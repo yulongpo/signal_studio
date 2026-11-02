@@ -1,0 +1,110 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^(signal_studio_ux_r5_detection|signal_studio_ux_(r5_ui|layout))$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 17
+    Start 17: signal_studio_ux_r5_detection
+
+17: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-debug_bin\SignalStudioUxR5DetectionTests.exe
+17: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+17: Test timeout computed to be: 120
+17: PASS A-B-A-zero-ROI-manual-undo
+17: PASS cancel-fail-late-coverage
+17: PASS file-and-sample-channel-isolation
+17: PASS real-ssproj-stage-persist-commit-GC-faults
+17: PASS running-save-reopen-recovery
+17: PASS private-canonical-GC-and-authority-discovery
+17: PASS Copy-Reference-Preserve
+17: PASS legacy-multi-run-and-ambiguous-timestamps
+17: PASS retired-channel-snapshot-and-GC
+17: PASS save-GC-real-lock-competition
+17: PASS transaction-metadata-count-segment-budgets
+17: 11/11 UX-R5 detection lifecycle cases passed
+1/3 Test #17: signal_studio_ux_r5_detection ....   Passed   13.22 sec
+test 40
+    Start 40: signal_studio_ux_r5_ui
+
+40: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r5_ui-test-results-debug.txt" "-DSS_UI_CASES=uxR5_threeTabsReadOnlyAndConversion;uxR5_layersAndIndependentFilters;uxR5_crossViewAndUnknownObservation;uxR5_readOnlyMenusAndCommandGuards" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+40: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+40: Environment variables: 
+40:  QT_QPA_PLATFORM=offscreen
+40:  QT_SCALE_FACTOR=1.5
+40: Test timeout computed to be: 480
+40: ********* Start testing of UxTests *********
+40: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+40: PASS   : UxTests::initTestCase()
+40: QWARN  : UxTests::uxR5_threeTabsReadOnlyAndConversion() This plugin does not support grabbing the mouse
+40: QWARN  : UxTests::uxR5_threeTabsReadOnlyAndConversion() This plugin does not support grabbing the mouse
+40: PASS   : UxTests::uxR5_threeTabsReadOnlyAndConversion()
+40: PASS   : UxTests::uxR5_layersAndIndependentFilters()
+40: PASS   : UxTests::uxR5_crossViewAndUnknownObservation()
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support raise()
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support grabbing the keyboard
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support raise()
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support grabbing the keyboard
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support raise()
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support grabbing the keyboard
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support propagateSizeHints()
+40: QWARN  : UxTests::uxR5_readOnlyMenusAndCommandGuards() This plugin does not support propagateSizeHints()
+40: PASS   : UxTests::uxR5_readOnlyMenusAndCommandGuards()
+40: PASS   : UxTests::cleanupTestCase()
+40: Totals: 6 passed, 0 failed, 0 skipped, 0 blacklisted, 14241ms
+40: ********* Finished testing of UxTests *********
+40: 
+2/3 Test #40: signal_studio_ux_r5_ui ...........   Passed   14.67 sec
+test 41
+    Start 41: signal_studio_ux_layout
+
+41: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-layout-test-results-debug.txt" "-DSS_UI_CASES=uxR01_chartToolbarLayout;uxR02_inspectorRouting;uxR02_fileProperties;uxR02_paletteWorkspaceOwnership;uxR03_taskKeyboardAndDetails;uxR03_taskRowActions;uxR01_lateRunFilterPopupAndRefresh;roundTwoFlatResponsiveControls" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+41: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+41: Environment variables: 
+41:  QT_QPA_PLATFORM=offscreen
+41:  QT_SCALE_FACTOR=1.5
+41: Test timeout computed to be: 480
+41: ********* Start testing of UxTests *********
+41: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+41: PASS   : UxTests::initTestCase()
+41: PASS   : UxTests::uxR01_chartToolbarLayout()
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+41: PASS   : UxTests::uxR02_inspectorRouting()
+41: PASS   : UxTests::uxR02_fileProperties()
+41: PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+41: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+41: QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+41: PASS   : UxTests::uxR03_taskKeyboardAndDetails()
+41: QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+41: PASS   : UxTests::uxR03_taskRowActions()
+41: PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+41: PASS   : UxTests::roundTwoFlatResponsiveControls()
+41: PASS   : UxTests::cleanupTestCase()
+41: Totals: 10 passed, 0 failed, 0 skipped, 0 blacklisted, 25745ms
+41: ********* Finished testing of UxTests *********
+41: 
+3/3 Test #41: signal_studio_ux_layout ..........   Passed   26.26 sec
+
+The following tests passed:
+	signal_studio_ux_r5_detection
+	signal_studio_ux_r5_ui
+	signal_studio_ux_layout
+
+100% tests passed, 0 tests failed out of 3
+
+Label Time Summary:
+layout         =  26.26 sec*proc (1 test)
+r5_ui          =  14.67 sec*proc (1 test)
+wideband-ux    =  40.93 sec*proc (2 tests)
+
+Total Test time (real) =  54.18 sec
+SCRIPT_EXIT=0

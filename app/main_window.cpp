@@ -1,5 +1,6 @@
 #include "ui/project_tree_presentation.h"
 #include "app/main_window.h"
+#include "infrastructure/runtime_log.h"
 #include "ui/chart_control_strip.h"
 #include "ui/context_stack.h"
 #include "ui/settings_popover.h"
@@ -9,6 +10,7 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QCloseEvent>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDialog>
@@ -18,6 +20,8 @@
 #include <QDoubleValidator>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QFormLayout>
 #include <QInputDialog>
 #include <QJsonDocument>
@@ -33,10 +37,13 @@
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QProgressBar>
+#include <QProgressDialog>
+#include <QEventLoop>
 #include <QPushButton>
 #include <QRegularExpressionValidator>
 #include <QResizeEvent>
 #include <QScreen>
+#include <QScopeGuard>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
@@ -56,8 +63,11 @@
 #include <QVBoxLayout>
 #include <QWindow>
 #include <algorithm>
+#include <chrono>
+#include <thread>
 #include <cmath>
 #include <functional>
+#include <future>
 #include <limits>
 #include <unordered_map>
 #include <unordered_set>
@@ -65,6 +75,10 @@
 #include "infrastructure/channel_processor.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/project_store.h"
+#include "infrastructure/project_file.h"
+#include "infrastructure/label_discovery.h"
+#include "ui/label_mapping_dialog.h"
+#include "ui/background_operation.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/spectral_settings_json.h"
 #include "infrastructure/wav_metadata.h"
@@ -77,7 +91,11 @@
 #include "ui/controls/sample_time_edit.h"
 #include "ui/custom_combo.h"
 #include "ui/detection/detection_card.h"
+#include "application/detection_result_service.h"
 #include "ui/detection/detection_panel.h"
+#include "ui/detection/detection_resource_options.h"
+#include "ui/detection/ffscn_engine_dialog.h"
+#include "ui/detection/ffscn_engine_switch_dialog.h"
 #include "ui/import/signal_import_dialog.h"
 #include "ui/narrowband_workspace.h"
 #include "ui/parameter_input.h"
@@ -87,6 +105,11 @@
 
 namespace signalstudio {
 namespace {
+bool projectIo(QWidget* parent, const QString& title,
+               const std::function<bool(std::function<bool()>)>& operation) {
+  return runBackgroundOperation(parent, title, operation);
+}
+
 constexpr std::array<const char*, 5> kDetectionFolds{
     "detectionAnalysisParametersToggle", "detectionPostprocessParametersToggle",
     "detectionResourceParametersToggle", "detectionCalculationDetailsToggle",
@@ -166,6 +189,8 @@ QString channelRelationLabel(ChannelSourceRelation relation) {
       return "旧版段确认记录；保留创建快照";
     case ChannelSourceRelation::LegacyNeedsReview:
       return "旧版来源待复核";
+    case ChannelSourceRelation::Retired:
+      return "关联检测结果已退役，使用创建快照";
   }
   return "来源待复核";
 }
@@ -306,6 +331,51 @@ class PrototypeSplitter : public QSplitter {
     return handle;
   }
 };
+
+QString detectionPreviewCountNote(const std::vector<ChartPreviewTrack>& tracks,
+                                  std::uint64_t dropped, bool unpublished) {
+  if (tracks.empty()) return {};
+  if (unpublished)
+    return QString("预览 · 未发布 · %1 条 · 不能转换为人工标记或创建窄带")
+        .arg(tracks.size());
+  int localized = 0;
+  int pendingTime = 0;
+  for (const auto& track : tracks) {
+    if (track.timeLocalized) ++localized;
+    else ++pendingTime;
+  }
+  const QString timing =
+      localized && pendingTime
+          ? QString("%1 条时间已定位 · %2 条时间未定位").arg(localized).arg(pendingTime)
+          : localized ? QStringLiteral("时间已定位")
+                      : QStringLiteral("时间未定位");
+  auto note = QString("预览 %1 条 · %2 · 随推理批次更新 · 不能转换为人工标记或创建窄带")
+                  .arg(tracks.size())
+                  .arg(timing);
+  if (dropped)
+    note += QString(" · 已丢弃 %1 条旧事件").arg(dropped);
+  return note;
+}
+
+void publishDetectionPreview(PlotWidget* plot, AnnotationPanel* annotations,
+                             DetectionPanel* detection) {
+  if (!detection) return;
+  const auto& preview = detection->livePreview();
+  const auto latest = latestPreviewEvents(preview.events);
+  std::vector<ChartPreviewTrack> tracks;
+  tracks.reserve(latest.size());
+  for (const auto& event : latest)
+    tracks.push_back({event.trackId, event.observedSupport, event.frequency,
+                      event.timeLocalized, preview.unpublished});
+  const auto noteTracks = tracks;
+  if (plot) plot->setDetectionPreview(std::move(tracks), preview.dropped);
+  if (!annotations) return;
+  const auto absence = detection->previewAbsenceNote();
+  annotations->setDetectionPreviewNote(
+      absence.isEmpty()
+          ? detectionPreviewCountNote(noteTracks, preview.dropped, preview.unpublished)
+          : absence);
+}
 }  // namespace
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
@@ -325,12 +395,24 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
         QMenu { background:#1b2b41; border:1px solid #56718b; padding:5px; }
         QMenu::item { padding:9px 12px; min-width:200px; } QMenu::item:selected { background:#275475; }
         QMenu::item:disabled { color:#627a91; } QMenu::separator { height:1px; background:#375168; margin:4px; }
-        QPushButton,QToolButton { border:1px solid transparent; border-radius:4px; padding:5px 8px; background:transparent; color:#bdd5e9; }
-        QPushButton:hover,QToolButton:hover { background:#263d56; }
-        QPushButton:disabled,QToolButton:disabled { color:#5b7186; }
-        QPushButton:checked { background:#1b5883; color:#cdefff; }
+        QPushButton,QToolButton { border:1px solid #456078; border-radius:4px; padding:5px 8px; background:#1b2d41; color:#d3e3f1; }
+        QPushButton:hover,QToolButton:hover { background:#294963; border-color:#729bb7; }
+        QPushButton:pressed,QToolButton:pressed { background:#34617f; border-color:#9dddf5; }
+        QPushButton:checked,QToolButton:checked { background:#1b5883; border-color:#58c6ed; color:#e4f8ff; }
+        QPushButton:focus,QToolButton:focus { border:2px solid #9be5ff; }
+        QPushButton:disabled,QToolButton:disabled { color:#8799aa; border-color:#344354; background:#182331; }
         QPushButton[uiRole="outline"] { border:1px solid #37566c; }
         QPushButton[uiRole="primary"] { background:#1a4e76; border:1px solid #2b4055; color:#bdebff; }
+        QPushButton[uiRole="primary"]:hover { background:#266d96; border-color:#87d9fc; }
+        QPushButton[uiRole="destructive"] { color:#ffc3cd; background:#392534; border-color:#ad6576; }
+        QPushButton[uiRole="destructive"]:hover { background:#6e3346; border-color:#f49dae; }
+        QPushButton[uiRole="destructive"]:disabled { background:#24212b; color:#9a8491; border-color:#53404d; }
+        QToolButton[uiRole="tertiary"] { background:#182c3c; border-color:#3b596f; text-align:left; }
+        QPushButton[uiRole="primary"]:disabled { background:#1a2938; color:#8799aa; border-color:#344354; }
+        QPushButton[uiRole="destructive"]:pressed { background:#874059; border-color:#ffc3cd; }
+        QPushButton:focus,QToolButton:focus { border:2px solid #9be5ff; }
+        QLabel[uiRole="annotationSection"] { color:#aed9ef; font-weight:600; padding-top:8px; }
+        #auxChartControls QPushButton,#auxChartControls QToolButton,#specChartControls QPushButton,#specChartControls QToolButton { padding:1px 6px; }
         QPushButton[uiRole="segment"] { font-size:11px; padding:4px 9px; border-radius:2px; }
         QPushButton[uiRole="icon"] { color:#a4c1d8; font-size:15px; padding:0; }
         QComboBox,QDoubleSpinBox,QLineEdit { border:1px solid #314963; background:#0e1a2a; border-radius:4px; padding:5px 7px; font-size:11px; }
@@ -440,6 +522,43 @@ MainWindow::~MainWindow() {
   delete takeCentralWidget();
 }
 
+void MainWindow::openDetectionResourceOptions() {
+  DetectionResourceOptionsDialog dialog(this, projectPath_);
+  if (dialog.exec() != QDialog::Accepted) return;
+  if (detectionCard_) detectionCard_->refresh();
+}
+
+void MainWindow::openFfscnEngineTool() {
+  if (auto* existing = findChild<FfscnEngineDialog*>("ffscnEngineDialog")) {
+    existing->show();
+    existing->raise();
+    existing->activateWindow();
+    return;
+  }
+  auto* dialog = new FfscnEngineDialog(this);
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
+}
+
+void MainWindow::openFfscnEngineSwitch() {
+  if (detectionAssetsInUse()) {
+    QMessageBox::warning(
+        this, "暂不能切换 FFSCN 引擎",
+        "检测仍在进行。请等待当前任务结束或取消完成后再切换。"
+        "正在运行的任务不会改用新引擎。");
+    return;
+  }
+  FfscnEngineSwitchDialog dialog(this);
+  dialog.setBusyCheck([this] { return detectionAssetsInUse(); });
+  connect(&dialog, &FfscnEngineSwitchDialog::engineActivated, this,
+          [this](const QString& directory, const QString& engineSha) {
+            log(QString("已切换 FFSCN 引擎：%1（引擎 %2）。"
+                        "已有检测结果保持不变，下次完整检测成功后才会替换。")
+                    .arg(directory, engineSha));
+          });
+  dialog.exec();
+}
+
 void MainWindow::buildMenus() {
   menuBar()->setFixedHeight(34);
   menuBar()->setNativeMenuBar(false);
@@ -497,20 +616,49 @@ void MainWindow::buildMenus() {
       file->addAction("▧ 新建工程…", this, &MainWindow::showNewProjectDialog);
   action->setObjectName("newProjectAction");
   action->setShortcut(QKeySequence::New);
-  action = file->addAction("⇧ 打开工程文件夹…", this, [this] {
-    const auto path = QFileDialog::getExistingDirectory(
-        this, "打开工程文件夹",
-        QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation));
-    if (!path.isEmpty()) openProject(path);
+  action = file->addAction("⇧ 打开工程…", this, [this] {
+    const auto path = QFileDialog::getOpenFileName(
+        this, "打开 Signal Studio 工程", {}, "Signal Studio 工程 (*.ssproj)");
+    if (!path.isEmpty() && confirmProjectTransition()) openProject(path);
   });
   action->setObjectName("openProjectAction");
   action->setShortcut(QKeySequence::Open);
-  action = file->addAction("打开工程 JSON…", this, [this] {
-    const auto path = QFileDialog::getOpenFileName(
-        this, "打开工程 JSON", {}, "Signal Studio 工程 (*.json)");
-    if (!path.isEmpty()) openProject(path);
-  });
+  action = file->addAction("导入旧工程 v6…", this, &MainWindow::importLegacyProjectDialog);
   action->setObjectName("openProjectJsonAction");
+  auto* discover = file->addAction("重新发现当前信号标签…", this, [this] { discoverLabels(); });
+  discover->setObjectName("discoverLabelsAction");
+  auto* importLabelsAction = file->addAction("导入标签…", this, [this] {
+    if (annotations_) annotations_->showImportLabelsDialog();
+  });
+  importLabelsAction->setObjectName("importLabelsAction");
+  auto* fromLabel = file->addAction("从标签定位 WAV / DATA 信号…", this, [this] {
+    if (projectPath_.isEmpty() && session_.project().files.empty()) { log("请先新建或打开 .ssproj 工程"); return; }
+    const auto path = QFileDialog::getOpenFileName(this, "选择 label/<name>.txt", {}, "文本标签 (*.txt)");
+    if (path.isEmpty()) return;
+    LabelDiscoveryResult reverse;
+    projectIo(this, "核对同名 WAV / DATA 配对…", [&](auto cancelled) {
+      LabelDiscoveryOptions options; options.parsing.cancelled = cancelled;
+      reverse = discoverDataForLabel(path, options); return true;
+    });
+    if ((reverse.state != LabelDiscoveryState::Found && reverse.state != LabelDiscoveryState::Ambiguous &&
+         reverse.state != LabelDiscoveryState::NeedsMapping && reverse.state != LabelDiscoveryState::Empty) ||
+        reverse.candidates.empty()) { QMessageBox::information(this, "未建立配对", reverse.message); return; }
+    QString selectedData;
+    if (reverse.candidates.size() == 1) selectedData = reverse.candidates.front().dataPath;
+    else {
+      QStringList paths;
+      for (const auto& candidate : reverse.candidates) paths.append(candidate.dataPath);
+      bool ok = false;
+      selectedData = QInputDialog::getItem(this, "选择目标信号", "存在多个同名信号，请明确选择：", paths, 0, false, &ok);
+      if (!ok) return;
+    }
+    auto* dialog = new SignalImportDialog(q(session_.project().name), this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->commitSource = [this](FileState source, QString& why) { return addImportedSource(std::move(source), why); };
+    dialog->addPath(selectedData);
+    dialog->open();
+  });
+  fromLabel->setObjectName("importDatasetFromLabelAction");
   action =
       file->addAction("打开宽带演示工程", this, &MainWindow::openDemoProject);
   action->setObjectName("openDemoProjectAction");
@@ -527,12 +675,17 @@ void MainWindow::buildMenus() {
       return;
     }
     const auto path = QFileDialog::getSaveFileName(
-        this, "保存工程 JSON", "signal-studio-project.json",
-        "Signal Studio 工程 (*.json)");
+        this, "保存工程", "signal-studio-project.ssproj",
+        "Signal Studio 工程 (*.ssproj)");
     if (!path.isEmpty()) saveProject(path);
   });
   saveAction_->setObjectName("saveProjectAction");
   saveAction_->setShortcut(QKeySequence::Save);
+  auto* saveAs = file->addAction("另存为…", this, &MainWindow::saveProjectAsDialog);
+  saveAs->setObjectName("saveProjectAsAction");
+  saveAs->setShortcut(QKeySequence::SaveAs);
+  auto* closeProjectAction = file->addAction("关闭工程", this, &MainWindow::closeProject);
+  closeProjectAction->setObjectName("closeProjectAction");
   recentProjectsMenu_ = file->addMenu("最近打开的工程");
   recentProjectsMenu_->setObjectName("recentProjectsMenu");
   updateRecentProjectsMenu();
@@ -599,7 +752,8 @@ void MainWindow::buildMenus() {
       edit->addAction("删除所选标记", this, &MainWindow::deleteMarks);
   deleteAction_->setObjectName("deleteMarksAction");
   deleteAction_->setShortcut(QKeySequence::Delete);
-  edit->addAction("重命名当前标记", this, &MainWindow::renameMark);
+  renameAction_ = edit->addAction("重命名当前标记", this, &MainWindow::renameMark);
+  renameAction_->setObjectName("renameMarkAction");
   auto* view = menuBar()->addMenu("视图(&V)");
   backAction_ = view->addAction("视图后退", this, [this] {
     cancelInteractions();
@@ -639,13 +793,22 @@ void MainWindow::buildMenus() {
   auto* roiAction = analysis->addAction("选择检测 ROI…", this,
                                         &MainWindow::beginDetectionRoi);
   roiAction->setObjectName("widebandDetectionRoiAction");
-  auto* about = menuBar()
-                    ->addMenu("工具(&T)")
-                    ->addAction("关于 Signal Studio", this, [this] {
-                      auto* dialog = BrandAssets::aboutDialog(this);
-                      dialog->setAttribute(Qt::WA_DeleteOnClose);
-                      dialog->open();
-                    });
+  auto* tools = menuBar()->addMenu("工具(&T)");
+  auto* options = tools->addAction("选项…", this,
+                                   &MainWindow::openDetectionResourceOptions);
+  options->setObjectName("toolsOptionsAction");
+  tools->addSeparator();
+  auto* engineTool = tools->addAction("FFSCN 引擎转换…", this,
+                                      &MainWindow::openFfscnEngineTool);
+  engineTool->setObjectName("ffscnEngineToolAction");
+  auto* switchEngine = tools->addAction("切换 FFSCN 引擎…", this,
+                                        &MainWindow::openFfscnEngineSwitch);
+  switchEngine->setObjectName("ffscnEngineSwitchAction");
+  auto* about = tools->addAction("关于 Signal Studio", this, [this] {
+    auto* dialog = BrandAssets::aboutDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->open();
+  });
   about->setObjectName("aboutSignalStudioAction");
   auto* help = menuBar()->addMenu("帮助(&H)");
   auto* interactions = help->addAction("鼠标交互帮助");
@@ -804,6 +967,7 @@ void MainWindow::buildWorkspace() {
                               if (channel) showChannelDialog(q(channel->id));
                             },
                             [this] {
+                              if (!allowProjectMutation()) { refresh(); return; }
                               session_.project().narrowbandWorkspaceOpen =
                                   false;
                               workspaceStack_->setCurrentIndex(0);
@@ -813,6 +977,7 @@ void MainWindow::buildWorkspace() {
                             [this](const QString& message) { log(message); });
   center->addWidget(workspaceStack_, 1);
   connect(workMode, &QPushButton::clicked, this, [this, workMode] {
+    if (!allowProjectMutation()) { refresh(); return; }
     if (workMode->isChecked()) {
       session_.project().narrowbandWorkspaceOpen = false;
       workspaceStack_->setCurrentIndex(0);
@@ -926,6 +1091,19 @@ void MainWindow::buildWorkspace() {
           "8px;border-radius:3px;");
       header->addWidget(specMode_);
     }
+    if (index != 0) {
+      auto* axisHeader = new AxisHeaderLabel(head);
+      axisHeader->setObjectName(index == 1 ? "auxAxisHeader" : "specAxisLabel");
+      if (index == 2) specAxis_ = axisHeader;
+      header->addWidget(axisHeader);
+      auto* plot = plots[index];
+      const auto updateAxes = [plot, axisHeader] {
+        axisHeader->setDescription(plot->axisDescription());
+        axisHeader->setVisible(plot->axisTitleMode() == PlotWidget::AxisTitleMode::CompactHeader);
+      };
+      connect(plot, &PlotWidget::axisDescriptionChanged, axisHeader, updateAxes);
+      updateAxes();
+    }
     header->addStretch();
     if (index == 0) {
       navStatus_ = label({}, "navStatus", "tag");
@@ -944,10 +1122,6 @@ void MainWindow::buildWorkspace() {
       header->addWidget(auxStatus_);
     }
     if (index == 2) {
-      specAxis_ = label({}, "specAxisLabel", "hint");
-      specAxis_->setMinimumWidth(0);
-      specAxis_->setMaximumWidth(150);
-      header->addWidget(specAxis_);
       manualTool_ = push("▱ 持续标记", "manualTool", header);
       manualTool_->setCheckable(true);
       connect(manualTool_, &QPushButton::clicked, this, [this](bool enabled) {
@@ -1037,14 +1211,6 @@ void MainWindow::buildWorkspace() {
           &PlotWidget::cancelDetectionRoi);
   detectionRoiConfirmation_->resize(650, 40);
   detectionRoiConfirmation_->hide();
-  auto* layerBar = new QWidget;
-  layerBar->setObjectName("annotationLayerBar");
-  layerBar->setFixedHeight(31);
-  auto* layerRow = new QHBoxLayout(layerBar);
-  layerRow->setContentsMargins(8, 0, 8, 0);
-  layerRow->setSpacing(14);
-  graphLayout->addWidget(layerBar);
-
   bottomResize_ = new PanelResizeHandle(Qt::Vertical);
   bottomResize_->setObjectName("bottomPanelResize");
   center->addWidget(bottomResize_);
@@ -1059,16 +1225,21 @@ void MainWindow::buildWorkspace() {
   auto* tabRow = new QHBoxLayout(tabs);
   tabRow->setContentsMargins(8, 0, 8, 0);
   tabRow->setSpacing(3);
-  const std::array<QString, 3> tabNames{"统一标记记录", "后台任务", "日志"},
-      tabIds{"resultTab", "taskTab", "logTab"};
-  for (int i = 0; i < 3; ++i) {
+  const std::array<QString, 5> tabNames{"原始标签", "人工标记", "检测结果", "后台任务", "日志"},
+      tabIds{"importedLabelsTab", "manualAnnotationsTab", "detectionResultsTab", "taskTab", "logTab"};
+  for (int i = 0; i < 5; ++i) {
     bottomButtons_[i] = push(tabNames[i], tabIds[i], tabRow);
     bottomButtons_[i]->setCheckable(true);
     connect(bottomButtons_[i], &QPushButton::clicked, this, [this, i] {
+      if (i < 3 && !allowProjectMutation()) {
+        for (int tab = 0; tab < 5; ++tab) bottomButtons_[tab]->setChecked(tab == bottomTab_);
+        return;
+      }
       cancelInteractions(false);
       bottomTab_ = i;
+      if (i < 3 && annotations_) annotations_->setSourceTab(static_cast<AnnotationSource>(i));
       resultToggle_->setChecked(true);
-      updateBottom();
+      refresh();
     });
   }
   tabRow->addStretch();
@@ -1091,9 +1262,16 @@ void MainWindow::buildWorkspace() {
   results_ = new QPlainTextEdit;
   results_->setObjectName("resultsPanel");
   results_->setReadOnly(true);
-  results_->setMaximumBlockCount(300);
+  results_->setMaximumBlockCount(100000);
+  RuntimeLog::setMirror(this, [this](const QString& line) {
+    if (results_) results_->appendPlainText(line);
+  });
+  for (const auto& line : RuntimeLog::recentLines(2000))
+    results_->appendPlainText(line);
   annotations_ = new AnnotationPanel(session_);
-  layerRow->addWidget(annotations_->layerWidget());
+  connect(annotations_, &AnnotationPanel::sourceTabChanged, this, [this](int source) {
+    bottomTab_ = source;
+  });
   connect(annotations_, &AnnotationPanel::changed, this, [this] { refresh(); });
   connect(annotations_, &AnnotationPanel::message, this, &MainWindow::log);
   connect(annotations_, &AnnotationPanel::createChannelRequested, this,
@@ -1109,15 +1287,56 @@ void MainWindow::buildWorkspace() {
   resultSummary_->hide();
   bottomContent_->addWidget(annotations_);
   detection_ = new DetectionPanel(session_, [this] {
-    return projectPath_.isEmpty() ? QString{}
-                                  : QFileInfo(projectPath_).absolutePath();
+    return projectAssetDirectory();
   });
+  detection_->setProjectFilePathProvider([this] { return projectPath_; });
   connect(detection_, &DetectionPanel::changed, this, [this] { refresh(); });
+  connect(detection_, &DetectionPanel::presentationRequested, this,
+          &MainWindow::applyDetectionPresentation);
   connect(detection_, &DetectionPanel::message, this, &MainWindow::log);
   connect(detection_, &DetectionPanel::configurationRequested, this,
           &MainWindow::openWidebandDetection);
   connect(detection_, &DetectionPanel::runProgressChanged, this, [this] {
     if (detectionCard_) detectionCard_->refresh();
+  });
+  connect(detection_, &DetectionPanel::previewSelectionDropped, this,
+          [this](const QStringList& ids) {
+            if (detection_->projectCommitInProgress()) return;
+            auto* file = session_.activeFile();
+            if (!file) return;
+            bool dropped = false;
+            for (const auto& id : ids) {
+              const auto text = id.toStdString();
+              if (findMark(*file, text)) continue;
+              if (std::erase(file->selectedMarkIds, text) != 0) dropped = true;
+              if (file->activeMarkId == text) {
+                file->activeMarkId.clear();
+                file->activeSegmentId.clear();
+                dropped = true;
+              }
+              if (file->hoveredMarkId == text) {
+                file->hoveredMarkId.clear();
+                file->hoveredSegmentId.clear();
+                dropped = true;
+              }
+              if (file->selectionAnchorId == text) {
+                file->selectionAnchorId.clear();
+                dropped = true;
+              }
+            }
+            if (dropped && file->activeMarkId.empty() &&
+                !file->selectedMarkIds.empty()) {
+              file->activeMarkId = file->selectedMarkIds.front();
+              if (const auto* active = findMark(*file, file->activeMarkId))
+                file->activeSegmentId = active->activeSegmentId;
+            }
+            if (dropped) {
+              session_.noteProjectWrite();
+              refreshAnnotationHover();
+            }
+          });
+  connect(detection_, &DetectionPanel::previewChanged, this, [this] {
+    publishDetectionPreview(main_, annotations_, detection_);
   });
   connect(detection_, &DetectionPanel::runFocused, this,
           [this](const QString& id) {
@@ -1231,6 +1450,17 @@ void MainWindow::buildWorkspace() {
   sourceSummary_ = output("inspectorSourceSummary");
   sourceSummary_->setWordWrap(true);
   displayPage->addWidget(sourceSummary_);
+  auto* axisMode = combo("axisTitleMode", {"Y 轴单位顶置（A）", "完整轴标题带（B）", "传统旋转标题（C）", "紧凑标题栏（默认）"});
+  axisMode->setCurrentIndex(static_cast<int>(PlotWidget::AxisTitleMode::CompactHeader));
+  axisMode->setToolTip("紧凑模式在现有标题栏显示轴名、单位和原点，为图谱保留更多空间；同时应用于宽带主图和辅助图。");
+  displayPage->addWidget(axisMode);
+  connect(axisMode, &QComboBox::activated, this, [this](int index) {
+    main_->setAxisTitleMode(static_cast<PlotWidget::AxisTitleMode>(index));
+  });
+  connect(main_, &PlotWidget::axisDescriptionChanged, axisMode, [this, axisMode] {
+    const QSignalBlocker blocker(axisMode);
+    axisMode->setCurrentIndex(static_cast<int>(main_->axisTitleMode()));
+  });
   filePropertiesButton_ = new QPushButton("文件属性 / 调整有效带宽…");
   filePropertiesButton_->setObjectName("fileProperties");
   filePropertiesButton_->setProperty("uiRole", "outline");
@@ -1267,8 +1497,7 @@ void MainWindow::buildWorkspace() {
   bandwidthHelp->setWordWrap(true);
   fileForm->addRow(bandwidthHelp);
   detectionCard_ = new DetectionCard(session_, [this] {
-    return projectPath_.isEmpty() ? QString{}
-                                  : QFileInfo(projectPath_).absolutePath();
+    return projectAssetDirectory();
   });
   detectionPage->setContentsMargins(0, 4, 0, 12);
   detectionPage->addWidget(detectionCard_);
@@ -1280,24 +1509,35 @@ void MainWindow::buildWorkspace() {
           sharedPsdFromSelectionPreference_ && hasActiveSegment(*file);
     refresh();
   });
+  connect(detectionCard_, &DetectionCard::configurationCommitted,
+          detection_, &DetectionPanel::markConfigurationStale);
+  connect(detectionCard_, &DetectionCard::intermediateResultsToggled, detection_,
+          &DetectionPanel::setShowIntermediateResults);
+  detection_->setShowIntermediateResults(detectionCard_->showIntermediateResults());
   connect(detectionCard_, &DetectionCard::requestSubmitted, this,
           [this](const DetectionRequest& request) {
             QString error;
-            if (!detection_->startRequest(request, error)) log(error);
-            refresh();
+            if (!detection_->startRequest(request, error, detectionCard_->startLatchSteadyNs())) {
+              detectionCard_->noteStartRejected(request.runId, error);
+              log(error);
+            }
+          });
+  connect(detection_, &DetectionPanel::startRejected, this,
+          [this](const QString& runId, const QString& message) {
+            detectionCard_->noteStartRejected(runId.toStdString(), message);
           });
   connect(detectionCard_, &DetectionCard::roiSelectionRequested, this,
           &MainWindow::beginDetectionRoi);
   connect(detectionCard_, &DetectionCard::cancelRunRequested, this,
           [this](const QString& runId) {
-            detection_->tasks().cancel(runId.toStdString());
+            detection_->cancelRun(runId);
             detection_->refresh();
             detectionCard_->refresh();
           });
   connect(detectionCard_, &DetectionCard::focusRunningRunRequested, this,
           [this](const QString& runId) {
             detection_->openRunSource(runId);
-            bottomTab_ = 1;
+            bottomTab_ = 3;
             resultToggle_->setChecked(true);
             updateBottom();
           });
@@ -1318,6 +1558,7 @@ void MainWindow::buildWorkspace() {
   delete_->setProperty("preserveParameterDrafts", true);
   for (auto* action : {rename_, locate_, delete_})
     action->setProperty("uiRole", "outline");
+  delete_->setProperty("uiRole", "destructive");
   markRow->addStretch();
   annotationActions_ = markActions;
   annotationPage->addWidget(markActions);
@@ -1402,7 +1643,6 @@ void MainWindow::buildWorkspace() {
         control));
   }
   freqMode_ = combo("freqMode", {"射频绝对频率", "基带相对频率"});
-  layerRow->addStretch();
   for (int i = 0; i < dynamic_->count(); ++i)
     dynamic_->setItemData(i, 20 + 20 * i);
   for (int i = 0; i < reference_->count(); ++i)
@@ -1514,7 +1754,7 @@ void MainWindow::buildWorkspace() {
               QTimer::singleShot(0, this, [this, id] {
                 cancelInteractions();
                 detection_->openRunSource(id);
-                bottomTab_ = 1;
+                bottomTab_ = 3;
                 resultToggle_->setChecked(true);
                 updateBottom();
               });
@@ -1546,9 +1786,10 @@ void MainWindow::buildWorkspace() {
   connect(tree_, &QTreeWidget::itemDoubleClicked, this,
           [this](QTreeWidgetItem* item, int) {
             if (item->data(0, Qt::UserRole).toString() == "mark") {
+              if (!allowProjectMutation()) return;
               cancelInteractions();
-              session_.focusMark(
-                  item->data(0, Qt::UserRole + 1).toString().toStdString());
+              if (!session_.focusMark(
+                  item->data(0, Qt::UserRole + 1).toString().toStdString())) return;
               session_.project().narrowbandWorkspaceOpen = false;
               workspaceStack_->setCurrentIndex(0);
               refresh();
@@ -1575,6 +1816,17 @@ void MainWindow::buildWorkspace() {
         auto* item = tree_->itemAt(point);
         if (!item) return;
         const auto kind = item->data(0, Qt::UserRole).toString();
+        if (kind == "project") {
+          QMenu menu(this);
+          menu.addAction("工程路径与资产…", this, [this] {
+            QMessageBox::information(this, "工程详情", "工程：" + projectPath_ + "\nprojectId：" + q(session_.project().projectId) + "\n伴随资产：" + projectAssetDirectory());
+          });
+          menu.addAction("在资源管理器中显示", this, [this] {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(projectPath_).absolutePath()));
+          });
+          menu.exec(tree_->viewport()->mapToGlobal(point));
+          return;
+        }
         if (kind == "channel") {
           const auto channelId = item->data(0, Qt::UserRole + 1).toString();
           QMenu menu(this);
@@ -1583,10 +1835,11 @@ void MainWindow::buildWorkspace() {
           menu.addAction("修改通道参数…", this,
                          [this, channelId] { showChannelDialog(channelId); });
           menu.addAction("定位来源标记", this, [this, channelId] {
-            session_.activateChannel(channelId.toStdString());
+            if (!session_.activateChannel(channelId.toStdString())) return;
             locateActiveChannelSource();
           });
           menu.addAction("重命名通道…", this, [this, channelId] {
+            if (!allowProjectMutation()) return;
             auto* file = session_.fileForChannel(channelId.toStdString());
             if (!file) return;
             auto it = std::find_if(file->channels.begin(), file->channels.end(),
@@ -1594,19 +1847,31 @@ void MainWindow::buildWorkspace() {
                                      return value.id == channelId.toStdString();
                                    });
             if (it == file->channels.end()) return;
+            const auto renameGeneration = session_.projectGeneration();
             bool ok = false;
             const auto name =
                 QInputDialog::getText(this, "重命名窄带通道", "通道名称",
                                       QLineEdit::Normal, q(it->name), &ok)
                     .trimmed();
             if (ok && !name.isEmpty() && name.size() <= 80) {
-              auto updated = *it;
+              // A publication may replace the Project while this modal runs.
+              // Resolve the channel again instead of retaining its iterator.
+              if (!allowProjectMutation() ||
+                  session_.projectGeneration() != renameGeneration) return;
+              auto* currentFile = session_.fileForChannel(channelId.toStdString());
+              if (!currentFile) return;
+              const auto current = std::find_if(
+                  currentFile->channels.begin(), currentFile->channels.end(),
+                  [&](const Channel& value) { return value.id == channelId.toStdString(); });
+              if (current == currentFile->channels.end()) return;
+              auto updated = *current;
               updated.name = name.toStdString();
-              session_.updateChannel(updated.id, updated);
+              if (!session_.updateChannel(updated.id, updated)) return;
               refresh();
             }
           });
           menu.addAction("删除通道…", this, [this, channelId] {
+            if (!allowProjectMutation()) return;
             auto* file = session_.fileForChannel(channelId.toStdString());
             if (!file) return;
             const auto* channel = [&]() -> const Channel* {
@@ -1619,7 +1884,7 @@ void MainWindow::buildWorkspace() {
                                       "删除通道“" + q(channel->name) + "”？") !=
                     QMessageBox::Yes)
               return;
-            session_.removeChannel(channelId.toStdString());
+            if (!session_.removeChannel(channelId.toStdString())) return;
             refresh();
             log("已删除窄带通道");
           });
@@ -1630,12 +1895,23 @@ void MainWindow::buildWorkspace() {
           const auto fileId = item->data(0, Qt::UserRole + 1).toString();
           QMenu menu(this);
           menu.addAction("打开宽带工作区", this, [this, fileId] {
-            session_.activateFile(fileId.toStdString());
+            if (!session_.activateFile(fileId.toStdString())) return;
             session_.project().narrowbandWorkspaceOpen = false;
             refresh();
           });
           menu.addAction("添加 / 打开 IQ…", this,
                          &MainWindow::showAddFileDialog);
+          menu.addAction("重新定位源文件…", this, [this, fileId] {
+            const auto path = QFileDialog::getOpenFileName(this, "选择同一源文件（校验长度、格式和内容签名）");
+            if (path.isEmpty()) return;
+            QString why;
+            if (!relocateSource(fileId, path, &why)) QMessageBox::warning(this, "重新定位失败", why);
+          });
+          menu.addAction("在资源管理器中显示", this, [this, fileId] {
+            for (const auto& f : session_.project().files)
+              if (q(f.metadata.id) == fileId)
+                QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(q(f.metadata.path)).absolutePath()));
+          });
           menu.exec(tree_->viewport()->mapToGlobal(point));
           return;
         }
@@ -1647,14 +1923,23 @@ void MainWindow::buildWorkspace() {
                       id.toStdString()) == f->selectedMarkIds.end())
           selectMark(id, Qt::NoModifier);
         QMenu menu(this);
+        menu.setObjectName("annotationTreeContextMenu");
+        const auto* activeFile = session_.activeFile();
+        const auto capabilities = session_.annotations().capabilities(*activeFile, activeFile->activeMarkId);
         auto* create = menu.addAction("创建窄带通道…", this,
                                       [this] { showChannelDialog(); });
         create->setObjectName("annotationTreeCreateChannelAction");
-        menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
+        create->setEnabled(capabilities.createChannelDirectly || capabilities.convertToManual);
+        if (!capabilities.createChannelDirectly) create->setText("转换并创建窄带通道…");
+        auto* rename = menu.addAction("重命名当前标记", this, &MainWindow::renameMark);
+        rename->setObjectName("annotationTreeRenameAction");
+        rename->setEnabled(capabilities.editMetadata);
         menu.addAction("定位当前标记", this, &MainWindow::locateMark);
-        menu.addAction(QString("删除所选标记 (%1)")
+        auto* remove = menu.addAction(QString("删除所选标记 (%1)")
                            .arg(session_.activeFile()->selectedMarkIds.size()),
                        this, &MainWindow::deleteMarks);
+        remove->setObjectName("annotationTreeDeleteAction");
+        remove->setEnabled(canDeleteSelectedAnnotations());
         menu.addSeparator();
         menu.addAction(backAction_);
         menu.addAction(forwardAction_);
@@ -1722,6 +2007,7 @@ void MainWindow::buildWorkspace() {
     if (refreshing_) return;
     auto* file = session_.activeFile();
     if (!file) return;
+    if (!allowProjectMutation()) { refresh(); return; }
     auto* control = psd ? psdParameters_ : stftParameters_;
     if (session_.project().narrowbandWorkspaceOpen &&
         session_.activeChannel()) {
@@ -1750,6 +2036,7 @@ void MainWindow::buildWorkspace() {
     if (refreshing_) return;
     auto* f = session_.activeFile();
     if (!f || f->metadata.availability.status == LoadStatus::Loading) return;
+    if (!allowProjectMutation()) { refresh(); return; }
     const bool narrow =
         session_.project().narrowbandWorkspaceOpen && session_.activeChannel();
     if (narrow && sender() == freqMode_) {
@@ -1914,7 +2201,16 @@ void MainWindow::buildChartControls() {
   auxiliaryControls_=attach(findChild<QWidget*>("auxChartHead"),"auxChartControls");
   spectrumControls_=attach(findChild<QWidget*>("specChartHead"),"specChartControls");
   auxiliaryControls_->setAuxiliaryStatus(auxStatus_);
-  spectrumControls_->setAuxiliaryStatus(specAxis_);
+  for (auto pair : {std::pair{auxiliary_, auxiliaryControls_}, std::pair{main_, spectrumControls_}}) {
+    auto* axes = new QLabel;
+    axes->setTextFormat(Qt::PlainText);
+    axes->setWordWrap(true);
+    axes->setObjectName(pair.first == main_ ? "mainAxisDetails" : "auxAxisDetails");
+    pair.second->addPanel(axes, "坐标轴说明");
+    const auto updateAxes = [plot = pair.first, axes] { axes->setText(plot->axisDescription().fullText()); };
+    connect(pair.first, &PlotWidget::axisDescriptionChanged, axes, updateAxes);
+    updateAxes();
+  }
   psdSettingsButton_=auxiliaryControls_->overflowButton();
   stftSettingsButton_=spectrumControls_->overflowButton();
   psdSettingsButton_->setObjectName("psdSettings");
@@ -1954,12 +2250,27 @@ void MainWindow::buildChartControls() {
     auto* head=layout->itemAt(0)->widget();
     head->setObjectName(panels[i]+"Head");
     narrowbandControls_[i]=attach(head,panels[i]+"Controls");
+    for (auto* candidate : head->findChildren<QLabel*>())
+      if (candidate->objectName().endsWith("AxisHeader")) {
+        auto* details = new AxisDetailsLabel(candidate);
+        details->setObjectName(panels[i]+"AxisDetails");
+        narrowbandControls_[i]->addPanel(details, "坐标轴说明");
+      }
   }
   auto* nbWave=narrowband_->findChild<QComboBox*>("narrowbandWaveformMode");field(nbWave,104);
   narrowbandControls_[0]->addControl(nbWave,"分量",100);
   auto* nbFit=new QToolButton;nbFit->setObjectName("narrowbandWaveformAutoFit");nbFit->setText("自动幅度");
   narrowbandControls_[0]->addControl(nbFit,"自动幅度",90);
-  connect(nbFit,&QToolButton::clicked,this,[this]{if(auto* c=session_.activeChannel()){c->waveformAutoScale=true;narrowband_->refreshFromSession();}});
+  connect(nbFit,&QToolButton::clicked,this,[this]{
+    if (!allowProjectMutation()) return;
+    if (auto* c = session_.activeChannel()) {
+      if (!c->waveformAutoScale) {
+        c->waveformAutoScale = true;
+        session_.noteProjectWrite();
+      }
+      narrowband_->refreshFromSession();
+    }
+  });
   auto* nbPsd=narrowband_->findChild<QComboBox*>("narrowbandPsdFft");field(nbPsd,94);
   narrowbandControls_[1]->addControl(nbPsd,"PSD N",100);
   auto* nbStft=narrowband_->findChild<QComboBox*>("narrowbandStftFft");field(nbStft,100);
@@ -1987,7 +2298,7 @@ void MainWindow::buildChartControls() {
   field(narrowband_->findChild<QWidget*>("eyeTimingOffsetUi"),160);
   field(narrowband_->findChild<QWidget*>("analysisRrcRolloff"),130);
   eye->addPanel(narrowband_->findChild<QWidget*>("narrowbandEyeDisplaySettings"));
-  specMode_->setMaximumWidth(150);specAxis_->setMaximumWidth(100);
+  specMode_->setMaximumWidth(150);
   connect(narrowband_,&NarrowbandWorkspace::pageChanged,this,[this]{
     if(session_.project().narrowbandWorkspaceOpen)updateChartControls(true);
   });
@@ -2010,21 +2321,21 @@ void MainWindow::updateChartControls(bool narrow) {
     auto* stftHost=narrow?heat:spectrumControls_;
     if(!narrow){psdHost->addControl(psd_,"PSD N",100);stftHost->addControl(stft_,"STFT N",100);}
     psdHost->addControl(psdSourceControl_,"谱源",110);
-    psdHost->addControl(psdScope_,"范围",65);
+    psdHost->addControl(psdScope_,"范围",narrow?65:-1);
     psdHost->addControl(psdStatisticControl_,"统计",75);
     for(int i=0;i<3;++i){
       const QString title=i==0?"方法":i==1?"窗":"重叠 (%)";
-      psdHost->addControl(psdInline_[i],title,45-i*10);
-      stftHost->addControl(stftInline_[i],title,40-i*10);
+      psdHost->addControl(psdInline_[i],title,narrow?45-i*10:-1);
+      stftHost->addControl(stftInline_[i],title,narrow?40-i*10:-1);
     }
     psdHost->addPanel(psdParameters_,"PSD 高级参数");
     stftHost->addPanel(stftParameters_,"STFT 高级参数");
     stftHost->addControl(propertyPalette_,"色表",95);
-    stftHost->addControl(reference_,"参考",85);
-    stftHost->addControl(dynamic_,"动态",80);
+    stftHost->addControl(reference_,"参考",narrow?85:-1);
+    stftHost->addControl(dynamic_,"动态",narrow?80:-1);
     stftHost->addControl(autoPowerFit_,"自动适配电平",70);
-    stftHost->addControl(colorScale_,"色阶条",5);
-    if(!narrow){stftHost->addControl(freqMode_,"频率",15);stftHost->addControl(grid_,"网格",10);}
+    stftHost->addControl(colorScale_,"色阶条",narrow?5:-1);
+    if(!narrow){stftHost->addControl(freqMode_,"频率",-1);stftHost->addControl(grid_,"网格",-1);}
     else{
       // Overflow layers are owned by the main window, outside the workspace.
       // Resolve these singleton editors from their stable root after a page change.
@@ -2084,6 +2395,7 @@ void MainWindow::rebuildTree() {
   root->setExpanded(true);
   root->setFlags(Qt::ItemIsEnabled);
   root->setData(0, Qt::UserRole, "project");
+  root->setToolTip(0, projectPath_ + "\n资产：" + projectAssetDirectory());
   root->setSizeHint(0, QSize(0, 35));
   root->setBackground(0, QColor("#1b2f45"));
   QFont bold = tree_->font();
@@ -2138,10 +2450,11 @@ void MainWindow::rebuildTree() {
     actionRow->addWidget(counts,1);
     auto* all=push("全选","treeSelectAll",actionRow);
     auto* remove=push("删除","treeDeleteMarks",actionRow);
-    all->setToolTip("全选当前筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
+    all->setToolTip("全选当前来源 Tab 筛选的全部匹配标记");remove->setToolTip("预览并删除所选标记");
     remove->setProperty("preserveParameterDrafts",true);
     all->setProperty("uiRole","outline");remove->setProperty("uiRole","outline");
-    all->setEnabled(count.matching!=0);remove->setEnabled(count.selected!=0);
+    all->setEnabled(!annotations_->sortedVisibleIds().empty());
+    remove->setEnabled(canDeleteSelectedAnnotations());
     tree_->setItemWidget(actions, 0, controls);
     connect(all, &QPushButton::clicked, this, &MainWindow::selectAllMarks);
     connect(remove, &QPushButton::clicked, this, &MainWindow::deleteMarks);
@@ -2285,16 +2598,27 @@ std::vector<std::string> MainWindow::treeSelectionOrder() const {
   const auto* file = session_.activeFile();
   if (!file || !annotations_) return result;
   std::unordered_map<std::string, const Annotation*> byId;
-  for (const auto& annotation : file->marks)
-    byId.emplace(annotation.id, &annotation);
-  for (int kind = 0; kind < 3; ++kind)
-    for (const auto& id : annotations_->sortedVisibleIds()) {
-      const auto found = byId.find(id);
-      if (found != byId.end() &&
-          static_cast<int>(found->second->sourceKind) == kind &&
-          annotationVisible(*file, *found->second))
-        result.push_back(id);
+  byId.reserve(file->marks.size());
+  for (const auto& value : file->marks) byId.emplace(value.id, &value);
+  // The tree exposes every source group. Only the currently projected source
+  // uses its table's query/sort; switching tabs cannot erase other groups.
+  for (int kind = 0; kind < 3; ++kind) {
+    if (kind == static_cast<int>(annotations_->sourceTab())) {
+      for (const auto& id : annotations_->sortedVisibleIds()) {
+        const auto found = byId.find(id);
+        if (found != byId.end() && annotationSelectable(*file, *found->second)) result.push_back(id);
+      }
+      continue;
     }
+    std::vector<const Annotation*> values;
+    for (const auto& value : file->marks)
+      if (static_cast<int>(value.sourceKind) == kind && annotationSelectable(*file, value))
+        values.push_back(&value);
+    std::sort(values.begin(), values.end(), [](const auto* a, const auto* b) {
+      return a->name == b->name ? a->id < b->id : a->name < b->name;
+    });
+    for (const auto* value : values) result.push_back(value->id);
+  }
   return result;
 }
 
@@ -2336,7 +2660,8 @@ void MainWindow::restoreUiState() {
   resultToggle_->setChecked(
       settings.value(QStringLiteral("resultsExpanded"), false).toBool());
   bottomTab_ =
-      std::clamp(settings.value(QStringLiteral("bottomTab"), 0).toInt(), 0, 2);
+      std::clamp(settings.value(QStringLiteral("annotationSourceTab"), 0).toInt(), 0, 4);
+  if (annotations_ && bottomTab_ < 3) annotations_->setSourceTab(static_cast<AnnotationSource>(bottomTab_));
   auxiliaryEvidenceVisible_ =
       settings.value("auxiliaryEvidenceVisible", false).toBool();
   resourceWidth_ =
@@ -2371,7 +2696,7 @@ void MainWindow::saveUiState() {
                     propertiesCollapsed_);
   settings.setValue(QStringLiteral("resultsExpanded"),
                     resultToggle_->isChecked());
-  settings.setValue(QStringLiteral("bottomTab"), bottomTab_);
+  settings.setValue(QStringLiteral("annotationSourceTab"), bottomTab_);
   settings.setValue("auxiliaryEvidenceVisible", auxiliaryEvidenceVisible_);
   settings.setValue("resourceWidth", resourceWidth_);
   settings.setValue("propertyWidth", propertyWidth_);
@@ -2655,9 +2980,9 @@ void MainWindow::updateRecentProjectsMenu() {
     action->setObjectName(QStringLiteral("recentProjectAction"));
     action->setToolTip(path);
     action->setStatusTip(path);
-    action->setEnabled(QFileInfo::exists(path));
+    action->setEnabled(QFileInfo::exists(path) && path.endsWith(".ssproj", Qt::CaseInsensitive));
     connect(action, &QAction::triggered, this,
-            [this, path] { openProject(path); });
+            [this, path] { if (confirmProjectTransition()) openProject(path); });
   }
   if (paths.isEmpty()) {
     auto* empty = recentProjectsMenu_->addAction("暂无历史工程");
@@ -2745,15 +3070,17 @@ void MainWindow::syncTreeState() {
       summary->setText(counts.selected?QString("已选 %1").arg(counts.selected):QString("%1 项").arg(counts.matching));
       summary->setToolTip(annotationCountText(file));
       controls->findChild<QPushButton*>("treeSelectAll")
-          ->setEnabled(counts.matching != 0);
+          ->setEnabled(!annotations_->sortedVisibleIds().empty());
       controls->findChild<QPushButton*>("treeDeleteMarks")
-          ->setEnabled(counts.selected != 0);
+          ->setEnabled(canDeleteSelectedAnnotations());
     }
     std::array<std::size_t, 3> matching{}, total{};
+    const auto order = treeSelectionOrder();
+    const std::unordered_set<std::string> matchingIds(order.begin(), order.end());
     for (const auto& annotation : file.marks) {
       const auto kind = static_cast<int>(annotation.sourceKind);
       if (annotationInContext(file, annotation)) ++total[kind];
-      if (annotationVisible(file, annotation)) ++matching[kind];
+      if (matchingIds.contains(annotation.id)) ++matching[kind];
     }
     for (int group = 1; group < marks->childCount(); ++group) {
       auto* node = marks->child(group);
@@ -2860,6 +3187,36 @@ void MainWindow::revealTreeAnnotation() {
   }
 }
 
+bool MainWindow::allowProjectMutation(QString* error) {
+  std::string blocked;
+  if (session_.acceptProjectWrite(blocked)) return true;
+  if (error && error->isEmpty()) *error = QString::fromStdString(blocked);
+  return false;
+}
+
+void MainWindow::syncFormalDetectionSuppression() {
+  const auto* file = session_.activeFile();
+  const auto* slot =
+      file ? currentDetectionSlot(*file, file->metadata.sampleFormat.selectedChannel)
+           : nullptr;
+  const bool hide = slot && slot->suppressFormalResults;
+  for (auto* plot : {navigation_, auxiliary_, main_})
+    if (plot) plot->setFormalDetectionSuppressed(hide);
+}
+void MainWindow::applyDetectionPresentation() {
+  if (destroying_) return;
+  syncFormalDetectionSuppression();
+  if (annotations_ && detection_)
+    annotations_->setDetectionClearanceNote(detection_->clearanceNoteForActive());
+  if (annotations_) annotations_->refresh();
+  if (detection_) detection_->refresh();
+  if (detectionCard_) detectionCard_->refresh();
+  updateTree();
+  if (!main_ || !detection_) return;
+  publishDetectionPreview(main_, annotations_, detection_);
+  main_->invalidateAnnotationOverlay();
+}
+
 void MainWindow::refreshAnnotationHover() {
   if (destroying_) return;
   if (main_) main_->refreshAnnotationOverlay();
@@ -2878,8 +3235,11 @@ void MainWindow::refresh() {
   if (detectionAction_) detectionAction_->setEnabled(detectionReady);
   if (refreshing_) return;
   refreshing_ = true;
+  if (detection_) detection_->syncPreviewScope();
   auto* file = session_.activeFile();
   if (file) session_.annotations().reconcileSelection(*file);
+  const bool dirty = isProjectDirty();
+  setWindowTitle(q(session_.project().name) + (dirty ? " *" : "") + " · Signal Studio UX-R3");
   projectLabel_->setText(q(session_.project().name));
   const bool narrowOpen = session_.project().narrowbandWorkspaceOpen &&
                           session_.activeChannel() != nullptr;
@@ -2919,7 +3279,8 @@ void MainWindow::refresh() {
   saveAction_->setEnabled(!projectPath_.isEmpty() ||
                           !session_.project().files.empty());
   removeAction_->setEnabled(file != nullptr);
-  deleteAction_->setEnabled(file && !file->selectedMarkIds.empty());
+  deleteAction_->setEnabled(canDeleteSelectedAnnotations());
+  renameAction_->setEnabled(file && session_.annotations().capabilities(*file, file->activeMarkId).editMetadata);
   backAction_->setEnabled(session_.canBack());
   forwardAction_->setEnabled(session_.canForward());
   empty_->setVisible(!file);
@@ -2932,7 +3293,7 @@ void MainWindow::refresh() {
         projectReady
             ? "当前工程：" + q(session_.project().name) +
                   "。添加信号后即可进行宽带数据操作。"
-            : "第一步：新建工程（自动创建工程文件夹）或打开已有工程。");
+            : "第一步：新建 .ssproj 工程文件或打开已有工程。");
   if (auto* actions = findChild<QWidget*>("emptyProjectActions"))
     actions->setVisible(!projectReady);
   if (auto* addButton = findChild<QPushButton*>("emptyAddSignal"))
@@ -3060,12 +3421,8 @@ void MainWindow::refresh() {
                          file->metadata.sampleRateHz) +
                   " s");
     auxStatus_->setText(auxiliary_->statusText());
-    const bool waterfall = display.mainMode == MainMode::Waterfall;
     specMode_->setText("正在框选信号 · 右键或 Esc 退出");
     specMode_->setVisible(main_->isCreating() && width() > 990);
-    specAxis_->setText(waterfall ? "X 频率 · Y 时间↓" : "X 时间 · Y 频率");
-    specAxis_->setToolTip(waterfall ? "X 轴：频率；Y 轴：时间；颜色：功率"
-                                    : "X 轴：时间；Y 轴：频率；颜色：功率");
     fileValues_[0]->setText(q(file->metadata.name));
     fileValues_[1]->setText(number(file->metadata.sampleRateHz / 1e6) +
                             " MS/s");
@@ -3106,10 +3463,9 @@ void MainWindow::refresh() {
                                        .arg(mark->segments.size())
                              : mark ? QString(" · 时间未定位 / 0 段")
                                     : QString{}));
-    rename_->setEnabled(mark &&
-                        session_.annotations().canEdit(*file, mark->id));
+    rename_->setEnabled(mark && session_.annotations().capabilities(*file, mark->id).editMetadata);
     locate_->setEnabled(mark != nullptr);
-    delete_->setEnabled(!file->selectedMarkIds.empty());
+    delete_->setEnabled(canDeleteSelectedAnnotations());
     if (cursorFileId_ != q(file->metadata.id)) {
       cursorFileId_ = q(file->metadata.id);
       cursorSample_ = file->view.time.begin +
@@ -3137,6 +3493,7 @@ void MainWindow::refresh() {
   updatePropertyContext();
   updateBottom();
   updateTree();
+  syncFormalDetectionSuppression();
   for (auto* plot : {navigation_, auxiliary_, main_}) plot->syncState();
   updateChartControls(narrowOpen);
   refreshing_ = false;
@@ -3161,7 +3518,13 @@ void MainWindow::locateActiveChannelSource() {
   const auto fileId = file->metadata.id;
   const auto markId = channel->sourceMarkId;
   cancelInteractions(false);
-  if (!session_.activateFile(fileId) || !session_.focusMark(markId)) return;
+  const auto snapshot = channel->sourceSnapshot;
+  if (!session_.activateFile(fileId)) return;
+  if (!session_.focusMark(markId)) {
+    if (!snapshot) return;
+    session_.setView(snapshot->range);
+    log("原检测标记已退役；按通道创建快照定位来源 IQ。");
+  }
   session_.project().narrowbandWorkspaceOpen = false;
   workspaceStack_->setCurrentIndex(0);
   refresh();
@@ -3188,6 +3551,25 @@ void MainWindow::showChannelDialog(const QString& channelId) {
     original = *found;
   }
   if (!file) return;
+  if (!editing) {
+    const auto* source = findAnnotation(*file, file->activeMarkId);
+    if (source && source->sourceKind != AnnotationSource::Manual && file->selectedMarkIds.size() == 1) {
+      const auto sourceId = source->id;
+      const auto sourceRevision = source->revisionId;
+      const auto sourceFileId = file->metadata.id;
+      const auto sourceGeneration = session_.projectGeneration();
+      if (QMessageBox::question(this, "转换并创建通道", "此来源只读。先创建独立人工标记副本，再配置窄带通道？") != QMessageBox::Yes) return;
+      file = session_.activeFile();
+      const auto* current = file ? findAnnotation(*file, sourceId) : nullptr;
+      if (!current || file->metadata.id != sourceFileId || session_.projectGeneration() != sourceGeneration || current->revisionId != sourceRevision) return;
+      std::vector<std::string> created;
+      const auto converted = session_.annotations().convertToManual(*file, {sourceId}, {}, created);
+      if (!converted || created.empty()) { log(q(converted.error)); return; }
+      annotations_->setSourceTab(AnnotationSource::Manual, false);
+      session_.selectMarks(created, created.front());
+      refresh();
+    }
+  }
   const auto fileId = file->metadata.id;
   const auto generation = session_.projectGeneration();
   const auto sampleChannel = file->metadata.sampleFormat.selectedChannel;
@@ -3212,7 +3594,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
   outer->setSpacing(9);
   auto* intro = label(
       editing ? "保留创建时不可变来源快照；参数作为一次配置事务应用。"
-              : "三类来源使用同一通道配置；质量标记可选，不作为创建前置条件。",
+              : "从人工标记创建通道；只读标签及检测结果须先显式转换。质量标记可选。",
       {}, "help");
   intro->setWordWrap(true);
   outer->addWidget(intro);
@@ -3235,6 +3617,7 @@ void MainWindow::showChannelDialog(const QString& channelId) {
       QString{});
   const auto addSource = [&](const Annotation& annotation) {
     if (!annotationInContext(*file, annotation) ||
+        (!editing && !session_.annotations().canEdit(*file, annotation.id)) ||
         sourceMark->findData(q(annotation.id)) >= 0)
       return;
     const auto kind = annotation.sourceKind == AnnotationSource::Manual ? "手动"
@@ -3762,6 +4145,7 @@ void MainWindow::updatePropertyContext() {
     sourceSummary_->setText(q(file->metadata.name) + "\n" + state + " · " +
         number(file->metadata.sampleRateHz / 1e6) + " MS/s · " +
         number(file->metadata.centerFrequencyHz / 1e6) + " MHz");
+    sourceSummary_->setToolTip("工程：" + projectPath_ + "\n源文件：" + q(file->metadata.path) + "\n" + q(file->metadata.availability.error));
     const bool frame = session_.linkedCursor(narrow ? channel->id : file->metadata.id).framePsd;
     const int stftN = narrow ? channel->stftFftSize : file->display.stftSize;
     const int psdN = frame ? stftN : narrow ? channel->psdFftSize : file->display.psdSize;
@@ -3811,13 +4195,15 @@ void MainWindow::showInspectorPage(int page, bool intentional) {
       !session_.project().narrowbandWorkspaceOpen && !propertiesCollapsed_ && width() > 1150);
 }
 void MainWindow::updateBottom() {
+  if (annotations_ && detection_)
+    annotations_->setDetectionClearanceNote(detection_->clearanceNoteForActive());
   if (annotations_) annotations_->refresh();
   if (auxiliaryEvidence_) {
     if (auxiliaryEvidenceVisible_) {
       const auto* file = session_.activeFile();
       auxiliaryEvidence_->setAnnotation(
           file ? findMark(*file, file->activeMarkId) : nullptr, file);
-    }
+    } else auxiliaryEvidence_->setAnnotation(nullptr, session_.activeFile());
     auxiliaryDisplay_->setCurrentIndex(auxiliaryEvidenceVisible_ ? 1 : 0);
     evidenceMode_->setChecked(auxiliaryEvidenceVisible_);
     if (auxiliaryEvidenceVisible_)
@@ -3829,9 +4215,9 @@ void MainWindow::updateBottom() {
   bottom_->setFixedHeight(open ? bottomHeight_ : 29);
   if (bottomResize_) bottomResize_->setVisible(open);
   bottomContent_->setVisible(open);
-  bottomContent_->setCurrentIndex(bottomTab_);
+  bottomContent_->setCurrentIndex(bottomTab_ < 3 ? 0 : bottomTab_ - 2);
   resultToggle_->setText(open ? "⌄" : "⌃");
-  for (int i = 0; i < 3; ++i) bottomButtons_[i]->setChecked(i == bottomTab_);
+  for (int i = 0; i < 5; ++i) bottomButtons_[i]->setChecked(i == bottomTab_);
   const auto* file = session_.activeFile();
   resultSummary_->setText(file ? QString("%1    标记 %2 个，通道 %3 个。")
                                      .arg(q(file->metadata.name))
@@ -4296,8 +4682,9 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
           tree_->setFocus(Qt::MouseFocusReason);
           selectMark(id, mouse->modifiers(), {}, true);
         } else if (event->type() == QEvent::MouseButtonDblClick) {
+          if (!allowProjectMutation()) return true;
           cancelInteractions(false);
-          session_.focusMark(id.toStdString());
+          if (!session_.focusMark(id.toStdString())) return true;
           session_.project().narrowbandWorkspaceOpen = false;
           workspaceStack_->setCurrentIndex(0);
           annotations_->revealActive();
@@ -4425,12 +4812,18 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event) {
 
 void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
                             const QString& segmentId, bool fromTree) {
+  if (!allowProjectMutation()) return;
   auto* file = session_.activeFile();
   if (!file) return;
   AnnotationResult result{true};
   if (id.isEmpty()) {
-    session_.selectMarks({});
+    result = session_.selectMarks({});
   } else {
+    if (const auto* target = findAnnotation(*file, id.toStdString())) {
+      if (target->sourceKind != annotations_->sourceTab())
+        annotations_->setSourceTab(target->sourceKind);
+      annotations_->refresh();
+    }
     const auto mode = modifiers & Qt::ShiftModifier
                           ? modifiers & Qt::ControlModifier
                                 ? AnnotationSelectionMode::ExtendRange
@@ -4438,12 +4831,14 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
                       : modifiers & Qt::ControlModifier
                           ? AnnotationSelectionMode::Toggle
                           : AnnotationSelectionMode::Replace;
+    auto order = fromTree ? treeSelectionOrder() : annotations_->sortedVisibleIds();
+    if (std::find(order.begin(), order.end(), id.toStdString()) == order.end())
+      order.push_back(id.toStdString());
     result = session_.annotations().chooseSelection(
-        *file, id.toStdString(), mode,
-        fromTree ? treeSelectionOrder() : annotations_->sortedVisibleIds(),
+        *file, id.toStdString(), mode, order,
         segmentId.toStdString());
   }
-  if (!result.ok) log(q(result.error));
+  if (!result.ok) { log(q(result.error)); return; }
   annotations_->revealActive();
   treeRevealPending_ = true;
   if (auto* active = session_.activeFile())
@@ -4454,6 +4849,7 @@ void MainWindow::selectMark(const QString& id, Qt::KeyboardModifiers modifiers,
   scheduleRightSidebarSettingsSave();
 }
 void MainWindow::selectAllMarks() {
+  if (!allowProjectMutation()) return;
   cancelInteractions(false);
   if (const auto* file = session_.activeFile()) {
     const auto& ids = annotations_->sortedVisibleIds();
@@ -4462,7 +4858,8 @@ void MainWindow::selectAllMarks() {
             ? file->activeMarkId
         : ids.empty() ? std::string{}
                       : ids.front();
-    session_.selectMarks(ids, active);
+    const auto selected = session_.selectMarks(ids, active);
+    if (!selected) { log(q(selected.error)); return; }
     if (auto* current = session_.activeFile())
       current->display.psdFromSelection =
           sharedPsdFromSelectionPreference_ && hasActiveSegment(*current);
@@ -4474,7 +4871,7 @@ void MainWindow::selectAllMarks() {
 void MainWindow::locateMark() {
   cancelInteractions(false);
   if (const auto* file = session_.activeFile())
-    session_.focusMark(file->activeMarkId);
+    if (!session_.focusMark(file->activeMarkId)) return;
   refresh();
   showInspectorPage(2, true);
 }
@@ -4542,12 +4939,22 @@ void MainWindow::cancelInteractions(bool exitCreating) {
   if (graphs_) static_cast<PrototypeSplitter*>(graphs_)->cancel();
 }
 void MainWindow::deleteMarks() {
+  if (!canDeleteSelectedAnnotations()) return;
   if (annotations_) annotations_->deleteSelected();
 }
+bool MainWindow::canDeleteSelectedAnnotations() const {
+  const auto* file = session_.activeFile();
+  return file && !file->selectedMarkIds.empty() &&
+      std::all_of(file->selectedMarkIds.begin(), file->selectedMarkIds.end(), [&](const auto& id) {
+        return session_.annotations().capabilities(*file, id).deleteAnnotation;
+      });
+}
 void MainWindow::renameMark() {
-  cancelInteractions(false);
   auto* file = session_.activeFile();
-  if (!file) return;
+  if (!file || !session_.annotations().capabilities(*file, file->activeMarkId).editMetadata) return;
+  cancelInteractions(false);
+  file = session_.activeFile();
+  if (!file || !session_.annotations().capabilities(*file, file->activeMarkId).editMetadata) return;
   auto* mark = findMark(*file, file->activeMarkId);
   if (!mark) return;
   const auto context =
@@ -4572,6 +4979,7 @@ void MainWindow::renameMark() {
   }
 }
 void MainWindow::showNewProjectDialog() {
+  if (!confirmProjectTransition()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "新建工程",
                             "新建工程会切换当前工程，继续吗？") !=
@@ -4588,7 +4996,7 @@ void MainWindow::showNewProjectDialog() {
   layout->setContentsMargins(20, 18, 20, 18);
   layout->setSpacing(12);
   auto* intro =
-      label("新工程将创建独立文件夹，并在其中保存 project.json。", {}, "help");
+      label("在所选目录直接创建 .ssproj 工程文件；IQ 文件保持外置。", {}, "help");
   intro->setWordWrap(true);
   layout->addWidget(intro);
   auto* form = new QFormLayout;
@@ -4613,7 +5021,7 @@ void MainWindow::showNewProjectDialog() {
   layout->addWidget(target);
   auto updateTarget = [name, location, target] {
     target->setText("将创建：" +
-                    QDir(location->text()).filePath(name->text().trimmed()));
+                    QDir(location->text()).filePath(name->text().trimmed() + ".ssproj"));
   };
   connect(name, &QLineEdit::textChanged, dialog,
           [updateTarget] { updateTarget(); });
@@ -4631,7 +5039,7 @@ void MainWindow::showNewProjectDialog() {
   layout->addWidget(error);
   auto* buttons = new QDialogButtonBox(
       QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
-  buttons->button(QDialogButtonBox::Ok)->setText("创建工程文件夹");
+  buttons->button(QDialogButtonBox::Ok)->setText("创建工程文件");
   buttons->button(QDialogButtonBox::Ok)->setObjectName("createProjectButton");
   buttons->button(QDialogButtonBox::Cancel)->setText("取消");
   layout->addWidget(buttons);
@@ -4650,6 +5058,7 @@ void MainWindow::showNewProjectDialog() {
 
 bool MainWindow::createProject(const QString& parentDirectory,
                                const QString& projectName, QString* error) {
+  if (!allowProjectMutation(error)) return false;
   auto setError = [error](const QString& message) {
     if (error) *error = message;
   };
@@ -4664,19 +5073,12 @@ bool MainWindow::createProject(const QString& parentDirectory,
     setError("工程保存位置不存在，请重新选择。");
     return false;
   }
-  if (!parent.mkdir(name)) {
-    setError(
-        "无法创建工程文件夹；请检查名称、权限，或选择一个尚不存在的文件夹。");
-    return false;
-  }
-  const QString folder = parent.absoluteFilePath(name);
-  const QString projectFile = QDir(folder).filePath("project.json");
+  const QString projectFile = parent.absoluteFilePath(name.endsWith(".ssproj", Qt::CaseInsensitive) ? name : name + ".ssproj");
+  if (QFileInfo::exists(projectFile)) { setError("工程文件已存在，请选择其它名称。"); return false; }
   Project candidate;
   candidate.name = name.toUtf8().toStdString();
   QString message;
-  if (!ProjectStore::save(projectFile, candidate, message)) {
-    QFile::remove(projectFile);
-    QDir().rmdir(folder);
+  if (!ProjectFileCodec::save(projectFile, candidate, message)) {
     setError("工程文件初始化失败：" + message);
     return false;
   }
@@ -4684,19 +5086,24 @@ bool MainWindow::createProject(const QString& parentDirectory,
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  savedProjectToken_ = ProjectStore::stateToken(session_.project());
   rememberProject(projectPath_);
   refresh();
-  log("已创建工程文件夹：" + folder);
+  log("已创建工程文件：" + projectPath_);
   if (error) error->clear();
   return true;
 }
 
 void MainWindow::openDemoProject() {
+  if (!allowProjectMutation()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "打开演示工程",
                             "打开演示工程会切换当前工程，继续吗？") !=
           QMessageBox::Yes)
     return;
+  // The confirmation above enters a nested event loop; a background detection
+  // can begin its atomic publication before the user answers.
+  if (!allowProjectMutation()) return;
   cancelInteractions();
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.newProject();
@@ -4711,6 +5118,7 @@ void MainWindow::openDemoProject() {
 }
 
 void MainWindow::openNarrowbandDemoProject() {
+  if (!allowProjectMutation()) return;
   if ((!projectPath_.isEmpty() || !session_.project().files.empty()) &&
       QMessageBox::question(this, "打开窄带演示工程",
                             "打开窄带演示工程会切换当前工程，继续吗？") !=
@@ -4732,6 +5140,7 @@ void MainWindow::openNarrowbandDemoProject() {
     return;
   }
 
+  if (!allowProjectMutation()) return;
   cancelInteractions();
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.newProject();
@@ -4786,6 +5195,7 @@ void MainWindow::showAddFileDialog() {
 }
 
 bool MainWindow::addImportedSource(FileState file, QString& error) {
+  if (!allowProjectMutation(&error)) return false;
   if (!availableSamples(file.metadata) ||
       file.metadata.availability.status == LoadStatus::Failed) {
     error = "没有可用的完整样本帧";
@@ -4826,10 +5236,14 @@ bool MainWindow::addImportedSource(FileState file, QString& error) {
                QString::fromStdString(formatId(metadata.sampleFormat)))
           .arg(availableSamples(metadata)));
   error.clear();
+  QTimer::singleShot(0, this, [this, fileId = q(id), generation = session_.projectGeneration()] {
+    if (session_.projectGeneration() == generation) discoverLabels(fileId);
+  });
   return true;
 }
 
 bool MainWindow::addIqFile(const QString& path, QString* error) {
+  if (!allowProjectMutation(error)) return false;
   if (path.endsWith(".wav", Qt::CaseInsensitive)) {
     if (error)
       *error =
@@ -4877,16 +5291,17 @@ bool MainWindow::addIqFile(const QString& path, QString* error) {
 }
 
 bool MainWindow::openProject(const QString& path) {
+  if (!allowProjectMutation()) return false;
   cancelInteractions();
   Project candidate;
   QString error;
   const QFileInfo requested(path);
-  const QString projectFile =
-      requested.isDir() ? QDir(path).filePath("project.json") : path;
-  if (!ProjectStore::load(projectFile, candidate, error)) {
+  const QString projectFile = requested.absoluteFilePath();
+  if (!projectIo(this, "校验工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::load(projectFile, candidate, error, cancelled); })) {
     QMessageBox::critical(this, "打开失败", error);
     return false;
   }
+  if (!allowProjectMutation()) return false;
   const auto* current = session_.activeFile();
   const DisplaySettings fallbackSettings =
       current ? current->display
@@ -4894,11 +5309,32 @@ bool MainWindow::openProject(const QString& path) {
                                          : candidate.files.front().display);
   if (maximizedPanel_ >= 0) toggleMaximized(maximizedPanel_);
   session_.replaceProject(std::move(candidate));
-  for (auto& file : session_.project().files)
-    if (!file.metadata.demo)
-      startSourceLoad(file, availableSamples(file.metadata));
   applyGlobalRightSidebarSettings(fallbackSettings);
+  // The panel still holds the previous file's source tab. Refresh would stamp
+  // that tab onto this file's persisted layers and filter. Select the opened
+  // file's saved source first, then put its own filter and layers back so the
+  // clean baseline stays the opened project.
+  if (annotations_) {
+    if (auto* opened = session_.activeFile()) {
+      const int savedSource = opened->annotationFilter.source;
+      if (savedSource >= 0 && savedSource <= 2 &&
+          static_cast<int>(annotations_->sourceTab()) != savedSource) {
+        const auto filter = opened->annotationFilter;
+        const auto layers = opened->annotationLayers;
+        annotations_->setSourceTab(static_cast<AnnotationSource>(savedSource), false);
+        opened = session_.activeFile();
+        if (opened) {
+          opened->annotationFilter = filter;
+          opened->annotationLayers = layers;
+        }
+      }
+    }
+  }
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  savedProjectToken_ = ProjectStore::stateToken(session_.project());
+  for (auto& file : session_.project().files)
+    if (!file.metadata.demo && file.metadata.availability.status != LoadStatus::Failed)
+      startSourceLoad(file, availableSamples(file.metadata));
   rememberProject(projectPath_);
   refresh();
   scheduleRightSidebarSettingsSave();
@@ -4906,21 +5342,226 @@ bool MainWindow::openProject(const QString& path) {
   return true;
 }
 bool MainWindow::saveProject(const QString& path) {
-  const QFileInfo requested(path);
-  const QString projectFile =
-      requested.isDir() ? QDir(path).filePath("project.json") : path;
+  if (!allowProjectMutation()) return false;
+  const QString projectFile = QFileInfo(path).absoluteFilePath();
+  const bool currentPath = !projectPath_.isEmpty() &&
+      QFileInfo(projectPath_).absoluteFilePath().compare(projectFile, Qt::CaseInsensitive) == 0;
+  const auto saveMode = currentPath ? AssetSaveMode::Preserve : AssetSaveMode::Copy;
+  const QString targetAssets = currentPath ? q(session_.project().assetDirectory) :
+      projectFile + ".assets/" + q(session_.project().projectId);
+  const bool assetRootChanges = QDir(targetAssets).absolutePath().compare(
+      QDir(q(session_.project().assetDirectory)).absolutePath(), Qt::CaseInsensitive) != 0;
+  if (assetRootChanges && detectionAssetsInUse()) {
+    const QPointer<QWidget> priorFocus(QApplication::focusWidget());
+    QMessageBox::warning(this, "暂不能复制工程资产", "检测任务仍在写入当前资产目录。请等待任务结束或取消完成后再另存为；当前工程仍可保存。");
+    activateWindow();
+    if (priorFocus && priorFocus->isVisible() && priorFocus->isEnabled())
+      priorFocus->setFocus(Qt::OtherFocusReason);
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    return false;
+  }
+  QString leaseError;
+  if (detection_ && !detection_->beginProjectIo(leaseError)) {
+    log(leaseError);
+    return false;
+  }
+  auto releaseIo = qScopeGuard([this] {
+    if (detection_) detection_->endProjectIo();
+  });
   cancelInteractions(false);
   QString error;
-  if (!ProjectStore::save(projectFile, session_.project(), error)) {
+  auto candidate = session_.project();
+  if (!projectIo(this, "保存工程与伴随资产…", [&](auto cancelled) {
+        // Our own bounded background GC briefly owns the same root lock.
+        // Retry only that explicit contention in the IO worker, keeping the
+        // GUI responsive and the codec's fail-closed locking contract intact.
+        for (int attempt = 0; ; ++attempt) {
+          if (ProjectFileCodec::save(projectFile, candidate, error, saveMode, cancelled)) return true;
+          if (attempt >= 40 || cancelled() || !error.contains("正被保存/清理")) return false;
+          std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        }
+      })) {
     QMessageBox::critical(this, "保存失败", error);
+    log(error);
     return false;
   }
   projectPath_ = QFileInfo(projectFile).absoluteFilePath();
+  session_.project().projectId = candidate.projectId;
+  session_.project().assetDirectory = candidate.assetDirectory;
+  for (auto& file : session_.project().files)
+    for (const auto& saved : candidate.files) if (file.metadata.id == saved.metadata.id) {
+      file.metadata.referenceSignature = saved.metadata.referenceSignature;
+      file.metadata.referenceBytes = saved.metadata.referenceBytes;
+    }
+  savedProjectToken_ = ProjectStore::stateToken(candidate);
+  session_.noteProjectWrite();
+  if (detection_) detection_->endProjectIo();
+  releaseIo.dismiss();
   rememberProject(projectPath_);
   refresh();
   log("工程已保存：" + projectPath_);
   return true;
 }
+
+QString MainWindow::projectAssetDirectory() const {
+  return projectPath_.isEmpty() ? QString{} : ProjectFileCodec::assetDirectory(projectPath_, session_.project());
+}
+bool MainWindow::detectionAssetsInUse() const {
+  if (!detection_) return false;
+  if (detection_->hasPendingPublications()) return true;
+  const auto jobs = detection_->tasks().snapshots();
+  return std::any_of(jobs.begin(), jobs.end(), [](const DetectionRun& run) {
+    return run.lifecycle == DetectionLifecycle::Queued || run.lifecycle == DetectionLifecycle::Validating ||
+           run.lifecycle == DetectionLifecycle::Running || run.lifecycle == DetectionLifecycle::Cancelling;
+  });
+}
+bool MainWindow::isProjectDirty() const {
+  if (projectPath_.isEmpty()) return !session_.project().files.empty();
+  try { return savedProjectToken_ != ProjectStore::stateToken(session_.project()); }
+  catch (...) { return true; }
+}
+void MainWindow::saveProjectAsDialog() {
+  if (!allowProjectMutation()) return;
+  const auto path = QFileDialog::getSaveFileName(this, "工程另存为", projectPath_.isEmpty() ? "Signal Studio.ssproj" : projectPath_, "Signal Studio 工程 (*.ssproj)");
+  if (path.isEmpty()) return;
+  if (!allowProjectMutation()) return;
+  const auto answer = QMessageBox::question(this, "伴随资产", "复制伴随标记/检测资产到新工程旁？\n选择“否”将显式引用当前资产目录。原工程文件不会改变。", QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+  if (answer == QMessageBox::Cancel) return;
+  if (!allowProjectMutation()) return;
+  if (answer == QMessageBox::Yes && detectionAssetsInUse()) {
+    QMessageBox::warning(this, "暂不能复制工程资产", "请等待检测结束或取消完成后再复制资产；也可显式选择引用当前资产目录。");
+    return;
+  }
+  QString error;
+  if (detection_ && !detection_->beginProjectIo(error)) { log(error); return; }
+  auto releaseIo = qScopeGuard([this] {
+    if (detection_) detection_->endProjectIo();
+  });
+  cancelInteractions(false);
+  auto candidate = session_.project();
+  if (!projectIo(this, "另存工程与伴随资产…", [&](auto cancelled) { return ProjectFileCodec::save(path, candidate, error, answer == QMessageBox::Yes ? AssetSaveMode::Copy : AssetSaveMode::Reference, cancelled); })) {
+    QMessageBox::critical(this, "另存为失败", error); return;
+  }
+  projectPath_ = QFileInfo(path).absoluteFilePath();
+  session_.project().projectId = candidate.projectId;
+  session_.project().assetDirectory = candidate.assetDirectory;
+  for (auto& file : session_.project().files)
+    for (const auto& saved : candidate.files) if (file.metadata.id == saved.metadata.id) {
+      file.metadata.referenceSignature = saved.metadata.referenceSignature;
+      file.metadata.referenceBytes = saved.metadata.referenceBytes;
+    }
+  savedProjectToken_ = ProjectStore::stateToken(candidate);
+  session_.noteProjectWrite();
+  if (detection_) detection_->endProjectIo();
+  releaseIo.dismiss();
+  rememberProject(projectPath_);
+  refresh();
+}
+bool MainWindow::importLegacyProject(const QString& legacy, const QString& destination, QString* error) {
+  Project candidate;
+  QString why;
+  if (!projectIo(this, "复制转换旧 v6 工程…", [&](auto cancelled) {
+        return ProjectFileCodec::importLegacy(legacy, destination, candidate, why, cancelled);
+      })) { if (error) *error = why; return false; }
+  return openProject(destination);
+}
+void MainWindow::importLegacyProjectDialog() {
+  if (!confirmProjectTransition()) return;
+  const auto path = QFileDialog::getOpenFileName(this, "只读导入旧 v6 工程", {}, "旧 Signal Studio 工程 (*.json)");
+  if (path.isEmpty()) return;
+  Project preview;
+  QString error;
+  if (!projectIo(this, "只读校验旧 v6 工程…", [&](auto cancelled) {
+        if (cancelled()) { error = "已取消旧工程预览"; return false; }
+        const bool loaded = ProjectStore::load(path, preview, error);
+        if (cancelled()) { error = "已取消旧工程预览"; return false; }
+        return loaded;
+      })) { QMessageBox::warning(this, "旧工程校验失败", error); return; }
+  std::size_t marks = 0, channels = 0, runs = 0;
+  for (const auto& f : preview.files) { marks += f.marks.size(); channels += f.channels.size(); runs += f.detectionRuns.size(); }
+  if (QMessageBox::question(this, "转换预览", QString("%1 个文件，%2 个标记，%3 个通道，%4 次检测。\n将复制转换为新的 .ssproj；原 JSON 与资产保持。继续？").arg(preview.files.size()).arg(marks).arg(channels).arg(runs)) != QMessageBox::Yes) return;
+  const auto target = QFileDialog::getSaveFileName(this, "保存转换后的工程", QFileInfo(path).absoluteDir().filePath(q(preview.name) + ".ssproj"), "Signal Studio 工程 (*.ssproj)");
+  if (!target.isEmpty() && !importLegacyProject(path, target, &error)) QMessageBox::warning(this, "转换失败", error);
+}
+void MainWindow::closeProject() {
+  if (!allowProjectMutation()) return;
+  if (!confirmProjectTransition()) return;
+  cancelInteractions();
+  sourceLoads_.clear();
+  if (narrowband_) narrowband_->cancelWork();
+  session_.newProject();
+  projectPath_.clear();
+  savedProjectToken_.clear();
+  refresh();
+}
+bool MainWindow::confirmProjectTransition() {
+  if (!isProjectDirty()) return true;
+  const auto result = QMessageBox::question(this, "未保存的工程修改", "保存当前工程修改后继续？", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel, QMessageBox::Save);
+  if (result == QMessageBox::Cancel) return false;
+  if (result == QMessageBox::Discard) return true;
+  auto path = projectPath_;
+  if (path.isEmpty()) path = QFileDialog::getSaveFileName(this, "保存当前工程", "Signal Studio.ssproj", "Signal Studio 工程 (*.ssproj)");
+  return !path.isEmpty() && saveProject(path);
+}
+void MainWindow::closeEvent(QCloseEvent* event) {
+  if (qApp->property("uiStatePersistenceEnabled").toBool() && !confirmProjectTransition()) { event->ignore(); return; }
+  QMainWindow::closeEvent(event);
+}
+bool MainWindow::relocateSource(const QString& fileId, const QString& path, QString* error) {
+  if (!allowProjectMutation(error)) return false;
+  for (auto& f : session_.project().files) if (q(f.metadata.id) == fileId) {
+    QString why;
+    if (!ProjectFileCodec::relocate(f.metadata, path, why)) { if (error) *error = why; return false; }
+    sourceLoads_.erase(f.metadata.id);
+    startSourceLoad(f, f.metadata.sampleCount);
+    refresh();
+    if (error) error->clear();
+    return true;
+  }
+  if (error) *error = "源文件不属于当前工程";
+  return false;
+}
+namespace {
+bool detectionTestFixturesEnabled() {
+  return qApp &&
+         (qApp->property("enableDetectionTestFixture").toBool() ||
+          qEnvironmentVariableIntValue("SS_ENABLE_DETECTION_TEST_FIXTURES") == 1);
+}
+}
+
+void MainWindow::setSourceLoadPollingForTest(bool enabled) {
+  if (!detectionTestFixturesEnabled() || !sourceLoadTimer_) return;
+  if (enabled) {
+    if (!sourceLoadTimer_->isActive()) sourceLoadTimer_->start();
+  } else {
+    sourceLoadTimer_->stop();
+  }
+}
+
+void MainWindow::pollSourceLoadsForTest() {
+  if (!detectionTestFixturesEnabled()) return;
+  pollSourceLoads();
+}
+
+bool MainWindow::sourceLoadActiveForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return false;
+  return sourceLoads_.find(fileId.toStdString()) != sourceLoads_.end();
+}
+
+bool MainWindow::sourceLoadFinishedForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return false;
+  const auto found = sourceLoads_.find(fileId.toStdString());
+  return found != sourceLoads_.end() && found->second.loader &&
+         found->second.loader->snapshot().finished;
+}
+
+SampleIndex MainWindow::sourceLoadLoadedForTest(const QString& fileId) const {
+  if (!detectionTestFixturesEnabled()) return 0;
+  const auto found = sourceLoads_.find(fileId.toStdString());
+  if (found == sourceLoads_.end() || !found->second.loader) return 0;
+  return found->second.loader->snapshot().loaded;
+}
+
 void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
   const auto path = QString::fromStdString(file.metadata.path);
   const auto fingerprint = iqSourceFingerprint(path);
@@ -4943,6 +5584,15 @@ void MainWindow::startSourceLoad(FileState& file, SampleIndex target) {
 }
 void MainWindow::pollSourceLoads() {
   bool changed = false;
+  // Start and publication commits each install an older Project snapshot on
+  // the UI thread before they drop commitInFlight_. Publishing a source load
+  // while that lock is held is overwritten, and erasing a finished loader
+  // leaves the file on the captured prefix. Keep the loader and its previous
+  // counter; the next poll after the lock drops applies that same snapshot.
+  // This is the session write-guard condition without its status message.
+  // noteProjectWrite is intentionally not used: it would move contentEpoch
+  // and reject the in-flight detection.
+  const bool writeLocked = detection_ && detection_->projectCommitInProgress();
   for (auto it = sourceLoads_.begin(); it != sourceLoads_.end();) {
     const auto found = std::find_if(
         session_.project().files.begin(), session_.project().files.end(),
@@ -4950,6 +5600,10 @@ void MainWindow::pollSourceLoads() {
     if (it->second.project != session_.projectGeneration() ||
         found == session_.project().files.end()) {
       it = sourceLoads_.erase(it);
+      continue;
+    }
+    if (writeLocked) {
+      ++it;
       continue;
     }
     auto& file = *found;
@@ -4978,6 +5632,10 @@ void MainWindow::pollSourceLoads() {
                                        .arg(snapshot.loaded)
                                        .arg(file.metadata.sampleCount)
                                  : "读入失败：" + snapshot.error);
+    if (snapshot.loaded && snapshot.error.isEmpty())
+      QTimer::singleShot(0, this, [this, fileId = q(file.metadata.id), generation = session_.projectGeneration()] {
+        if (session_.projectGeneration() == generation) discoverLabels(fileId);
+      });
     if (!snapshot.loaded && file.marks.empty() && file.channels.empty()) {
       const auto id = file.metadata.id;
       session_.activateFile(id);
@@ -4988,16 +5646,155 @@ void MainWindow::pollSourceLoads() {
   if (changed) refresh();
 }
 void MainWindow::log(const QString& message) {
-  if (!results_) return;
-  results_->appendPlainText(QDateTime::currentDateTime().toString("HH:mm:ss") +
-                            "  信息  " + message);
-  statusBar()->showMessage(message, 2500);
+  RuntimeLog::write(QStringLiteral("ui"), message);
+  if (statusBar()) statusBar()->showMessage(message, 2500);
 }
 }  // namespace signalstudio
 
 namespace signalstudio {
 bool MainWindow::importLabels(const QString& path, QString* error,
                               bool preview) {
+  if (!preview && !allowProjectMutation(error)) return false;
   return annotations_ && annotations_->importLabels(path, error, preview);
+}
+
+void MainWindow::discoverLabels(const QString& requestedId) {
+  auto* active = session_.activeFile();
+  const auto fileId = requestedId.isEmpty() && active ? q(active->metadata.id) : requestedId;
+  auto found = std::find_if(session_.project().files.begin(), session_.project().files.end(), [&](const auto& f) { return q(f.metadata.id) == fileId; });
+  if (found == session_.project().files.end() || found->metadata.demo || !availableSamples(found->metadata)) return;
+  const auto generation = session_.projectGeneration();
+  FileState source;
+  source.metadata = found->metadata;
+  source.sourceSets = found->sourceSets;
+  if (!requestedId.isEmpty()) {
+    const auto key = std::to_string(generation) + "/" + source.metadata.id;
+    if (!labelDiscoveryPending_.insert(key).second) return;
+    const QPointer<MainWindow> owner(this);
+    labelWorkers_.emplace_back([owner, source, generation, key](std::stop_token stop) {
+      LabelDiscoveryOptions options;
+      options.parsing.cancelled = [&] { return stop.stop_requested(); };
+      const auto discovered = discoverLabelCandidates(source.metadata, options);
+      std::optional<LabelImportPlan> prepared;
+      if (discovered.candidates.size() == 1 && discovered.state != LabelDiscoveryState::Empty) {
+        const auto& candidate = discovered.candidates.front();
+        const auto mapping = reusableLabelFieldMapping(source, candidate.labelPath);
+        if (candidate.profile != LabelProfile::MatlabDataTxt || mapping)
+          prepared = prepareDiscoveredLabels(candidate, source, generation, mapping, options);
+      }
+      if (stop.stop_requested()) return;
+      QMetaObject::invokeMethod(qApp, [owner, source, generation, key, discovered, prepared] {
+        if (!owner) return;
+        owner->labelDiscoveryPending_.erase(key);
+        if (owner->session_.projectGeneration() != generation) return;
+        auto& files = owner->session_.project().files;
+        const auto current = std::find_if(files.begin(), files.end(), [&](const auto& f) { return f.metadata.id == source.metadata.id; });
+        if (current == files.end()) return;
+        if (!prepared) {
+          owner->log(discovered.message + (discovered.candidates.empty() || discovered.state == LabelDiscoveryState::Empty
+              ? QString{} : "；可从文件菜单“重新发现当前信号标签”打开预览/字段映射"));
+          return;
+        }
+        const auto& plan = *prepared;
+        if (plan.disposition != LabelImportDisposition::Ready && plan.disposition != LabelImportDisposition::Empty && plan.disposition != LabelImportDisposition::AlreadyImported) {
+          owner->log(plan.message + "；请从文件菜单重新发现并明确处理"); return;
+        }
+        const auto result = publishDiscoveredLabels(owner->session_.annotations(), *current, plan, generation);
+        owner->log(result.ok ? (result.changed ? QString("已自动导入 %1 个标签 · %2").arg(plan.imported.annotations.size()).arg(q(plan.imported.sourceSet.originalPath)) : "标签已存在，未重复导入") : q(result.error));
+        if (result.changed) owner->refresh();
+      }, Qt::QueuedConnection);
+    });
+    return;
+  }
+  LabelDiscoveryResult discovery;
+  projectIo(this, "发现信号标签…", [&](auto cancelled) {
+    LabelDiscoveryOptions options;
+    options.parsing.cancelled = cancelled;
+    discovery = discoverLabelCandidates(source.metadata, options);
+    return true;
+  });
+  if (discovery.candidates.empty()) { log(discovery.message); return; }
+  if (discovery.state == LabelDiscoveryState::Empty) { log(discovery.message); return; }
+  auto selected = discovery.candidates.front();
+  if (discovery.candidates.size() > 1) {
+    QStringList choices;
+    for (const auto& c : discovery.candidates) choices << c.labelPath;
+    bool ok = false;
+    const auto choice = QInputDialog::getItem(this, "选择标签来源", discovery.message, choices, 0, false, &ok);
+    if (!ok) return;
+    selected = discovery.candidates[choices.indexOf(choice)];
+  }
+  std::optional<LabelFieldMapping> mapping;
+  if (selected.profile == LabelProfile::MatlabDataTxt) {
+    mapping = reusableLabelFieldMapping(source, selected.labelPath);
+    if (!mapping) {
+      LabelMappingDialog dialog(selected.labelPath, selected.preview, this);
+      if (dialog.exec() != QDialog::Accepted || !dialog.mapping()) { log("已取消字段映射，未导入任何标签"); return; }
+      mapping = dialog.mapping();
+    }
+  }
+  LabelImportPlan plan;
+  projectIo(this, "校验标签字段与物理范围…", [&](auto cancelled) {
+    LabelDiscoveryOptions options;
+    options.parsing.cancelled = cancelled;
+    plan = prepareDiscoveredLabels(selected, source, generation, mapping, options);
+    return true;
+  });
+  // Detection publication can replace the entire files vector in any nested
+  // dialog event loop without changing the project generation. Resolve by id
+  // after each modal instead of retaining a FileState iterator across it.
+  const auto currentFile = [&]() -> FileState* {
+    if (generation != session_.projectGeneration()) return nullptr;
+    auto& files = session_.project().files;
+    const auto current = std::find_if(files.begin(), files.end(),
+        [&](const auto& file) { return q(file.metadata.id) == fileId; });
+    return current == files.end() ? nullptr : &*current;
+  };
+  if (!currentFile()) { log("工程/文件上下文已变化，未发布标签"); return; }
+  QString summary = QString("%1 个标签 · %2\n%3").arg(plan.imported.annotations.size()).arg(selected.labelPath, plan.message);
+  if (plan.disposition == LabelImportDisposition::IncompleteEvidence)
+    summary = "仅保存原始来源、类别、映射和诊断；0 个可定位标记。\n" + summary;
+  QStringList classes;
+  for (const auto& [name, count] : plan.classCounts) classes << QString("%1:%2").arg(q(name)).arg(count);
+  summary += "\n类别：" + classes.join(", ");
+  if (plan.timeExtent) summary += QString("\n样本 [%1,%2)").arg(plan.timeExtent->begin).arg(plan.timeExtent->end);
+  if (plan.frequencyExtent) summary += QString(" · RF [%1,%2] Hz").arg(plan.frequencyExtent->lowerHz, 0, 'g', 14).arg(plan.frequencyExtent->upperHz, 0, 'g', 14);
+  for (const auto& d : plan.imported.diagnostics) summary += "\n" + q(d.message);
+  bool explicitReload = false;
+  if (plan.disposition == LabelImportDisposition::SourceChanged) {
+    QMessageBox prompt(QMessageBox::Question, "标签来源已变化", summary + "\n保留现有修订，或将新内容作为独立来源版本载入。", QMessageBox::NoButton, this);
+    auto* reload = prompt.addButton("载入新版本", QMessageBox::AcceptRole);
+    auto* compare = prompt.addButton("比对原始内容", QMessageBox::ActionRole);
+    prompt.addButton("保留现有", QMessageBox::RejectRole);
+    prompt.exec();
+    if (prompt.clickedButton() == compare) {
+      const auto* current = currentFile();
+      if (!current) { log("工程/文件上下文已变化，未比对标签"); return; }
+      QDialog diff(this);
+      diff.setWindowTitle("标签来源比对（只读）"); diff.resize(900, 600);
+      auto* layout = new QVBoxLayout(&diff);
+      auto* text = new QPlainTextEdit(&diff); text->setReadOnly(true);
+      QString old;
+      for (const auto& prior : current->sourceSets) if (QFileInfo(q(prior.originalPath)).fileName() == QFileInfo(selected.labelPath).fileName()) old += q(prior.originalText).left(65536) + "\n";
+      text->setPlainText("原来源（预览上限 64 KiB/项）：\n" + old + "\n新来源（预览上限 64 KiB）：\n" + q(plan.imported.sourceSet.originalText).left(65536));
+      layout->addWidget(text); diff.exec(); return;
+    }
+    if (prompt.clickedButton() != reload) return;
+    explicitReload = true;
+  } else if (plan.disposition == LabelImportDisposition::Rejected || plan.disposition == LabelImportDisposition::NeedsMapping) {
+    log(summary);
+    QMessageBox::warning(this, "标签校验未通过", summary);
+    return;
+  } else if (mapping && plan.disposition != LabelImportDisposition::AlreadyImported) {
+    if (QMessageBox::question(this, "标签导入预览", summary + "\n确认按此字段映射导入？", QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes) return;
+  }
+  if (!allowProjectMutation()) return;
+  auto* current = currentFile();
+  if (!current) { log("工程/文件上下文已变化，未发布标签"); return; }
+  const auto published = explicitReload
+      ? session_.annotations().publishSourceSet(*current, plan.imported.sourceSet, plan.imported.annotations)
+      : publishDiscoveredLabels(session_.annotations(), *current, plan, generation);
+  log(published.ok ? (published.changed ? "已自动导入：" + summary : "相同标签来源已存在，未重复导入") : "标签未发布：" + q(published.error));
+  refresh();
 }
 }  // namespace signalstudio

@@ -111,6 +111,9 @@ void roundtripAndRecovery() {
   oldManifest.remove("computationPhase");
   oldManifest.remove("refinedCandidates");
   oldManifest.remove("totalRefinementCandidates");
+  oldManifest.remove("accountedChunkBytes");
+  oldManifest.remove("accountedEvidenceBytes");
+  oldManifest.remove("accountedRawHeadBytes");
   DetectionRun oldRun;
   check(decodeDetectionRun(oldManifest, oldRun, error) &&
             oldRun.totalRefinementCandidates == 0 &&
@@ -181,7 +184,7 @@ void failedReadsAndAtomicPublication() {
       error);
   const auto manifestPath =
       directory.filePath(QString::fromStdString(run.manifestRelativePath));
-  const auto manifest = readFile(manifestPath);
+  auto manifest = readFile(manifestPath);
   const auto path =
       directory.filePath(QString::fromStdString(run.chunks[0].relativePath));
   const auto bytes = readFile(path);
@@ -196,10 +199,30 @@ void failedReadsAndAtomicPublication() {
             chunkSentinel.size() == 1 &&
             chunkSentinel[0].toObject()["sentinel"].toBool(),
         "A failed explicit read must preserve the caller's prior result array");
-  check(!appendDetectionChunk(directory.path(), run, results(), {}, error) &&
-            run.chunks.size() == 1 && readFile(manifestPath) == manifest,
-        "A damaged old shard must prevent manifest replacement");
+  auto second = results();
+  auto secondResult = second[0].toObject();
+  secondResult["windowId"] = "1";
+  second[0] = secondResult;
+  const auto ledgerBefore = run.accountedChunkBytes;
+  check(appendDetectionChunk(directory.path(), run, second, {}, error) &&
+            run.chunks.size() == 2 && run.accountedChunkBytes > ledgerBefore,
+        "Append must ledger only the new chunk and must not reread a damaged "
+        "historical shard: " +
+            error);
+  const auto published = readFile(manifestPath);
+  check(published != manifest,
+        "The new chunk is published before the terminal hash audit");
+  auto terminal = run;
+  terminal.lifecycle = DetectionLifecycle::Failed;
+  check(!writeDetectionRun(directory.path(), terminal, error) &&
+            readFile(manifestPath) == published,
+        "Terminal hash audit must reject the damaged historical shard without "
+        "replacing the manifest: " +
+            error);
+  check(!loadDetectionRun(directory.path(), "run-1", sentinel, error),
+        "Loading after an incremental append must still fail the full hash audit");
   writeFile(path, bytes);
+  manifest = published;
   auto wrongSource = run;
   wrongSource.request.sourceIdentity.quickFingerprint = "source-changed";
   check(!writeDetectionRun(directory.path(), wrongSource, error) &&
@@ -302,8 +325,14 @@ void budgetsAndMalformedRequests() {
         "Budget overflow must not lose uint64 precision or mutate the target");
   object = encodeDetectionRequest(run.request);
   object["evidenceBudgetBytes"] = "268435457";
-  check(!decodeDetectionRequest(object, sentinel, error),
-        "Evidence budget exceeds the configured limit");
+  check(decodeDetectionRequest(object, sentinel, error),
+        "Evidence budget is no longer capped at 256 MiB: " + error);
+  object["evidenceBudgetBytes"] = QString::number(
+      detectionDiskBudgetLimitBytes(directory.path().toStdString()) + 1);
+  sentinel.runId = "sentinel";
+  check(!decodeDetectionRequest(object, sentinel, error, directory.path()) &&
+            sentinel.runId == "sentinel",
+        "Evidence budget cannot exceed the project volume free space");
   object = encodeDetectionRequest(run.request);
   auto source = object["sourceIdentity"].toObject();
   source["availableSamples"] = "400001";
@@ -432,6 +461,9 @@ void adaptedHeadsSurviveReopen() {
   for (const auto* profile : {"ffscn-gui-iq-v1", "scn-max-psd-v1"}) {
     auto run = fixture(directory.path(), profile);
     run.request.profile = *findDetectionProfile(profile);
+    run.request.retainRawModelOutput = true;
+    run.request.legacyCombinedEvidence = false;
+    run.request.rawHeadBudgetBytes = 256ULL * 1024 * 1024;
     run.request.profile.fftSize = 3001;
     run.request.profile.modelFrames = 3;
     run.request.spectrumMode = DetectionSpectrumMode::Mean;
@@ -482,6 +514,140 @@ void adaptedHeadsSurviveReopen() {
           "Reopening adapted heads must detect changed immutable bytes");
   }
 }
+void independentRawHeadBudgetsAndLegacyCompatibility() {
+  // A complete 65536-bin head set is much larger than its JSON mapping. Keep
+  // the quotas distinct without accepting damaged evidence or partial commits.
+  for (const int policy : {0,1,2}) {
+    QTemporaryDir directory;
+    auto run=fixture(directory.path(),"raw-head-budget-"+std::to_string(policy));
+    run.request.profile=*findDetectionProfile("ffscn-gui-iq-v1");
+    run.request.evidenceBudgetBytes=policy==2 ? 1 : 8192;
+    const auto width=detectionModelInputBins(run.request)/4;
+    const auto rawBytes=3ULL*width*sizeof(float);
+    run.request.rawHeadBudgetBytes=policy==0 ? 0 : rawBytes;
+    run.request.legacyCombinedEvidence=policy==0;
+    run.request.retainRawModelOutput=policy!=0;
+    DetectionWorkerPacket packet;
+    packet.envelope=workerEnvelope("batch","quota-check",0,
+        {{"headOrder",QJsonArray{"hm","bw","off"}},
+         {"modelEvidence",QJsonObject{{"fixture",true}}}},
+        QString::fromStdString(run.request.runId),run.request.sourceIdentity.projectGeneration,
+        QString::fromStdString(run.request.sourceIdentity.fileId));
+    attachFloat32Payload(packet,std::vector<float>(3*width,.25f),
+        {1,3,1,static_cast<int>(width)});
+    auto evidence=mappings();
+    QString error;
+    check(storeDetectionHeadEvidence(directory.path(),run.request,packet,evidence,error),error);
+    const auto requestJson=encodeDetectionRequest(run.request);
+    DetectionRequest restoredRequest;
+    check(decodeDetectionRequest(requestJson,restoredRequest,error) &&
+        restoredRequest.rawHeadBudgetBytes==run.request.rawHeadBudgetBytes,error);
+    if(policy==0) check(!requestJson.contains("rawHeadBudgetBytes"),
+        "Legacy combined requests must not acquire a new disk allowance on reopen");
+    const bool appended=appendDetectionChunk(directory.path(),run,results(),evidence,error);
+    if(policy!=1) {
+      check(!appended && error.contains(policy==0 ? "legacy combined" : "JSON evidence budget") &&
+          run.chunks.empty(),"Legacy combined and independent JSON quotas must still reject atomically");
+      continue;
+    }
+    check(appended,error);
+    DetectionRun restored;
+    check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error),error);
+    check(restored.request.evidenceBudgetBytes==8192 && restored.request.rawHeadBudgetBytes==rawBytes &&
+        restored.accountedRawHeadBytes==rawBytes && restored.accountedChunkBytes>0,
+        "JSON quota cannot grow just to fit independent disk heads");
+    auto secondEvidence=evidence;
+    auto second=secondEvidence[0].toObject();second["windowId"]="1";secondEvidence[0]=second;
+    auto secondResults=results();auto result=secondResults[0].toObject();result["windowId"]="1";secondResults[0]=result;
+    check(!appendDetectionChunk(directory.path(),run,secondResults,secondEvidence,error) &&
+        error.contains("independent disk evidence budget") && run.chunks.size()==1,
+        "Independent disk quota must reject a second reference without changing the committed prefix");
+    check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error) &&
+        restored.chunks.size()==1,error);
+    const auto head=evidence[0].toObject()["headEvidence"].toObject();
+    const auto headPath=directory.filePath(head["path"].toString());
+    auto raw=readFile(headPath);check(static_cast<std::uint64_t>(raw.size())==rawBytes,"Full heads must be retained");
+    raw[0]=char(raw[0]^1);writeFile(headPath,raw);
+    auto plain=results();
+    auto plainRow=plain[0].toObject();plainRow["windowId"]="2";plain[0]=plainRow;
+    const auto rawLedger=run.accountedRawHeadBytes;
+    const auto chunkLedger=run.accountedChunkBytes;
+    check(appendDetectionChunk(directory.path(),run,plain,{},error) &&
+        run.accountedRawHeadBytes==rawLedger && run.accountedChunkBytes>chunkLedger &&
+        run.chunks.size()==2,
+        "A later append must not reread historical raw heads: "+error);
+    const auto manifestAfter=readFile(directory.filePath(QString::fromStdString(run.manifestRelativePath)));
+    auto terminal=run;terminal.lifecycle=DetectionLifecycle::Failed;
+    check(!writeDetectionRun(directory.path(),terminal,error) &&
+        readFile(directory.filePath(QString::fromStdString(run.manifestRelativePath)))==manifestAfter,
+        "Terminal publication must still hash every raw head: "+error);
+    check(!loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error),
+        "Independent disk quotas cannot bypass raw-head content integrity");
+  }
+}
+void boundedPerformanceRoundtrip() {
+  QTemporaryDir directory;
+  auto run=fixture(directory.path(),"bounded-performance");
+  run.performanceJson=QJsonDocument(QJsonObject{{"schema","signal-studio-detection-profile-v1"},
+      {"pipelineStages",QJsonObject{{"read",QJsonObject{{"calls","2"},{"totalMs",1.25}}}}}})
+      .toJson(QJsonDocument::Compact).toStdString();
+  QString error;
+  check(writeDetectionRun(directory.path(),run,error),error);
+  DetectionRun restored;
+  check(loadDetectionRun(directory.path(),QString::fromStdString(run.request.runId),restored,error) &&
+      restored.performanceJson==run.performanceJson,error);
+  auto old=encodeDetectionRun(run);old.remove("performance");
+  check(decodeDetectionRun(old,restored,error) && restored.performanceJson.empty(),
+      "An old manifest cannot invent performance measurements");
+  auto malformed=encodeDetectionRun(run);malformed["performance"]=QJsonObject{{"schema","unknown"}};
+  check(!decodeDetectionRun(malformed,restored,error) && restored.performanceJson.empty(),
+      "Malformed profiling must not partially replace decoded run state");
+  malformed["performance"]=QJsonObject{{"schema","signal-studio-detection-profile-v1"},{"oversized",QString(65536,'x')}};
+  check(!decodeDetectionRun(malformed,restored,error),"Performance metadata must remain bounded");
+}
+void sampleNumericalRouteCompatibility() {
+  QTemporaryDir directory;
+  auto run=fixture(directory.path(),"sample-numerical-route");
+  QString error;
+  for(const auto mode:{DetectionSampleEnergyMode::LegacyExact,DetectionSampleEnergyMode::Auto,DetectionSampleEnergyMode::StreamingFir}) {
+    run.request.sampleEnergyMode=mode;run.request.sampleScratchBudgetBytes=1024*1024;
+    DetectionRun restored;
+    check(decodeDetectionRun(encodeDetectionRun(run),restored,error) &&
+        restored.request.sampleEnergyMode==mode && restored.request.sampleScratchBudgetBytes==1024*1024,
+        "Frozen numerical route and explicit scratch quota must survive roundtrip: "+error);
+  }
+  auto old=encodeDetectionRun(run);auto request=old["request"].toObject();
+  request.remove("sampleEnergyMode");request.remove("sampleScratchBudgetBytes");
+  request.remove("gpuDspPreferred");old["request"]=request;
+  DetectionRun restored;
+  check(decodeDetectionRun(old,restored,error) && restored.request.sampleEnergyMode==DetectionSampleEnergyMode::LegacyExact && !restored.request.gpuDspPreferred,
+      "Historical runs must retain LegacyExact instead of silently adopting a new numerical method");
+  const auto unchanged=encodeDetectionRun(restored);
+    auto gpuRequest=request;
+    gpuRequest["gpuDspPreferred"]=true;
+    old["request"]=gpuRequest;
+    check(decodeDetectionRun(old,restored,error) && restored.request.gpuDspPreferred,
+        "Explicit GPU preference must survive request persistence");
+    gpuRequest["gpuDspPreferred"]="yes";old["request"]=gpuRequest;
+    const auto gpuUnchanged=encodeDetectionRun(restored);
+    check(!decodeDetectionRun(old,restored,error) && encodeDetectionRun(restored)==gpuUnchanged,
+        "Malformed GPU preference must not partially replace run state");
+    restored={};
+    old["request"]=request;
+    check(decodeDetectionRun(old,restored,error),"Restore legacy numerical request");
+  request["sampleEnergyMode"]=3;old["request"]=request;
+  check(!decodeDetectionRun(old,restored,error) && encodeDetectionRun(restored)==unchanged,
+      "Invalid numerical mode must not partially replace frozen run");
+  request["sampleEnergyMode"]=1;request["sampleScratchBudgetBytes"]="34359738369";old["request"]=request;
+  check(decodeDetectionRun(old,restored,error),
+      "Sample disk quota is not capped at 32 GiB: "+error);
+  request["sampleScratchBudgetBytes"]=QString::number(
+      detectionDiskBudgetLimitBytes(directory.path().toStdString())+1);
+  old["request"]=request;
+  restored={};
+  check(!decodeDetectionRun(old,restored,error,directory.path()),
+      "Sample disk quota cannot exceed the project volume free space");
+}
 void accumulatedReadsAndStreamingBudget() {
   QTemporaryDir directory;
   auto run = fixture(directory.path(), "streaming-budget");
@@ -495,6 +661,10 @@ void accumulatedReadsAndStreamingBudget() {
               {}, error),
           error);
   }
+  check(run.chunks.size() == 3 && run.accountedChunkBytes > 3ULL * 1024 * 1024 &&
+            run.accountedEvidenceBytes == 0 && run.accountedRawHeadBytes == 0,
+        "Chunk appends must accumulate store bytes without rereading mappings "
+        "or raw heads");
   QJsonArray target{QJsonObject{{"sentinel", true}}};
   check(!readDetectionChunks(directory.path(), run, target, error) &&
             error.contains("budget") && target.size() == 1 &&
@@ -522,6 +692,9 @@ int main(int argc, char** argv) {
     budgetsAndMalformedRequests();
     unpublishedChunksAndLargeIndices();
     adaptedHeadsSurviveReopen();
+    independentRawHeadBudgetsAndLegacyCompatibility();
+    boundedPerformanceRoundtrip();
+    sampleNumericalRouteCompatibility();
     accumulatedReadsAndStreamingBudget();
     std::cout << "Detection store boundary tests passed\n";
     return 0;

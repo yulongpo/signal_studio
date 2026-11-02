@@ -1,0 +1,4 @@
+# Preserve frozen requirements and raw execution evidence byte for byte.
+REQUIREMENTS.md -text -whitespace
+evidence/** -text -whitespace
+screenshots/** -text

@@ -1,0 +1,315 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_(annotations|annotation_store|ux_r5_annotations|ux_r5_compat|ux_r5_detection|core|project_file|label_import|wav|detection_store|project_tree|channel_processor)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 10
+      Start 10: signal_studio_detection_store
+
+10: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionStoreTests.exe
+10: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+10: Test timeout computed to be: 10000000
+10: Detection store boundary tests passed
+ 1/12 Test #10: signal_studio_detection_store .....   Passed    1.52 sec
+test 14
+      Start 14: signal_studio_annotations
+
+14: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationTests.exe
+14: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+14: Test timeout computed to be: 10000000
+14: PASS legacy compatibility
+14: PASS three sources and immutable origin
+14: PASS direct edits preserve origin and metadata quality
+14: PASS unknown frequency and edit context
+14: PASS segment deletion snapshot and concurrent undo
+14: PASS restore origin preserves confirmed sibling
+14: PASS located channel requests and relations
+14: PASS legacy channel binding full frequency bounds
+14: PASS channel names use persistent Unicode limit
+14: PASS UserRange channels preserve unknown time
+14: PASS unknown-time observation
+14: PASS Pending single-segment confirmation
+14: PASS confirmation undo/redo and rejection
+14: PASS confirmation geometry invalidation
+14: PASS confirmation available and effective bounds
+14: PASS confirmation current source and revision
+14: PASS physical and available bounds
+14: PASS multi-segment editing and selection
+14: PASS unified selection, order, filter, and hover
+14: PASS atomic batch and concurrent undo
+14: PASS channel snapshots and source changes
+14: PASS source idempotence and validation
+14: PASS budgets and independent histories
+ 2/12 Test #14: signal_studio_annotations .........   Passed    0.11 sec
+test 15
+      Start 15: signal_studio_ux_r5_annotations
+
+15: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR5AnnotationTests.exe
+15: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+15: Test timeout computed to be: 60
+15: PASS capability_matrix_and_invalid_identity
+15: PASS read_only_service_write_apis_and_channels
+15: PASS mixed_review_delete_batch_atomicity
+15: PASS manual_edit_review_channel_undo_redo
+15: PASS imported_algorithm_single_conversion
+15: PASS ten_item_atomic_conversion_undo_redo
+15: PASS hundred_item_atomic_conversion_undo_redo
+15: PASS snapshot_survives_source_retirement
+15: PASS all_current_segments_frames_and_restore_baseline
+15: PASS unknown_observation_and_explicit_manual_time
+15: PASS duplicate_modes_segments_and_revisions
+15: PASS invalid_conversion_batch_atomicity
+15: PASS segment_metadata_budgets_and_redo_preflight
+15: PASS selection_context_independent_of_overlay_and_tab
+15: PASS legacy_channel_snapshot_read_only_load
+15: PASS review_quality_and_real_one_sided_coordinates
+15: PASS manual_command_history_budget
+15: PASS source_management_preserves_manual_redo
+15: PASS physical_tail_geometry_and_available_prefix
+15: 19/19 passed
+ 3/12 Test #15: signal_studio_ux_r5_annotations ...   Passed    0.05 sec
+test 16
+      Start 16: signal_studio_ux_r5_compat
+
+16: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUxR5CompatTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/ux-r5-compat-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+16: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+16: Test timeout computed to be: 120
+16: ********* Start testing of UxR5CompatTests *********
+16: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+16: PASS   : UxR5CompatTests::initTestCase()
+16: PASS   : UxR5CompatTests::conversionRoundtripAndSourceRemoval()
+16: PASS   : UxR5CompatTests::historicalEdits(imported)
+16: PASS   : UxR5CompatTests::historicalEdits(algorithm)
+16: PASS   : UxR5CompatTests::malformedSnapshotRejectsAtomically()
+16: PASS   : UxR5CompatTests::cleanupTestCase()
+16: Totals: 6 passed, 0 failed, 0 skipped, 0 blacklisted, 498ms
+16: ********* Finished testing of UxR5CompatTests *********
+16: 
+ 4/12 Test #16: signal_studio_ux_r5_compat ........   Passed    0.89 sec
+test 17
+      Start 17: signal_studio_ux_r5_detection
+
+17: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR5DetectionTests.exe
+17: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+17: Test timeout computed to be: 120
+17: PASS A-B-A-zero-ROI-manual-undo
+17: PASS cancel-fail-late-coverage
+17: PASS file-and-sample-channel-isolation
+17: PASS real-ssproj-stage-persist-commit-GC-faults
+17: PASS running-save-reopen-recovery
+17: PASS private-canonical-GC-and-authority-discovery
+17: PASS Copy-Reference-Preserve
+17: PASS legacy-multi-run-and-ambiguous-timestamps
+17: PASS retired-channel-snapshot-and-GC
+17: PASS save-GC-real-lock-competition
+17: PASS transaction-metadata-count-segment-budgets
+17: 11/11 UX-R5 detection lifecycle cases passed
+ 5/12 Test #17: signal_studio_ux_r5_detection .....   Passed   11.29 sec
+test 18
+      Start 18: signal_studio_annotation_store
+
+18: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationStoreTests.exe
+18: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+18: Test timeout computed to be: 10000000
+18: PASS revision snapshots and soft deletion
+18: PASS located frequency bounds and atomic load
+18: PASS converted UserRange roundtrip and malformed binding
+18: PASS channel Unicode creation editing and persistence
+18: PASS shard integrity and atomic load
+18: PASS uint64 precision and Partial
+ 6/12 Test #18: signal_studio_annotation_store ....   Passed    7.06 sec
+test 19
+      Start 19: signal_studio_label_import
+
+19: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioLabelImportTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/label-test-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+19: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+19: Test timeout computed to be: 10000000
+19: ********* Start testing of LabelImportTests *********
+19: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+19: PASS   : LabelImportTests::initTestCase()
+19: PASS   : LabelImportTests::manualTxtRequiresMappingAndPreviewIsBounded()
+19: PASS   : LabelImportTests::strictMatlabPairAndReverseLookup()
+19: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(wav-riff-layout)
+19: PASS   : LabelImportTests::pairedGeneratorDiscoveryRoundtrip(raw-data-retained)
+19: PASS   : LabelImportTests::wavUnknownLabelsRequireMappingAndBoundedPreview()
+19: PASS   : LabelImportTests::wavPairCollisionsRequireExplicitSelection()
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(data-directory)
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(label-directory)
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(wav-suffix)
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(txt-suffix)
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(data-stem)
+19: PASS   : LabelImportTests::wavPairCasingIsStrict(label-stem)
+19: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(wav-file) Creating filesystem symlinks is unavailable on this host
+19: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(443) : failure location
+19: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(txt-file) Creating filesystem symlinks is unavailable on this host
+19: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(443) : failure location
+19: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(data-directory) Creating filesystem symlinks is unavailable on this host
+19: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(443) : failure location
+19: SKIP   : LabelImportTests::wavPairAliasesAreAmbiguous(label-directory) Creating filesystem symlinks is unavailable on this host
+19: D:\project\signal_studio_rebuild\tests\label_import_tests.cpp(443) : failure location
+19: PASS   : LabelImportTests::casingAndMultipleCandidatesAreExplicit()
+19: PASS   : LabelImportTests::discoveryAndParserBudgetsAndCancellation()
+19: PASS   : LabelImportTests::mappedIndicesUnitsAndSavedMapping()
+19: PASS   : LabelImportTests::mappedRoundingFramesAndPhysicalRejection()
+19: PASS   : LabelImportTests::unknownTimeObservationAndClassOnlyAreNotRectangles()
+19: PASS   : LabelImportTests::generatorDiscoveryAndSafePublication()
+19: PASS   : LabelImportTests::incompleteEvidenceConfirmationCancellationDeduplicationAndUndo()
+19: PASS   : LabelImportTests::mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview()
+19: PASS   : LabelImportTests::sigmfEmptyIsValidAndSupplementalConflictsRemainErrors()
+19: PASS   : LabelImportTests::generatorFixtureAndPhysicalBinding()
+19: PASS   : LabelImportTests::generatorRoundingAndRejectWholeBatch()
+19: PASS   : LabelImportTests::torchSigFixtureAndOrderIndependentMatching()
+19: PASS   : LabelImportTests::torchSigConflictsAndUnsupported()
+19: PASS   : LabelImportTests::codecFullRoundtripAndExports()
+19: PASS   : LabelImportTests::largeSharedAndRecordEvidenceRemainLossless()
+19: PASS   : LabelImportTests::normalizedBatchBudgetRejectsAtomically()
+19: PASS   : LabelImportTests::largeGeneratorRecordUsesSourceLineReference()
+19: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual generator annotations 10 segments 65 source SHA256 "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83"
+19: QINFO  : LabelImportTests::actualTwoSourceAssets() Actual TorchSig annotations 4 source SHA256 "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+19: PASS   : LabelImportTests::actualTwoSourceAssets()
+19: PASS   : LabelImportTests::cleanupTestCase()
+19: Totals: 32 passed, 0 failed, 4 skipped, 0 blacklisted, 8518ms
+19: ********* Finished testing of LabelImportTests *********
+19: 
+ 7/12 Test #19: signal_studio_label_import ........   Passed    8.90 sec
+test 20
+      Start 20: signal_studio_wav
+
+20: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioWavTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/wav-test-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+20: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+20: Test timeout computed to be: 10000000
+20: ********* Start testing of WavInputTests *********
+20: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+20: PASS   : WavInputTests::initTestCase()
+20: PASS   : WavInputTests::noncanonicalLayoutAndReader()
+20: PASS   : WavInputTests::metadataAuthorityAndRawUnchanged()
+20: PASS   : WavInputTests::malformedAndUnsupported()
+20: PASS   : WavInputTests::boundedHeaderRead()
+20: QINFO  : WavInputTests::actualGeneratorGolden() Generator WAV golden: D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav SHA256 88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd complex frames byte-compared 3072 metadata bytes read 44
+20: PASS   : WavInputTests::actualGeneratorGolden()
+20: PASS   : WavInputTests::cleanupTestCase()
+20: Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 467ms
+20: ********* Finished testing of WavInputTests *********
+20: 
+ 8/12 Test #20: signal_studio_wav .................   Passed    0.78 sec
+test 23
+      Start 23: signal_studio_core
+
+23: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioCoreTests.exe
+23: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+23: Test timeout computed to be: 60
+23: PASS boundary clamping and uint64 precision
+23: PASS shared wideband and narrowband chart interaction math
+23: PASS independent file state and 40-entry view history
+23: PASS selection, focus, linked deletion and fixed demo channels
+23: PASS independent auxiliary modes, combined snapshot history and PSD scope
+23: PASS strict atomic native JSON and full-state uint64 roundtrip
+23: PASS full numerical power fit, global PSD coupling and extreme-range roundtrip
+23: PASS int16 IQ metadata, mapped reads, waveform, Welch PSD and STFT
+ 9/12 Test #23: signal_studio_core ................   Passed    0.74 sec
+test 24
+      Start 24: signal_studio_project_file
+
+24: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectFileTests.exe
+24: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+24: Test timeout computed to be: 120
+24: PASS save-running-progress-chunks-and-cancel
+24: PASS live-reject-changed-frozen-request
+24: PASS live-reject-dropped-saved-prefix
+24: PASS live-reject-corrupt-future-chunk
+24: PASS live-reject-missing-future-chunk
+24: PASS live-reject-missing-manifest-anchor
+24: PASS live-reject-unknown-integrity-rule
+24: PASS ordinary-save-reference-retains-root
+24: PASS ordinary-save-renamed-copy-retains-root
+24: PASS ordinary-save-missing-original-is-explicit
+24: PASS killed-publisher-recovers-post-save-prefix
+24: PASS legacy-migration-commit-before-GC
+24: PASS legacy-unanchored-ambiguity-is-explicit
+24: PASS direct-create-stable-id
+24: PASS annotation-channel-detection-roundtrip
+24: PASS move-project-assets-and-raw
+24: PASS save-as-copy
+24: PASS save-as-reference-original-bytes
+24: PASS raw-relocation-and-same-length-rejection
+24: PASS missing-source-save-and-recovery
+24: PASS wrong-raw-at-stored-path
+24: PASS corrupt-annotation-asset
+24: PASS missing-annotation-asset
+24: PASS corrupt-detection-asset
+24: PASS missing-detection-asset
+24: PASS invalid-json-and-missing-assets
+24: PASS container-magic
+24: PASS container-version
+24: PASS container-project-id
+24: PASS container-state
+24: PASS missing-source-reference
+24: PASS duplicate-source-reference
+24: PASS reference-physical-mismatch
+24: PASS manifest-path-traversal
+24: PASS legacy-v6-explicit-readonly-conversion
+24: PASS cancel-legacy-conversion
+24: PASS reject-legacy-v1-through-v5
+24: PASS legacy-corrupt-shards
+24: PASS protect-existing-nonproject-target
+24: PASS protect-existing-other-project
+24: PASS invalid-save-preserves-target
+24: PASS absolute-only-and-cross-drive-source-reference
+24: PASS no-write-directory
+24: PASS cancel-load-entry
+24: PASS cancel-load-late
+24: PASS cancel-save-entry
+24: PASS cancel-save-near-publication
+24: PASS cancel-save-last-checkpoint
+24: 48/48 project file behavior cases passed
+10/12 Test #24: signal_studio_project_file ........   Passed   13.14 sec
+test 31
+      Start 31: signal_studio_channel_processor
+
+31: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelProcessorTests.exe
+31: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+31: Test timeout computed to be: 120
+31: PASS DDC/FIR/resampling, source mapping, chunk invariance, PSD and STFT
+11/12 Test #31: signal_studio_channel_processor ...   Passed    0.26 sec
+test 35
+      Start 35: signal_studio_project_tree
+
+35: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectTreeTests.exe
+35: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+35: Environment variables: 
+35:  QT_QPA_PLATFORM=offscreen
+35:  QT_SCALE_FACTOR=1.5
+35: Test timeout computed to be: 60
+35: PASS: data presentation
+35: PASS: active file and channel
+35: PASS: mark data and lazy group counts
+35: Combined mark cue pixels: current=76, hover=770, focus=251, selection=16
+35: PASS: independent mark painting states
+35: PASS: refresh preserves view state
+35: PASS: repeat refresh and old sync
+35: PASS: anomalies and boundary data
+35: PASS: clipped painting and readable rows
+35: Totals: 8 passed, 0 failed
+12/12 Test #35: signal_studio_project_tree ........   Passed    0.37 sec
+
+The following tests passed:
+	signal_studio_detection_store
+	signal_studio_annotations
+	signal_studio_ux_r5_annotations
+	signal_studio_ux_r5_compat
+	signal_studio_ux_r5_detection
+	signal_studio_annotation_store
+	signal_studio_label_import
+	signal_studio_wav
+	signal_studio_core
+	signal_studio_project_file
+	signal_studio_channel_processor
+	signal_studio_project_tree
+
+100% tests passed, 0 tests failed out of 12
+
+Total Test time (real) =  45.13 sec

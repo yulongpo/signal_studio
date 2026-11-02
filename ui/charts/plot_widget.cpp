@@ -1,6 +1,7 @@
 #include "ui/charts/plot_widget.h"
 
 #include <QApplication>
+#include <QJsonArray>
 #include <QContextMenuEvent>
 #include <QDateTime>
 #include <QElapsedTimer>
@@ -16,6 +17,7 @@
 #include <QPainterPath>
 #include <QPointer>
 #include <QResizeEvent>
+#include <QScopeGuard>
 #include <QToolTip>
 #include <QWheelEvent>
 #include <QWidgetAction>
@@ -46,6 +48,8 @@ using chart_palette::texture;
 constexpr int Left = 1, Right = 2, Top = 4, Bottom = 8, Move = 16;
 QPointer<PlotWidget> activeGesture;
 QPointer<PlotWidget> activeWheel;
+// GUI-thread-only peers. No Session ownership or persistent project state.
+QList<PlotWidget*> axisWidgets;
 
 SampleIndex sampleIndex(long double value, SampleIndex maximum) {
   if (value <= 0) return 0;
@@ -60,6 +64,12 @@ SampleIndex offsetSample(SampleIndex origin, long double offset,
 }
 double seconds(SampleIndex sample, double sampleRate) {
   return static_cast<double>(sample) / sampleRate;
+}
+bool rangeOutsideView(const ViewRange& range, const ViewRange& view) {
+  return range.time.end <= view.time.begin ||
+         range.time.begin >= view.time.end ||
+         range.frequency.upperHz <= view.frequency.lowerHz ||
+         range.frequency.lowerHz >= view.frequency.upperHz;
 }
 double randomValue(double x) {
   const double n = std::sin(x * 92.743 + 12.41) * 143758.327;
@@ -101,7 +111,8 @@ struct Unit {
 };
 Unit displayUnit(bool frequency, double span) {
   span = std::abs(span);
-  return frequency ? (span >= 1e6   ? Unit{"MHz", 1e-6}
+  return frequency ? (span >= 1e9   ? Unit{"GHz", 1e-9}
+                      : span >= 1e6 ? Unit{"MHz", 1e-6}
                       : span >= 1e3 ? Unit{"kHz", 1e-3}
                                     : Unit{"Hz", 1})
                    : (span >= 1      ? Unit{"s", 1}
@@ -544,6 +555,219 @@ class CurveWorker {
   std::thread thread_;
 };
 
+struct PlotWidget::AxisLayoutCache {
+  struct Key {
+    const FileState* file = nullptr;
+    std::uint64_t projectGeneration = 0;
+    ViewRange view{};
+    double sampleRate = 0, frequencyOffset = 0, minimum = 0, maximum = 0;
+    MainMode mainMode = MainMode::TimeFrequency;
+    AuxiliaryMode auxiliaryMode = AuxiliaryMode::Waveform;
+    WaveformMode waveformMode = WaveformMode::IqRms;
+    SampleFormat format;
+    bool demo = false;
+    AxisTitleMode mode = AxisTitleMode::UnitAtTop;
+    QFont font;
+    QSize size;
+    int dpiX = 0, dpiY = 0;
+    double dpr = 1;
+    bool operator==(const Key&) const = default;
+  } key;
+  Axis x, y;
+  axis_layout::Labels labels;
+  axis_layout::Budget budget;
+};
+
+const PlotWidget::AxisLayoutCache& PlotWidget::measuredAxes() const {
+  const auto* file = session_.activeFile();
+  AxisLayoutCache::Key key;
+  key.file = file;
+  key.projectGeneration = session_.projectGeneration();
+  key.mode = axisTitleMode_;
+  key.font = font();
+  key.size = size();
+  key.dpiX = logicalDpiX();
+  key.dpiY = logicalDpiY();
+  key.dpr = devicePixelRatioF();
+  if (file) {
+    key.view = file->view;
+    key.sampleRate = file->metadata.sampleRateHz;
+    key.frequencyOffset = file->display.absoluteFrequency
+                              ? 0 : analysisFrequencyOffset(file->metadata);
+    key.minimum = file->display.auxiliaryMin;
+    key.maximum = file->display.auxiliaryMax;
+    key.mainMode = file->display.mainMode;
+    key.auxiliaryMode = file->display.auxiliaryMode;
+    key.waveformMode = file->display.waveformMode;
+    key.format = file->metadata.sampleFormat;
+    key.demo = file->metadata.demo;
+  }
+  if (axisLayoutCache_ && axisLayoutCache_->key == key)
+    return *axisLayoutCache_;
+  auto cache = std::make_unique<AxisLayoutCache>();
+  cache->key = key;
+  if (file) {
+    const auto& view = file->view;
+    const auto& metadata = file->metadata;
+    const double rate = std::max(1e-12, metadata.sampleRateHz);
+    const double timeStart = seconds(view.time.begin, rate);
+    const double timeSpan = seconds(view.time.end - view.time.begin, rate);
+    const double frequencySpan = view.frequency.upperHz - view.frequency.lowerHz;
+    const bool waterfall = kind_ == Kind::Main &&
+                           key.mainMode == MainMode::Waterfall;
+    const bool psd = kind_ == Kind::Auxiliary &&
+                     key.auxiliaryMode == AuxiliaryMode::Psd;
+    cache->x = waterfall || psd
+                   ? axisScale(true, view.frequency.lowerHz, frequencySpan, 5,
+                               key.frequencyOffset)
+                   : axisScale(false, timeStart, timeSpan, 5);
+    cache->y = waterfall
+                   ? axisScale(false, timeStart + timeSpan, -timeSpan, 4)
+                   : axisScale(true, view.frequency.lowerHz, frequencySpan, 4,
+                               key.frequencyOffset);
+    auto& labels = cache->labels;
+    labels.xTitle = cache->x.label;
+    for (int i = 0; i <= cache->x.count; ++i)
+      labels.xTicks.append(cache->x.tick(static_cast<double>(i) / cache->x.count));
+    for (int i = 0; i <= 4; ++i) {
+      const double value = key.minimum + (key.maximum - key.minimum) * i / 4;
+      labels.yTicks.append(kind_ == Kind::Main ? cache->y.tick(i / 4.0)
+          : (std::abs(value) >= 1e7 || (value != 0 && std::abs(value) < 1e-4))
+              ? QString::number(value, 'g', 6)
+              : QString::number(value, 'f', psd ? 0 : 1));
+    }
+    labels.yTitle = sourceUnits(
+        kind_ == Kind::Main ? cache->y.label
+        : psd ? "功率谱密度（dBFS/Hz）"
+        : metadata.demo ? "幅值（演示单位）"
+        : key.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）"
+        : key.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）"
+        : key.waveformMode == WaveformMode::Envelope ? "幅度包络（ADC 计数）"
+                                                    : "幅度 RMS（ADC 计数）",
+        metadata);
+    labels.yUnit = kind_ == Kind::Main
+        ? (cache->y.relative ? QStringLiteral("Δ ") : QString{}) +
+              cache->y.unit.name +
+              (!cache->y.relative && key.frequencyOffset != 0 && !waterfall
+                   ? QStringLiteral(" · 基带") : QString{})
+        : psd ? powerUnit(metadata)
+        : metadata.demo ? QStringLiteral("演示单位") : amplitudeUnit(metadata);
+  }
+  cache->budget = axis_layout::measure(
+      cache->labels, QFontMetricsF(key.font, this),
+      static_cast<axis_layout::TitleMode>(axisTitleMode_), width(), height());
+  axisLayoutCache_ = std::move(cache);
+  return *axisLayoutCache_;
+}
+
+axis_layout::Layout PlotWidget::axisLayout() const {
+  auto budget = measuredAxes().budget;
+  if (frozenAxisBudget_)
+    budget = *frozenAxisBudget_;
+  else
+    for (const auto* peer : axisWidgets)
+      if (peer != this && peer->kind_ != Kind::Navigation &&
+          &peer->session_ == &session_ && peer->window() == window())
+        budget = axis_layout::sharedBudget(budget, peer->measuredAxes().budget,
+            axisTitleMode_ == AxisTitleMode::CompactHeader);
+  const auto* file = session_.activeFile();
+  return axis_layout::arrange(size(), budget,
+      kind_ == Kind::Main && file && file->display.colorScale ? 70 : 22);
+}
+
+void PlotWidget::refreshAxisLayouts() {
+  for (auto* peer : axisWidgets)
+    if (peer->kind_ != Kind::Navigation && &peer->session_ == &session_ &&
+        peer->window() == window()) {
+      const auto budget = peer->axisLayout().budget;
+      peer->setMinimumHeight(std::max(peer->kind_ == Kind::Main ? 110 : 60,
+          static_cast<int>(std::ceil(budget.top + budget.bottom + 16))));
+      peer->updateCurve();
+      peer->repaintChart();
+      emit peer->axisDescriptionChanged();
+    }
+}
+
+void PlotWidget::freezeAxisLayouts() {
+  for (auto* peer : axisWidgets)
+    if (peer->kind_ != Kind::Navigation && &peer->session_ == &session_ &&
+        peer->window() == window())
+      peer->frozenAxisBudget_ = peer->axisLayout().budget;
+}
+
+void PlotWidget::releaseAxisLayouts() {
+  for (auto* peer : axisWidgets)
+    if (peer->kind_ != Kind::Navigation && &peer->session_ == &session_ &&
+        peer->window() == window())
+      peer->frozenAxisBudget_.reset();
+  refreshAxisLayouts();
+}
+
+void PlotWidget::setAxisTitleMode(AxisTitleMode mode) {
+  if (kind_ == Kind::Navigation || axisTitleMode_ == mode) return;
+  if (mode != AxisTitleMode::UnitAtTop && mode != AxisTitleMode::Header &&
+      mode != AxisTitleMode::Rotated && mode != AxisTitleMode::CompactHeader) return;
+  for (auto* peer : axisWidgets)
+    if (peer->kind_ != Kind::Navigation && &peer->session_ == &session_ &&
+        peer->window() == window()) {
+      peer->cancelGesture();
+      peer->axisTitleMode_ = mode;
+      peer->axisLayoutCache_.reset();
+    }
+  refreshAxisLayouts();
+}
+
+AxisDescription PlotWidget::axisDescription() const {
+  const auto& axes = measuredAxes();
+  const auto* file = session_.activeFile();
+  if (!file) return {};
+  const bool waterfall = kind_ == Kind::Main && file->display.mainMode == MainMode::Waterfall;
+  const bool psd = kind_ == Kind::Auxiliary && file->display.auxiliaryMode == AuxiliaryMode::Psd;
+  const auto physical = [&](const Axis& axis, bool frequency) {
+    return QString(frequency ? (file->display.absoluteFrequency ? "RF频率" : "基带频率") : "时间") +
+        (axis.relative ? " Δ" : "") + " (" + axis.unit.name + ")";
+  };
+  AxisDescription result;
+  result.xTitle = result.xShort = physical(axes.x, waterfall || psd);
+  result.yTitle = kind_ == Kind::Main ? physical(axes.y, !waterfall) : axes.labels.yTitle;
+  result.yShort = kind_ == Kind::Main ? result.yTitle
+      : psd ? QStringLiteral("PSD (%1)").arg(axes.labels.yUnit)
+            : axes.labels.yTitle;
+  result.xOrigin = axes.x.originLabel;
+  result.yOrigin = kind_ == Kind::Main ? axes.y.originLabel : QString{};
+  return result;
+}
+
+QJsonObject PlotWidget::axisLayoutStatistics() const {
+  const auto layout = axisLayout();
+  const auto& axes = measuredAxes();
+  const auto rectJson = [](QRectF rect) {
+    return QJsonObject{{"x", rect.x()}, {"y", rect.y()},
+                       {"width", rect.width()}, {"height", rect.height()}};
+  };
+  return {{"mode", axisTitleMode_ == AxisTitleMode::UnitAtTop ? "A"
+                  : axisTitleMode_ == AxisTitleMode::Header ? "B"
+                  : axisTitleMode_ == AxisTitleMode::Rotated ? "C" : "CompactHeader"},
+          {"plot", rectJson(plotRect())}, {"header", rectJson(layout.header)},
+          {"xTickBand", rectJson(layout.xTicks)},
+          {"xTitleBand", rectJson(layout.xTitle)},
+          {"localLeft", axes.budget.left}, {"sharedLeft", layout.budget.left},
+          {"tickLabelWidth", axes.budget.tickLabelWidth},
+          {"tickHeight", axes.budget.tickHeight},
+          {"leftGainFrom88", 88 - layout.budget.left},
+          {"yTitle", axes.labels.yTitle}, {"yUnit", axes.labels.yUnit},
+          {"xTitle", axes.labels.xTitle},
+          {"headerText", axisDescription().fullText()},
+          {"widgetWidth", width()}, {"widgetHeight", height()},
+          {"localTop", axes.budget.top}, {"localBottom", axes.budget.bottom},
+          {"xTicks", QJsonArray::fromStringList(axes.labels.xTicks)},
+          {"yTicks", QJsonArray::fromStringList(axes.labels.yTicks)},
+          {"xOrigin", axes.x.originLabel},
+          {"yOrigin", kind_ == Kind::Main ? axes.y.originLabel : QString{}},
+          {"font", font().toString()}, {"logicalDpiX", logicalDpiX()},
+          {"logicalDpiY", logicalDpiY()}, {"dpr", devicePixelRatioF()}};
+}
+
 PlotWidget::PlotWidget(Session& session, Kind kind, QWidget* parent)
     : QWidget(parent), session_(session), kind_(kind) {
   setMouseTracking(true);
@@ -608,8 +832,12 @@ PlotWidget::PlotWidget(Session& session, Kind kind, QWidget* parent)
               emit backendChanged("软件回退 · " + reason);
             });
   }
+  axisWidgets.append(this);
+  if (kind_ != Kind::Navigation)
+    QTimer::singleShot(0, this, [this] { refreshAxisLayouts(); });
 }
 PlotWidget::~PlotWidget() {
+  axisWidgets.removeAll(this);
   wheelTimer_.stop();
   renderSettleTimer_.stop();
   navigationWorker_.reset();
@@ -652,11 +880,7 @@ void PlotWidget::beginPreview() {
 QRectF PlotWidget::plotRect() const {
   if (kind_ == Kind::Navigation)
     return QRectF(13, 0, std::max(1, width() - 26), std::max(1, height()));
-  const auto* file = session_.activeFile();
-  const int right =
-      kind_ == Kind::Main && file && file->display.colorScale ? 70 : 22;
-  return QRectF(88, 12, std::max(1, width() - 88 - right),
-                std::max(1, height() - 46));
+  return axisLayout().plot;
 }
 QPointF PlotWidget::toPixel(SampleIndex sample, double frequency) const {
   const auto* file = session_.activeFile();
@@ -839,6 +1063,56 @@ void PlotWidget::setHoveredMark(const QString& id, const QString& segmentId) {
       emit annotationHoverChanged();
     }
 }
+void PlotWidget::setFormalDetectionSuppressed(bool suppressed) {
+  if (formalDetectionSuppressed_ == suppressed) return;
+  formalDetectionSuppressed_ = suppressed;
+  if (kind_ == Kind::Main && surface_ && !softwareFallback_)
+    surface_->invalidateOverlay();
+  QWidget::update();
+}
+bool PlotWidget::showsMark(const FileState& file, const Annotation& mark) const {
+  if (formalDetectionSuppressed_ && mark.sourceKind == AnnotationSource::Algorithm)
+    return false;
+  return annotationVisible(file, mark);
+}
+void PlotWidget::setDetectionPreview(std::vector<ChartPreviewTrack> tracks,
+                                     std::uint64_t dropped) {
+  detectionPreview_ = std::move(tracks);
+  detectionPreviewDropped_ = dropped;
+  if (!selectedPreviewId_.empty() &&
+      std::none_of(detectionPreview_.begin(), detectionPreview_.end(),
+                   [&](const auto& track) { return track.id == selectedPreviewId_; }))
+    selectedPreviewId_.clear();
+  setProperty("detectionPreviewCount", static_cast<int>(detectionPreview_.size()));
+  setProperty("selectedDetectionPreviewId",
+              QString::fromStdString(selectedPreviewId_));
+  // Overlay only. Clearing or updating dashed boxes must not rebuild the
+  // spectrogram.
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+void PlotWidget::invalidateAnnotationOverlay() {
+  // Same overlay entry as setDetectionPreview. Do not rebuild the spectrogram.
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+void PlotWidget::selectDetectionPreview(const QString& id) {
+  const auto text = id.toStdString();
+  if (!text.empty() &&
+      std::none_of(detectionPreview_.begin(), detectionPreview_.end(),
+                   [&](const auto& track) { return track.id == text; }))
+    return;
+  selectedPreviewId_ = text;
+  setProperty("selectedDetectionPreviewId", id);
+  if (kind_ != Kind::Main) return;
+  if (surface_ && !softwareFallback_) surface_->invalidateOverlay();
+  QWidget::update();
+}
+QString PlotWidget::selectedDetectionPreview() const {
+  return QString::fromStdString(selectedPreviewId_);
+}
 void PlotWidget::refreshAnnotationOverlay() {
   const auto* file = session_.activeFile();
   setProperty("hoveredAnnotationId",
@@ -922,6 +1196,7 @@ void PlotWidget::cancelDetectionRoi() {
   emit statusMessage("检测 ROI 已取消；已恢复前一工具");
 }
 void PlotWidget::syncState() {
+  if (kind_ != Kind::Navigation) emit axisDescriptionChanged();
   const auto* file = session_.activeFile();
   const auto id = file ? file->metadata.id : std::string{};
   if (id != displayedFile_ ||
@@ -992,6 +1267,7 @@ void PlotWidget::finishWheel() {
   wheelBase_.reset();
   if (activeWheel == this) activeWheel.clear();
   if (session_.commitViewChange(before)) emit stateChanged();
+  releaseAxisLayouts();
 }
 void PlotWidget::cancelGesture(bool exitCreating) {
   finishWheel();
@@ -1013,6 +1289,7 @@ void PlotWidget::cancelGesture(bool exitCreating) {
     releasing_ = false;
   }
   if (exitCreating) creating_ = false;
+  if (cancellingGesture) releaseAxisLayouts();
   hoverZone_ = Zone::None;
   setHoveredMark({});
   setProperty("interactionZone", static_cast<int>(hoverZone_));
@@ -1269,6 +1546,7 @@ bool PlotWidget::isDisplaySettled() const {
 }
 QJsonObject PlotWidget::renderStatistics() const {
   QJsonObject result{
+      {"axisLayout", axisLayoutStatistics()},
       {"quality", renderQuality()},
       {"settled", isDisplaySettled()},
       {"generation", static_cast<qint64>(renderGeneration_)},
@@ -1600,11 +1878,13 @@ void PlotWidget::updateCurve() {
     curvePathKey_.clear();
   }
   const auto pathKey =
-      reductionKey + QString("/%1/%2/%3/%4")
+      reductionKey + QString("/%1/%2/%3/%4/%5/%6")
                          .arg(plot.width())
                          .arg(plot.height())
                          .arg(file->display.auxiliaryMin, 0, 'g', 17)
-                         .arg(file->display.auxiliaryMax, 0, 'g', 17);
+                         .arg(file->display.auxiliaryMax, 0, 'g', 17)
+                         .arg(plot.left())
+                         .arg(plot.top());
   if (curvePathKey_ != pathKey) {
     curvePathKey_ = pathKey;
     curvePath_ = {};
@@ -2223,73 +2503,63 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     }
     painter.restore();
   }
-  painter.setFont(canvasFont());
+  painter.setFont(font());
   painter.setPen(QColor("#aac2d7"));
-  const double frequencyOffset = file->display.absoluteFrequency
-                                     ? 0
-                                     : analysisFrequencyOffset(file->metadata);
-  const Axis x = waterfall || psd ? axisScale(true, view.frequency.lowerHz,
-                                              frequencySpan, 5, frequencyOffset)
-                                  : axisScale(false, timeStart, timeSpan, 5);
-  const Axis y =
-      kind_ == Kind::Main
-          ? waterfall ? axisScale(false, timeStart + timeSpan, -timeSpan, 4)
-                      : axisScale(true, view.frequency.lowerHz, frequencySpan,
-                                  4, frequencyOffset)
-          : Axis{};
-  const QFontMetricsF metrics(painter.font());
+  const auto layout = axisLayout();
+  const auto& axes = measuredAxes();
+  const auto& x = axes.x;
+  const auto& y = axes.y;
+  const QFontMetricsF metrics(font(), this);
   double previousRight = -std::numeric_limits<double>::infinity();
   for (int i = 0; i <= x.count; ++i) {
-    const auto label = x.tick(static_cast<double>(i) / x.count);
-    const double width = metrics.horizontalAdvance(label),
+    const auto& label = axes.labels.xTicks[i];
+    const double width = axis_layout::textWidth(metrics, label),
                  position = plot.left() + plot.width() * i / x.count;
     const double left =
         std::clamp(position - width / 2, plot.left() - 3,
                    std::max(plot.left() - 3, plot.right() - width + 3));
     if (left >= previousRight + 8) {
-      painter.drawText(QPointF(left, plot.bottom() + 14), label);
+      painter.drawText(QPointF(left - std::min(0.0, metrics.boundingRect(label).left()),
+                                layout.xTicks.top() + metrics.ascent()), label);
       previousRight = left + width;
     }
   }
   double previousTop = std::numeric_limits<double>::infinity();
   for (int i = 0; i <= 4; ++i) {
     const double position = plot.bottom() - plot.height() * i / 4;
-    const auto label = kind_ == Kind::Main
-                           ? y.tick(i / 4.0)
-                           : QString::number(file->display.auxiliaryMin +
-                                                 (file->display.auxiliaryMax -
-                                                  file->display.auxiliaryMin) *
-                                                     i / 4,
-                                             'f', psd ? 0 : 1);
-    if (position + 3 <= previousTop - 12) {
+    const auto& label = axes.labels.yTicks[i];
+    const double top = position - metrics.height() / 2;
+    if (top + metrics.height() <= previousTop - 3) {
       painter.drawText(
-          QPointF(plot.left() - 7 - metrics.horizontalAdvance(label),
-                  position + 3),
+          QPointF(plot.left() - 7 -
+                      std::max(metrics.horizontalAdvance(label),
+                               metrics.boundingRect(label).right()),
+                  top + metrics.ascent()),
           label);
-      previousTop = position + 3;
+      previousTop = top;
     }
   }
-  painter.drawText(QRectF(plot.left(), height() - 15, plot.width(), 14),
-                   Qt::AlignHCenter | Qt::AlignBottom, x.label);
-  painter.save();
-  painter.translate(15, plot.center().y());
-  painter.rotate(-90);
-  const QString verticalTitle = sourceUnits(
-      kind_ == Kind::Main   ? y.label
-      : psd                 ? "功率谱密度（dBFS/Hz）"
-      : file->metadata.demo ? "幅值（演示单位）"
-      : file->display.waveformMode == WaveformMode::I ? "I 分量（ADC 计数）"
-      : file->display.waveformMode == WaveformMode::Q ? "Q 分量（ADC 计数）"
-      : file->display.waveformMode == WaveformMode::Envelope
-          ? "幅度包络（ADC 计数）"
-          : "幅度 RMS（ADC 计数）",
-      file->metadata);
-  painter.drawText(QPointF(-metrics.horizontalAdvance(verticalTitle) / 2, 0),
-                   verticalTitle);
-  painter.restore();
+  if (axisTitleMode_ != AxisTitleMode::CompactHeader)
+    painter.drawText(layout.xTitle, Qt::AlignHCenter | Qt::AlignTop,
+                     axes.labels.xTitle);
+  if (axisTitleMode_ == AxisTitleMode::Rotated) {
+    painter.save();
+    painter.translate(layout.rotatedTitle.left(), plot.bottom());
+    painter.rotate(-90);
+    painter.drawText(QRectF(0, 0, plot.height(), layout.rotatedTitle.width()),
+                     Qt::AlignCenter | Qt::TextWordWrap, axes.labels.yTitle);
+    painter.restore();
+  } else if (axisTitleMode_ != AxisTitleMode::CompactHeader) {
+    if (axisTitleMode_ == AxisTitleMode::Header)
+      painter.fillRect(layout.header.adjusted(-4, -2, 4, 2), QColor("#102238"));
+    painter.drawText(layout.header, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
+                     axisTitleMode_ == AxisTitleMode::Header
+                         ? axes.labels.yTitle : axes.labels.yUnit);
+  }
   int originRow = 0;
-  for (const auto& label : {x.originLabel, y.originLabel})
-    if (!label.isEmpty()) {
+  for (const auto& label : {x.originLabel,
+                           kind_ == Kind::Main ? y.originLabel : QString{}})
+    if (axisTitleMode_ != AxisTitleMode::CompactHeader && !label.isEmpty()) {
       const double top = plot.top() + 13 + originRow++ * 15;
       painter.fillRect(QRectF(plot.left() + 4, top - 10,
                               metrics.horizontalAdvance(label) + 10, 14),
@@ -2304,7 +2574,8 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
     const QFontMetricsF fm(painter.font());
     const double width = std::min(static_cast<double>(this->width() - 24),
                                   std::ceil(fm.horizontalAdvance(tip)) + 12);
-    const QRectF box(this->width() - 12 - width, 7, width, fm.height() + 6);
+    const QRectF box(this->width() - 12 - width, plot.top() + 6,
+                      width, fm.height() + 6);
     painter.setPen(Qt::NoPen);
     painter.setBrush(cssColor("#091728c7"));
     painter.drawRoundedRect(box, 3, 3);
@@ -2352,11 +2623,43 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
   painter.save();
   painter.setClipRect(plot);
   painter.setFont(canvasFont(11, true));
+  if (kind_ == Kind::Main) visibleAnnotationRects_ = 0;
+  // Segment bodies only. Axes, hover chrome, and dashed previews keep their
+  // own pens; this hint is restored before those later draws.
+  painter.setRenderHint(QPainter::Antialiasing, false);
   const std::unordered_set<std::string> selectedIds(
       file->selectedMarkIds.begin(), file->selectedMarkIds.end());
   int handleCount = 0;
+  std::vector<QRectF> batchedRects;
+  QPen batchedPen;
+  QBrush batchedBrush;
+  bool haveBatch = false;
+  const auto flushBatchedRects = [&] {
+    if (!haveBatch || batchedRects.empty()) {
+      batchedRects.clear();
+      haveBatch = false;
+      return;
+    }
+    painter.setPen(batchedPen);
+    painter.setBrush(batchedBrush);
+    painter.drawRects(batchedRects.data(),
+                      static_cast<int>(batchedRects.size()));
+    batchedRects.clear();
+    haveBatch = false;
+  };
+  const auto addBatchedRect = [&](const QPen& pen, const QBrush& brush,
+                                  const QRectF& rect) {
+    if (haveBatch && (pen != batchedPen || brush != batchedBrush))
+      flushBatchedRects();
+    if (!haveBatch) {
+      batchedPen = pen;
+      batchedBrush = brush;
+      haveBatch = true;
+    }
+    batchedRects.push_back(rect);
+  };
   for (const auto& mark : file->marks) {
-    if (!annotationVisible(*file, mark)) continue;
+    if (!showsMark(*file, mark)) continue;
     const bool selected = selectedIds.contains(mark.id);
     const bool current = file->activeMarkId == mark.id;
     const bool objectHovered =
@@ -2365,6 +2668,11 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         mark.sourceKind == AnnotationSource::ImportedLabel ? QColor("#65d2bd")
         : mark.sourceKind == AnnotationSource::Manual      ? QColor("#edc56d")
                                                            : QColor("#51c4e9");
+    auto plainFill = sourceColor;
+    plainFill.setAlpha(selected ? 46 : 23);
+    QPen plainPen(sourceColor, selected ? 2 : 1);
+    if (!selected) plainPen.setDashPattern({5, 3});
+    const QBrush plainBrush(plainFill);
     for (std::size_t index = 0;
          index < std::max<std::size_t>(1, mark.segments.size()); ++index) {
       const auto* segment =
@@ -2380,11 +2688,19 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       const auto& range = editing   ? gesture_->draft
                           : segment ? segment->range
                                     : *mark.observation;
+      if (rangeOutsideView(range, view)) continue;
       const bool currentSegment =
           current && (!segment || segment->id == file->activeSegmentId);
       const auto box = markRect(range);
       if (box.isEmpty() || !box.intersects(plot)) continue;
+      ++visibleAnnotationRects_;
+      const bool decorated = hovered || currentSegment || !segment;
+      if (!decorated) {
+        addBatchedRect(plainPen, plainBrush, box);
+        continue;
+      }
       if (hovered) {
+        flushBatchedRects();
         painter.setBrush(Qt::NoBrush);
         for (const int thickness : {10, 6}) {
           painter.setPen(QPen(QColor(230, 251, 255, thickness == 10 ? 12 : 24),
@@ -2394,17 +2710,17 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       }
       auto fill = sourceColor;
       fill.setAlpha(currentSegment ? 61 : selected ? 46 : 23);
-      painter.setBrush(fill);
       QPen sourcePen(sourceColor, currentSegment ? 3 : selected ? 2 : 1);
       if (!selected) sourcePen.setDashPattern({5, 3});
-      painter.setPen(sourcePen);
+      const QBrush sourceBrush = segment
+                                     ? QBrush(fill)
+                                     : QBrush(sourceColor, Qt::BDiagPattern);
+      addBatchedRect(sourcePen, sourceBrush, box);
+      flushBatchedRects();
       if (!segment) {
-        painter.setBrush(QBrush(sourceColor, Qt::BDiagPattern));
-        painter.drawRect(box);
+        painter.setPen(sourcePen);
         painter.drawText(box.adjusted(5, 5, -5, -5),
                          Qt::AlignTop | Qt::AlignLeft, "时间未定位 / 观察窗口");
-      } else {
-        painter.drawRect(box);
       }
       // Neutral outlines communicate state while the inner source stroke keeps
       // the three provenance colors visible in every selection state.
@@ -2416,21 +2732,9 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
       if (hovered) {
         painter.setPen(QPen(QColor("#c4f7ff"), 1, Qt::DotLine));
         painter.drawRect(box.adjusted(2, 2, -2, -2));
-        const auto label = QString::fromStdString(mark.name) + " · 点击选中";
-        const double labelWidth =
-            std::ceil(QFontMetricsF(painter.font()).horizontalAdvance(label)) +
-            16;
-        const double left = std::clamp(
-            box.left() + 4, plot.left() + 3,
-            std::max(plot.left() + 3, plot.right() - labelWidth - 3));
-        const double top =
-            std::clamp(box.top() + 4, plot.top() + 3,
-                       std::max(plot.top() + 3, plot.bottom() - 21));
-        painter.fillRect(QRectF(left, top, labelWidth, 19), QColor("#10374f"));
-        painter.setPen(QColor("#95e3ff"));
-        painter.drawRect(QRectF(left + .5, top + .5, labelWidth - 1, 18));
-        painter.setPen(QColor("#e2f9ff"));
-        painter.drawText(QPointF(left + 8, top + 13), label);
+        // The full name and gesture hint already go through interactionHint
+        // into the existing readout/status area. Do not cover geometry or its
+        // eight handles with a second floating label (especially long names).
       }
       if (currentSegment && !creating_ && !detectionRoi_ &&
           session_.annotations().canEdit(*file, mark.id))
@@ -2448,6 +2752,8 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
         }
     }
   }
+  flushBatchedRects();
+  painter.setRenderHint(QPainter::Antialiasing, true);
   setProperty("annotationHandleCount", handleCount);
   setProperty("activeAnnotationId", QString::fromStdString(file->activeMarkId));
   setProperty("activeAnnotationSegmentId",
@@ -2497,6 +2803,34 @@ void PlotWidget::paintScene(QPainter& painter, bool accelerated) {
                                              std::max(1.0, labelWidth - 14)));
     }
   }
+  if (kind_ == Kind::Main &&
+      file->annotationLayers[static_cast<int>(AnnotationSource::Algorithm)] &&
+      !detectionPreview_.empty()) {
+    painter.setFont(canvasFont(11, true));
+    for (const auto& preview : detectionPreview_) {
+      if (preview.time.end <= preview.time.begin) continue;
+      const auto box = markRect({preview.time, preview.frequency});
+      if (box.isEmpty() || !box.intersects(plot)) continue;
+      QColor color("#c9a6ff");
+      color.setAlpha(36);
+      painter.setBrush(QBrush(color, Qt::BDiagPattern));
+      QPen pen(QColor("#c9a6ff"), 1, Qt::DashLine);
+      painter.setPen(pen);
+      painter.drawRect(box);
+      painter.setPen(QColor("#f3e9ff"));
+      painter.drawText(box.adjusted(4, 3, -4, -3), Qt::AlignTop | Qt::AlignLeft,
+                       preview.unpublished ? QStringLiteral("预览 · 未发布")
+                       : preview.timeLocalized ? QStringLiteral("预览")
+                                               : QStringLiteral("预览 · 时间未定位"));
+    }
+    if (detectionPreviewDropped_) {
+      const QString dropped =
+          QString("预览队列已丢弃 %1 条最旧事件").arg(detectionPreviewDropped_);
+      painter.setPen(QColor("#f3e9ff"));
+      painter.drawText(plot.adjusted(8, 8, -8, -8), Qt::AlignBottom | Qt::AlignLeft,
+                       dropped);
+    }
+  }
   painter.restore();
   if (!accelerated) drawCursors(painter);
 
@@ -2528,7 +2862,7 @@ std::vector<PlotWidget::Hit> PlotWidget::markChoicesAt(QPointF point) const {
       zoneAt(point) != Zone::Plot)
     return hits;
   for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
-    if (!annotationVisible(*file, *it)) continue;
+    if (!showsMark(*file, *it)) continue;
     for (const auto& s : it->segments)
       if (markRect(s.range).intersected(plotRect()).contains(point))
         hits.push_back({it->id, 0, false, s.id});
@@ -2608,7 +2942,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
       current && (activeSegment(*current) || current->observation))
     selected.push_back(current);
   for (const auto* mark : selected) {
-    if (!annotationVisible(*file, *mark) ||
+    if (!showsMark(*file, *mark) ||
         !session_.annotations().canEdit(*file, mark->id))
       continue;
     const bool observation = mark->segments.empty();
@@ -2666,7 +3000,7 @@ PlotWidget::Hit PlotWidget::hitMark(QPointF point) const {
       file->selectedMarkIds.begin(), file->selectedMarkIds.end());
   for (auto it = file->marks.rbegin(); it != file->marks.rend(); ++it) {
     if (!selectedIds.contains(it->id) || it->id == file->activeMarkId ||
-        !annotationVisible(*file, *it))
+        !showsMark(*file, *it))
       continue;
     if ((activeSegment(*it) || it->observation) &&
         markRect(activeSegment(*it) ? it->range : *it->observation)
@@ -2820,9 +3154,15 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
             : Tool::PanTime;
   else if (hit.selected &&
            !(event->modifiers() & (Qt::ControlModifier | Qt::ShiftModifier))) {
-    if (hit.id != file->activeMarkId)
-      session_.annotations().select(*file, file->selectedMarkIds, hit.id,
-                                    hit.segmentId);
+    if (hit.id != file->activeMarkId) {
+      const auto selected = session_.annotations().select(
+          *file, file->selectedMarkIds, hit.id, hit.segmentId);
+      if (!selected) { emit statusMessage(QString::fromStdString(selected.error)); return; }
+    }
+    std::string blocked;
+    if (!session_.acceptProjectWrite(blocked)) {
+      emit statusMessage(QString::fromStdString(blocked)); return;
+    }
     gesture.tool = Tool::MarkEdit;
     gesture.markId = hit.id;
     gesture.edges = hit.edges;
@@ -2835,6 +3175,7 @@ void PlotWidget::mousePressEvent(QMouseEvent* event) {
         annotationEditContext(*file, hit.id, session_.projectGeneration());
   } else
     gesture.tool = Tool::ZoomBox;
+  freezeAxisLayouts();
   gesture_ = gesture;
   activeGesture = this;
   grabMouse();
@@ -3008,6 +3349,7 @@ void PlotWidget::mouseMoveEvent(QMouseEvent* event) {
 }
 void PlotWidget::finishGesture(Qt::KeyboardModifiers modifiers) {
   if (!gesture_) return;
+  const auto releaseGeometry = qScopeGuard([this] { releaseAxisLayouts(); });
   const auto gesture = *gesture_;
   gesture_.reset();
   if (activeGesture == this) activeGesture.clear();
@@ -3176,6 +3518,7 @@ void PlotWidget::wheelEvent(QWheelEvent* event) {
       (wheelBase_->fileId != file->metadata.id || wheelAxis_ != axis))
     finishWheel();
   if (!wheelBase_) {
+    freezeAxisLayouts();
     wheelBase_ = session_.snapshot();
     wheelAxis_ = axis;
     activeWheel = this;
@@ -3254,12 +3597,16 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       addMarkChoices(menu, overlaps, Qt::NoModifier);
     }
     if (file && findMark(*file, file->activeMarkId)) {
+      const auto capabilities = session_.annotations().capabilities(*file, file->activeMarkId);
       auto* channel = menu->addAction("创建窄带通道…");
       channel->setObjectName("contextCreateChannelAction");
+      channel->setEnabled(capabilities.createChannelDirectly || capabilities.convertToManual);
+      if (!capabilities.createChannelDirectly) channel->setText("转换并创建窄带通道…");
       connect(channel, &QAction::triggered, this,
               &PlotWidget::annotationChannelRequested);
       auto* rename = menu->addAction("重命名当前标记");
       rename->setObjectName("contextRenameAction");
+      rename->setEnabled(capabilities.editMetadata);
       connect(rename, &QAction::triggered, this,
               &PlotWidget::markRenameRequested);
       auto* locate = menu->addAction("定位当前标记");
@@ -3272,6 +3619,10 @@ QMenu* PlotWidget::createContextMenu(const QPoint& point) {
       auto* remove = menu->addAction(
           QString("删除所选标记 (%1)").arg(file->selectedMarkIds.size()));
       remove->setObjectName("contextDeleteAction");
+      remove->setEnabled(!file->selectedMarkIds.empty() &&
+          std::all_of(file->selectedMarkIds.begin(), file->selectedMarkIds.end(), [&](const auto& id) {
+            return session_.annotations().capabilities(*file, id).deleteAnnotation;
+          }));
       connect(remove, &QAction::triggered, this,
               &PlotWidget::markDeleteRequested);
     }
@@ -3396,14 +3747,15 @@ void PlotWidget::keyPressEvent(QKeyEvent* event) {
     if (const auto* file = session_.activeFile()) {
       std::vector<std::string> ids;
       for (const auto& mark : file->marks)
-        if (annotationVisible(*file, mark)) ids.push_back(mark.id);
+        if (showsMark(*file, mark)) ids.push_back(mark.id);
       const auto active =
           std::find(ids.begin(), ids.end(), file->activeMarkId) != ids.end()
               ? file->activeMarkId
           : ids.empty() ? std::string{}
                         : ids.front();
-      session_.selectMarks(ids, active);
-      emit stateChanged();
+      const auto selected = session_.selectMarks(ids, active);
+      if (selected) emit stateChanged();
+      else emit statusMessage(QString::fromStdString(selected.error));
     }
     event->accept();
   } else
@@ -3414,9 +3766,23 @@ void PlotWidget::resizeEvent(QResizeEvent* event) {
   cancelGesture();
   if (surface_) surface_->setGeometry(rect());
   QWidget::resizeEvent(event);
-  repaintChart();
+  if (kind_ == Kind::Navigation)
+    repaintChart();
+  else
+    refreshAxisLayouts();
 }
 bool PlotWidget::event(QEvent* event) {
+  if (event->type() == QEvent::FontChange ||
+      event->type() == QEvent::ScreenChangeInternal ||
+      event->type() == QEvent::DevicePixelRatioChange) {
+    axisLayoutCache_.reset();
+    // Style propagation can deliver FontChange while the window is being
+    // constructed. Repaint peers after that propagation has completed.
+    QTimer::singleShot(0, this, [this] {
+      cancelGesture();
+      refreshAxisLayouts();
+    });
+  }
   if (cursor_overlay::tooltip(this, event)) return true;
   if ((event->type() == QEvent::UngrabMouse && !releasing_) ||
       event->type() == QEvent::WindowDeactivate ||

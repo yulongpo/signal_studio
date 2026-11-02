@@ -1,0 +1,62 @@
+{
+  "cases": [
+    {
+      "pass": true,
+      "name": "package-final-Debug-wideband-gpu"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Debug-five-pages-gpu"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Debug-wideband-software"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Debug-five-pages-software"
+    },
+    {
+      "pass": true,
+      "name": "cli-Debug-A"
+    },
+    {
+      "pass": true,
+      "name": "cli-Debug-B"
+    },
+    {
+      "pass": true,
+      "name": "cli-Debug-C"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Release-wideband-gpu"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Release-five-pages-gpu"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Release-wideband-software"
+    },
+    {
+      "pass": true,
+      "name": "package-final-Release-five-pages-software"
+    },
+    {
+      "pass": true,
+      "name": "cli-Release-A"
+    },
+    {
+      "pass": true,
+      "name": "cli-Release-B"
+    },
+    {
+      "pass": true,
+      "name": "cli-Release-C"
+    }
+  ],
+  "status": "passed",
+  "utc": "2026-10-25T07:42:48.3769619Z"
+}

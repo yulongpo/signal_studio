@@ -1,0 +1,55 @@
+{
+  "binaries": [
+    {
+      "configuration": "debug",
+      "name": "SignalStudio.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+      "bytes": 13484544,
+      "sha256": "36cca844101c40a755423e2f46dafba3abd540d60445dd4c9981e7eead7047f8",
+      "lastWriteUtc": "2026-10-24T15:54:54.4926360Z"
+    },
+    {
+      "configuration": "debug",
+      "name": "SignalStudioUiCapture.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+      "bytes": 15525888,
+      "sha256": "ba800245df614f75baa3ad85ef1293851def4143b97cee64b27bfddfad43be58",
+      "lastWriteUtc": "2026-10-24T15:55:07.6885680Z"
+    },
+    {
+      "configuration": "debug",
+      "name": "SignalStudioDetectionWorker.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioDetectionWorker.exe",
+      "bytes": 2664960,
+      "sha256": "949c11fd17018630ef8b2463fb365faef0be994b1f392f7699603acaaf84445f",
+      "lastWriteUtc": "2026-10-24T15:54:44.1541482Z"
+    },
+    {
+      "configuration": "release",
+      "name": "SignalStudio.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+      "bytes": 5138944,
+      "sha256": "681e4cb274dbcbb10e681150673dfcf2508c28b5e45a5542d11bd4040e8c77a5",
+      "lastWriteUtc": "2026-10-24T15:51:14.0461514Z"
+    },
+    {
+      "configuration": "release",
+      "name": "SignalStudioUiCapture.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+      "bytes": 5923328,
+      "sha256": "d6becf0833be1ea899a1f251e8cbf41d4c4fe9b7b16dc68cec3d8ebe346d0de6",
+      "lastWriteUtc": "2026-10-24T15:29:15.7588961Z"
+    },
+    {
+      "configuration": "release",
+      "name": "SignalStudioDetectionWorker.exe",
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionWorker.exe",
+      "bytes": 219136,
+      "sha256": "96e23b1c6250154635fb6826e8a161c72dd32f38e94db2d1b2fb211e9aea94c4",
+      "lastWriteUtc": "2026-10-24T15:25:48.3118461Z"
+    }
+  ],
+  "note": "Final local build identities; later delivery-doc-only commits do not rebuild these files.",
+  "sourceHead": "064b509ba8384bd0f7a13abab40cb810675d91b6",
+  "capturedUtc": "2026-10-24T16:13:05.0573468Z"
+}

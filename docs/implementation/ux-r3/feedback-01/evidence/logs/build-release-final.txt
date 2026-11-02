@@ -1,0 +1,280 @@
+D:\softwares\cmake\bin\cmake.exe --build --preset local-release --parallel 6
+适用于 .NET Framework MSBuild 版本 18.10.1-1.26427.6+3cd27c13e
+
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioBrand.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioBrand.lib
+  正在扫描源以查找模块依赖项...
+  SignalStudioDisplaySamplingTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDisplaySamplingTests.exe
+  SignalStudioCore.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioCore.lib
+  Automatic MOC for target SignalStudioParameterInputTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioAnnotationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationTests.exe
+  SignalStudioInfrastructure.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release\lib\Release\SignalStudioInfrastructure.lib
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioParameterInputTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioParameterInputTests.exe
+  SignalStudioDetectionRefinementTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinementTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionRefinedFusionTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionRefinedFusionTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandRecoveryTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandRecoveryTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionFrequencyAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionFrequencyAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionPostprocessTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPostprocessTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionWorker.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionWorker.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandFeedbackProbe.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandFeedbackProbe.exe
+  SignalStudioDetectionPipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionPipelineTests.exe
+  SignalStudioChannelProcessorTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelProcessorTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioChannelRateTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioChannelRateTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionModelBackendTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionModelBackendTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionProtocolTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionProtocolTests.exe
+  SignalStudioDetectionSampleEnergyTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSampleEnergyTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioAnnotationStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioAnnotationStoreTests.exe
+  SignalStudioNarrowbandModulationTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandModulationTests.exe
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioSampleFormatTests
+  SignalStudioDetectionStoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionStoreTests.exe
+  SignalStudioDetectionTimePipelineTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTimePipelineTests.exe
+  Automatic MOC for target SignalStudio
+  正在扫描源以查找模块依赖项...
+  SignalStudioNarrowbandAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioSampleFormatTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSampleFormatTests.exe
+  正在扫描源以查找模块依赖项...
+  main.cpp
+  main_window.cpp
+  narrowband_workspace.cpp
+  plot_widget.cpp
+  正在编译...
+  main.cpp
+  plot_widget.cpp
+  main_window.cpp
+  narrowband_workspace.cpp
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  mocs_compilation_Release.cpp
+  SignalStudio.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe
+  Deploying Qt and compiler runtime to the standalone output directory
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_ATOMIC_WAIT.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_2.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/VCRUNTIME140_1.dll
+  Adding local dependencyD:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/MSVCP140_1.dll
+  D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudio.exe 64 bit, release executable
+  Adding in plugin type generic for module: Qt6Gui
+  Adding Qt6Network for qtuiotouchplugin.dll from plugin type: generic
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+  Adding in plugin type imageformats for module: Qt6Gui
+EXEC : warning : Cannot find any version of the dxcompiler.dll and dxil.dll. This is not a problem unless Direct3D 12 and certain features are used by the application. [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudio.vcxproj]
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Adding in plugin type generic for module: Qt6Gui
+  Adding in plugin type iconengines for module: Qt6Gui
+  Adding in plugin type imageformats for module: Qt6Gui
+  Adding in plugin type networkinformation for module: Qt6Network
+  Adding in plugin type platforminputcontexts for module: Qt6Gui
+  Skipping plugin qtvirtualkeyboardplugin.dll due to disabled dependencies (Qt6Qml Qt6Quick).
+  Adding in plugin type platforms for module: Qt6Gui
+  Adding in plugin type styles for module: Qt6Widgets
+  Adding in plugin type tls for module: Qt6Network
+  Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+  Direct dependencies: Qt6Core Qt6Gui Qt6Widgets
+  All dependencies   : Qt6Core Qt6Gui Qt6Widgets
+  To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6Svg Qt6Widgets
+  Skipping system library C:/WINDOWS/system32/icuuc.dll
+  Qt6Core.dll is up to date.
+  Qt6Gui.dll is up to date.
+  Qt6Network.dll is up to date.
+  Qt6Svg.dll is up to date.
+  Qt6Widgets.dll is up to date.
+  opengl32sw.dll is up to date.
+  D3Dcompiler_47.dll is up to date.
+  vc_redist.x64.exe is up to date.
+  qtuiotouchplugin.dll is up to date.
+  qsvgicon.dll is up to date.
+  qgif.dll is up to date.
+  qicns.dll is up to date.
+  qico.dll is up to date.
+  qjpeg.dll is up to date.
+  qsvg.dll is up to date.
+  qtga.dll is up to date.
+  qtiff.dll is up to date.
+  qwbmp.dll is up to date.
+  qwebp.dll is up to date.
+  qnetworklistmanager.dll is up to date.
+  qminimal.dll is up to date.
+  qoffscreen.dll is up to date.
+  qwindows.dll is up to date.
+  qmodernwindowsstyle.dll is up to date.
+  qcertonlybackend.dll is up to date.
+  qschannelbackend.dll is up to date.
+  -- Staged 10 x64 Release CRT DLLs from C:/Program Files/Microsoft Visual Studio/18/Community/VC/Redist/MSVC/14.51.36231/x64/Microsoft.VC145.CRT
+  Automatic MOC for target SignalStudioImportTests
+  Automatic MOC for target SignalStudioLabelImportTests
+  Automatic MOC for target SignalStudioUxR3WorkflowTests
+  Automatic MOC for target SignalStudioDetectionSourceTests
+  Automatic MOC for target SignalStudioUxTests
+  Automatic MOC for target SignalStudioUiCapture
+  Automatic MOC for target SignalStudioNarrowbandAnalysisUiTests
+  Automatic MOC for target SignalStudioUxR3AxisTests
+  Automatic MOC for target SignalStudioWavTests
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioSpectralAnalysisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioSpectralAnalysisTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioDetectionTaskTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTaskTests.exe
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  正在扫描源以查找模块依赖项...
+  SignalStudioWavTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioWavTests.exe
+  SignalStudioProjectTreeTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectTreeTests.exe
+  SignalStudioImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioImportTests.exe
+  SignalStudioDetectionSourceTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionSourceTests.exe
+  正在扫描源以查找模块依赖项...
+  SignalStudioProjectFileTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioProjectFileTests.exe
+  plot_widget.cpp
+  ux_tests.cpp
+  main_window.cpp
+  narrowband_workspace.cpp
+  正在扫描源以查找模块依赖项...
+  SignalStudioLabelImportTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioLabelImportTests.exe
+  main_window.cpp
+  narrowband_workspace.cpp
+  narrowband_analysis_ui_tests.cpp
+  plot_widget.cpp
+  plot_widget.cpp
+  main_window.cpp
+  ui_capture.cpp
+  narrowband_workspace.cpp
+  正在扫描源以查找模块依赖项...
+  Automatic MOC for target SignalStudioUiTests
+  narrowband_workspace.cpp
+  main_window.cpp
+  正在扫描源以查找模块依赖项...
+  ux_r3_axis_tests.cpp
+  plot_widget.cpp
+  SignalStudioCoreTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioCoreTests.exe
+  plot_widget.cpp
+  ux_r3_workflow_tests.cpp
+  narrowband_workspace.cpp
+  main_window.cpp
+  正在编译...
+  正在编译...
+  ux_tests.cpp
+  main_window.cpp
+  narrowband_workspace.cpp
+  plot_widget.cpp
+  plot_widget.cpp
+  ux_r3_axis_tests.cpp
+  main_window.cpp
+  narrowband_workspace.cpp
+  正在编译...
+  正在编译...
+  正在扫描源以查找模块依赖项...
+  plot_widget.cpp
+  main_window.cpp
+  plot_widget.cpp
+  ui_capture.cpp
+  ux_r3_workflow_tests.cpp
+  narrowband_workspace.cpp
+  narrowband_workspace.cpp
+  main_window.cpp
+  正在编译...
+  narrowband_workspace.cpp
+  main_window.cpp
+  plot_widget.cpp
+  narrowband_analysis_ui_tests.cpp
+  main_window.cpp
+  ui_tests.cpp
+  narrowband_workspace.cpp
+  plot_widget.cpp
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3AxisTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3AxisTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3AxisTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiCapture.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiCapture.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiCapture.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3WorkflowTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3WorkflowTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3WorkflowTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiCapture.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioNarrowbandAnalysisUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioNarrowbandAnalysisUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioNarrowbandAnalysisUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3AxisTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUxR3WorkflowTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioNarrowbandAnalysisUiTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  mocs_compilation_Release.cpp
+  正在编译...
+  narrowband_workspace.cpp
+  ui_tests.cpp
+  main_window.cpp
+  plot_widget.cpp
+  mocs_compilation_Release.cpp
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2211,16): warning C4189: “frequencySpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2207,16): warning C4189: “timeStart”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\charts\plot_widget.cpp(2209,16): warning C4189: “timeSpan”: 局部变量已初始化但不引用 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiTests.vcxproj]
+D:\project\signal_studio_rebuild\ui\narrowband_workspace.cpp(2673,17): warning C4458: “data”的声明隐藏了类成员 [D:\project\signal_studio_rebuild\out\vs2026-qt611-release\SignalStudioUiTests.vcxproj]
+      D:\softwares\Qt\6.11.1\msvc2022_64\include\QtWidgets\qwidget.h(785,18):
+      参见“QWidget::data”的声明
+  
+  SignalStudioUxR3AxisTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR3AxisTests.exe
+  SignalStudioUxTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxTests.exe
+  SignalStudioUxR3WorkflowTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUxR3WorkflowTests.exe
+  SignalStudioUiCapture.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiCapture.exe
+  SignalStudioNarrowbandAnalysisUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioNarrowbandAnalysisUiTests.exe
+  mocs_compilation_Release.cpp
+  SignalStudioUiTests.vcxproj -> D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioUiTests.exe

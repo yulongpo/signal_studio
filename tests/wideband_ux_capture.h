@@ -124,8 +124,15 @@ QJsonObject widebandUxOpenSavedProject(MainWindow& window, const QString& projec
   picker.setInterval(100);
   QJsonObject trace;
   QObject::connect(&picker, &QTimer::timeout, &window, [&] {
+    if (auto* question = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+        question && question->windowTitle() == "未保存的工程修改") {
+      if (auto* discard = question->button(QMessageBox::Discard))
+        QTest::mouseClick(discard, Qt::LeftButton);
+      return;
+    }
     auto* dialog = qobject_cast<QFileDialog*>(QApplication::activeModalWidget());
     if (!dialog) {
+      if (accepted) return;
       if (elapsed.elapsed() < 15000) return;
       failure = "W6 visible project file picker did not appear";
       picker.stop();
@@ -151,7 +158,7 @@ QJsonObject widebandUxOpenSavedProject(MainWindow& window, const QString& projec
         return;
       }
       QTest::keyClick(field, Qt::Key_Return);
-      if (!dialog->isVisible()) { accepted = true; picker.stop(); }
+      if (!dialog->isVisible()) accepted = true;
     } catch (const std::exception& error) {
       failure = QString::fromUtf8(error.what());
       picker.stop(); dialog->reject();
@@ -332,9 +339,9 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     screenRecord["fullScreen"] = true;
     report["screen"] = screenRecord;
     QString error;
-    require(!QFileInfo::exists(output.filePath(runName)), "W2 project already exists");
+    require(!QFileInfo::exists(output.filePath(runName + ".ssproj")), "W2 project already exists");
     require(window.createProject(output.absolutePath(), runName, &error), error);
-    const auto projectPath = output.filePath(runName + "/project.json");
+    const auto projectPath = output.filePath(runName + ".ssproj");
     require(QFileInfo::exists(projectPath), "W2 project was not persisted");
     report["projectPath"] = projectPath;
     const auto data = widebandRepresentativeDataPath();
@@ -650,7 +657,7 @@ int runWidebandUxCapture(const QString& outputDirectory) {
                   encodeDetectionRequest(completed.request) == frozen,
               "W6 actual model failed: " + QString::fromStdString(completed.error));
       DetectionRun durable;
-      require(loadDetectionRun(QFileInfo(projectPath).absolutePath(), QString::fromStdString(runId), durable, error), error);
+      require(loadDetectionRun(QString::fromStdString(window.session().project().assetDirectory), QString::fromStdString(runId), durable, error), error);
       require(encodeDetectionRequest(durable.request) == frozen && durable.completedWindows == completed.completedWindows,
               "W6 formal frozen request/prefix changed on disk");
       productionRuns.append(encodeDetectionRun(completed));
@@ -719,7 +726,7 @@ int runWidebandUxCapture(const QString& outputDirectory) {
         "W6 formal cancellation did not expose a live persisted prefix");
     const auto beforeCancellation = window.session().activeFile()->detectionRuns.back();
     const auto immutableChunk = beforeCancellation.chunks.front();
-    const auto chunkPath = QFileInfo(projectPath).absoluteDir().filePath(QString::fromStdString(immutableChunk.relativePath));
+    const auto chunkPath = QDir(QString::fromStdString(window.session().project().assetDirectory)).filePath(QString::fromStdString(immutableChunk.relativePath));
     const auto chunkHash = widebandFileHash(chunkPath);
     const auto displayBefore = window.session().activeFile()->display;
     for (const auto* name : {"stftFft", "psdFft", "colormap"}) {
@@ -809,13 +816,18 @@ int runWidebandUxCapture(const QString& outputDirectory) {
     report["cpuDdcVerified"] = true;
     clickControl("narrowbandClose");
     require(widebandDisplayReady(window), "W6 return from channel did not restore charts");
-    // Save and reopen through the actual menu and visible JSON file picker.
+    // Save and reopen through the actual menu and visible .ssproj file picker.
     widebandMenuAction(window, "saveProjectAction");
     QFile saved(projectPath);
-    require(saved.open(QIODevice::ReadOnly), "W6 menu Save did not write project.json");
+    require(saved.open(QIODevice::ReadOnly), "W6 menu Save did not write .ssproj");
     const auto savedObject = QJsonDocument::fromJson(saved.readAll()).object();
     saved.close();
-    require(savedObject["version"].toInt() == 6, "W6 native project schema changed");
+    require(savedObject["magic"].toString() == "SignalStudioProject" &&
+                savedObject["schemaVersion"].toInt() == 1 &&
+                !savedObject["projectId"].toString().isEmpty(),
+            "W6 .ssproj container identity/schema is invalid");
+    require(savedObject["state"].toObject()["version"].toInt() == 6,
+            "W6 native project state schema changed");
     const auto generation = window.session().projectGeneration();
     currentScene = "w6-visible-project-reopen";
     report["projectPicker"] = widebandUxOpenSavedProject(window, projectPath, output);

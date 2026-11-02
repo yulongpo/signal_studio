@@ -491,6 +491,73 @@ bool decodeSourceSet(const QJsonObject& o, const FileMetadata& metadata,
     return s;
   });
 }
+static QJsonObject conversionJson(const ManualConversionSnapshot& s) {
+  return {{"sourceAnnotationId", q(s.sourceAnnotationId)},
+          {"sourceRevisionId", q(s.sourceRevisionId)},
+          {"sourceOriginRecordId", q(s.sourceOriginRecordId)},
+          {"sourceKind", enumText(static_cast<int>(s.sourceKind), sourceNames)},
+          {"sourceSet", encodeSourceSet(s.sourceSet)},
+          {"sourceName", q(s.sourceName)}, {"sourceNote", q(s.sourceNote)},
+          {"sourceClassLabel", optionalString(s.sourceClassLabel)},
+          {"sourceSegments", segmentsJson(s.sourceSegments)},
+          {"sourceObservation", optionalRange(s.sourceObservation)},
+          {"sourceObservationFrequencyFrame", enumText(static_cast<int>(s.sourceObservationFrequencyFrame), frameNames)},
+          {"sourceObservationTimeQuality", enumText(static_cast<int>(s.sourceObservationTimeQuality), timeNames)},
+          {"sourceActiveSegmentId", q(s.sourceActiveSegmentId)},
+          {"sourceReviewStatus", enumText(static_cast<int>(s.sourceReviewStatus), reviewNames)},
+          {"sourceOriginEvidence", originJson(s.sourceOriginEvidence)},
+          {"currentSegmentOnly", s.currentSegmentOnly},
+          {"convertedSegmentId", q(s.convertedSegmentId)}};
+}
+static ManualConversionSnapshot conversionValue(const QJsonObject& o,
+                                                 const FileMetadata& metadata) {
+  ManualConversionSnapshot s;
+  s.sourceAnnotationId = string(o, "sourceAnnotationId", 128);
+  s.sourceRevisionId = string(o, "sourceRevisionId", 128);
+  s.sourceOriginRecordId = string(o, "sourceOriginRecordId", 128);
+  s.sourceKind = static_cast<AnnotationSource>(choice(o, "sourceKind", sourceNames));
+  QString error;
+  require(decodeSourceSet(object(o["sourceSet"], "sourceSet"), metadata, s.sourceSet, error), error);
+  auto original = metadata;
+  const auto& identity = s.sourceSet.sourceIdentity;
+  original.sampleCount = identity.physicalSamples;
+  original.sampleRateHz = identity.sampleRateHz;
+  original.centerFrequencyHz = identity.centerFrequencyHz;
+  original.sampleFormat = identity.sampleFormat;
+  const auto bounds = annotationBounds(original);
+  s.sourceName = string(o, "sourceName", 256);
+  s.sourceNote = string(o, "sourceNote", 4096);
+  s.sourceClassLabel = optionalStringValue(o["sourceClassLabel"], 256);
+  s.sourceSegments = segmentsValue(o, "sourceSegments", bounds);
+  s.sourceObservation = optionalRangeValue(o["sourceObservation"]);
+  s.sourceObservationFrequencyFrame = static_cast<FrequencyFrame>(choice(o, "sourceObservationFrequencyFrame", frameNames));
+  s.sourceObservationTimeQuality = static_cast<TimeQuality>(choice(o, "sourceObservationTimeQuality", timeNames));
+  if (s.sourceObservation) {
+    require(s.sourceObservationTimeQuality == TimeQuality::Unknown ||
+                s.sourceObservationTimeQuality == TimeQuality::WindowObservation,
+            "转换快照观察不能伪造已定位时间");
+    Segment support{"snapshot-observation", *s.sourceObservation,
+                    TimeQuality::Manual, FrequencyQuality::Manual, false, 0,
+                    s.sourceObservationFrequencyFrame};
+    const auto checked = validateSegment(support, bounds, false);
+    require(checked.ok, q(checked.error));
+  }
+  s.sourceActiveSegmentId = string(o, "sourceActiveSegmentId", 128);
+  require(s.sourceActiveSegmentId.empty() || std::any_of(s.sourceSegments.begin(), s.sourceSegments.end(),
+              [&](const auto& segment) { return segment.id == s.sourceActiveSegmentId; }),
+          "转换快照当前段不属于原对象");
+  s.sourceReviewStatus = static_cast<ReviewStatus>(choice(o, "sourceReviewStatus", reviewNames));
+  s.sourceOriginEvidence = originValue(object(o["sourceOriginEvidence"], "sourceOriginEvidence"), bounds);
+  s.currentSegmentOnly = boolean(o, "currentSegmentOnly");
+  s.convertedSegmentId = string(o, "convertedSegmentId", 128);
+  require(!s.sourceAnnotationId.empty() && !s.sourceRevisionId.empty() &&
+              s.sourceKind != AnnotationSource::Manual &&
+              s.sourceKind == s.sourceSet.sourceKind &&
+              (!s.currentSegmentOnly || std::any_of(s.sourceSegments.begin(), s.sourceSegments.end(),
+                  [&](const auto& segment) { return segment.id == s.convertedSegmentId; })),
+          "人工转换来源快照身份或活动段无效");
+  return s;
+}
 QJsonObject encodeAnnotation(const Annotation& a) {
   QJsonArray revisions, reviews;
   for (const auto& r : a.revisions) revisions.append(revisionJson(r));
@@ -501,7 +568,7 @@ QJsonObject encodeAnnotation(const Annotation& a) {
         {"actor", q(r.actor)},
         {"timestamp", q(r.timestamp)},
         {"note", q(r.note)}});
-  return {
+  QJsonObject encoded{
       {"id", q(a.id)},
       {"name", q(a.name)},
       {"fileId", q(a.fileId)},
@@ -526,7 +593,10 @@ QJsonObject encodeAnnotation(const Annotation& a) {
       {"reviewHistory", reviews},
       {"revisions", revisions},
       {"derivedFrom", stringsJson(a.derivedFrom)},
+      {"conversionSnapshot", a.conversionSnapshot ? QJsonValue(conversionJson(*a.conversionSnapshot)) : QJsonValue(QJsonValue::Null)},
       {"deleted", a.deleted}};
+  if (a.plotHidden) encoded.insert("plotHidden", true);
+  return encoded;
 }
 bool decodeAnnotation(const QJsonObject& o, const FileMetadata& metadata,
                       Annotation& target, QString& error) {
@@ -559,6 +629,7 @@ bool decodeAnnotation(const QJsonObject& o, const FileMetadata& metadata,
     a.reviewStatus =
         static_cast<ReviewStatus>(choice(o, "reviewStatus", reviewNames));
     a.deleted = boolean(o, "deleted");
+    if (o.contains("plotHidden")) a.plotHidden = boolean(o, "plotHidden");
     std::unordered_set<std::string> revisionIds;
     for (const auto v : array(o, "revisions")) {
       auto r = revisionValue(v, bounds, a.observationFrequencyFrame);
@@ -576,6 +647,11 @@ bool decodeAnnotation(const QJsonObject& o, const FileMetadata& metadata,
            string(r, "timestamp", 128), string(r, "note", 4096)});
     }
     a.derivedFrom = stringsValue(o, "derivedFrom");
+    if (o.contains("conversionSnapshot") && !o["conversionSnapshot"].isNull()) {
+      require(a.sourceKind == AnnotationSource::Manual, "仅人工标记可持有转换快照");
+      a.conversionSnapshot = std::make_shared<const ManualConversionSnapshot>(
+          conversionValue(object(o["conversionSnapshot"], "conversionSnapshot"), metadata));
+    }
     require(a.fileId == metadata.id, "标记目标文件身份不一致");
     const auto result = validateAnnotation(a, bounds);
     require(result.ok, q(result.error));

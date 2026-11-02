@@ -1,0 +1,12 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_ui_annotations$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 41: signal_studio_ui_annotations
+1/1 Test #41: signal_studio_ui_annotations .....   Passed   97.50 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+annotations    =  97.50 sec*proc (1 test)
+ui             =  97.50 sec*proc (1 test)
+
+Total Test time (real) =  97.52 sec

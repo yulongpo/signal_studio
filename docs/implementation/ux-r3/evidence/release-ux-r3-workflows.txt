@@ -1,0 +1,31 @@
+********* Start testing of UxR3WorkflowTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : UxR3WorkflowTests::initTestCase()
+PASS   : UxR3WorkflowTests::arbitraryDirectoryCreateAndDuplicateFailure()
+PASS   : UxR3WorkflowTests::titleDirtyTracksCommitButNotDraftOrRefresh()
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed)
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target)
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container)
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(legacy-conversion-rejected)
+PASS   : UxR3WorkflowTests::saveAsReopenKeepsOriginalAndMovesSaveDestination()
+PASS   : UxR3WorkflowTests::relocateMissingSourceRejectsSameLengthWrongContent()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence)
+QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+PASS   : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation()
+PASS   : UxR3WorkflowTests::cleanupTestCase()
+Totals: 15 passed, 0 failed, 0 skipped, 0 blacklisted, 13904ms
+********* Finished testing of UxR3WorkflowTests *********

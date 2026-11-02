@@ -1,0 +1,20 @@
+{
+  "pass": true,
+  "configuration": "Release",
+  "softwareRenderer": true,
+  "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+  "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin",
+  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\native-release-software-verified-r3",
+  "startedUtc": "2026-10-26T10:39:48.3130223Z",
+  "timeoutSeconds": 480,
+  "systemOnlyPath": true,
+  "dpiOverridesCleared": true,
+  "buildExecuted": false,
+  "independentReviewPerformed": false,
+  "modelInferenceVerified": false,
+  "largeRfbenchValidationExecuted": false,
+  "elapsedSeconds": 32.3018203,
+  "processId": 30920,
+  "exitCode": 0,
+  "finishedUtc": "2026-10-26T10:40:20.6147586Z"
+}

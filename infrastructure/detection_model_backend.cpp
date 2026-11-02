@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -26,10 +27,6 @@ static_assert(NV_TENSORRT_MAJOR == 10 && NV_TENSORRT_MINOR == 11 &&
 namespace signalstudio {
 namespace {
 constexpr qint64 kMaximumEngineBytes = 128 * 1024 * 1024;
-constexpr auto kFfscnSha =
-    "d2de250b11d6bc4a3ccec6d95a232b03ba011e085698d525c3454387094bfe81";
-constexpr auto kScnSha =
-    "ae89d04332758d466846b71afc849c446500a82a8bd74fd8c671927247746627";
 constexpr auto kTrtSha =
     "d100ec93e5abf56f8d2dafb69cde536c4f9fbb4748a5746a74b7009f6894ce67";
 constexpr auto kCudaSha =
@@ -39,6 +36,29 @@ bool fail(QString& error, const QString& message) {
   error = message;
   return false;
 }
+
+#ifdef SS_DETECTION_TENSORRT
+// Device bytes for one physical batch: input tensor plus three float heads.
+// False means the product does not fit in uint64.
+bool unitDeviceBytes(std::uint32_t bins, std::uint32_t frames,
+                     std::uint64_t& bytes) {
+  if (bins != 0 && static_cast<std::uint64_t>(frames) >
+                       std::numeric_limits<std::uint64_t>::max() / bins)
+    return false;
+  const auto inputFloats =
+      static_cast<std::uint64_t>(bins) * static_cast<std::uint64_t>(frames);
+  const auto headBins = static_cast<std::uint64_t>(bins / 4);
+  if (headBins > std::numeric_limits<std::uint64_t>::max() / 3) return false;
+  const auto headFloats = headBins * 3;
+  if (inputFloats > std::numeric_limits<std::uint64_t>::max() - headFloats)
+    return false;
+  const auto floats = inputFloats + headFloats;
+  if (floats > std::numeric_limits<std::uint64_t>::max() / sizeof(float))
+    return false;
+  bytes = floats * sizeof(float);
+  return true;
+}
+#endif
 
 QString fileHash(const QString& path, qint64 maximum, QString& error) {
   QFile file(path);
@@ -54,19 +74,6 @@ QString fileHash(const QString& path, qint64 maximum, QString& error) {
     return {};
   }
   return QString::fromLatin1(hash.result().toHex());
-}
-
-bool plainFileName(const QString& name) {
-  return !name.isEmpty() && name != "." && name != ".." &&
-         !name.contains('/') && !name.contains('\\') && !name.contains(':');
-}
-
-bool sameShape(const QJsonArray& array, const std::array<int, 4>& shape) {
-  if (array.size() != 4) return false;
-  for (int index = 0; index < 4; ++index)
-    if (!array[index].isDouble() || array[index].toDouble() != shape[index])
-      return false;
-  return true;
 }
 
 void interpolateFrequency(const float* source, std::size_t bins, float* target,
@@ -126,7 +133,7 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
   const bool scn = request.profile.backend == DetectionBackendKind::Scn;
   if ((request.profile.id != "ffscn-gui-iq-v1" &&
        request.profile.id != "scn-max-psd-v1") ||
-      batch == 0 || batch > 2 || batch > request.parameters.batchSize)
+      batch == 0 || batch > 16 || batch > request.parameters.batchSize)
     return fail(error, "Model profile or batch is unsupported");
   const auto* registered = findDetectionProfile(request.profile.id);
   if (!registered || request.profile.version != registered->version ||
@@ -231,108 +238,6 @@ bool prepareDetectionModelInput(const DetectionRequest& request,
   return true;
 }
 
-bool validateDetectionModelPackage(const DetectionRequest& request,
-                                   const QString& modelRoot,
-                                   QJsonObject& manifest, QString& error) {
-  if (request.profile.backend == DetectionBackendKind::Experimental17)
-    return fail(error,
-                "FFSCN 17-order 131072-bin numerical parity is unvalidated; "
-                "this experimental profile cannot start production inference");
-  if (request.profile.id != "ffscn-gui-iq-v1" &&
-      request.profile.id != "scn-max-psd-v1")
-    return fail(error, "No production model package exists for this profile");
-  const auto* registered = findDetectionProfile(request.profile.id);
-  if (!registered || request.profile.version != registered->version ||
-      request.profile.backend != registered->backend ||
-      request.profile.maximumPsdOnly != registered->maximumPsdOnly ||
-      request.parameters.batchSize < 1 || request.parameters.batchSize > 2)
-    return fail(error, "Production model request shape is not registered");
-  const auto directory =
-      QDir(modelRoot).filePath(QString::fromStdString(request.profile.id));
-  const auto path = QDir(directory).filePath("manifest.json");
-  QFile file(path);
-  if (!file.open(QIODevice::ReadOnly) || file.size() <= 0 ||
-      file.size() > 1024 * 1024)
-    return fail(error, "Model manifest is missing or exceeds 1 MiB: " + path);
-  const auto bytes = file.readAll();
-  const auto document = QJsonDocument::fromJson(bytes);
-  if (!document.isObject()) return fail(error, "Model manifest is not JSON");
-  const auto object = document.object();
-  const bool scn = request.profile.id == "scn-max-psd-v1";
-  const auto engine = object["engine"].toObject();
-  const auto runtime = object["runtime"].toObject();
-  const auto input = object["input"].toObject();
-  const auto heads = object["heads"].toArray();
-  const auto capability = runtime["computeCapability"].toArray();
-  const std::array<int, 4> minimum = scn ? std::array<int, 4>{1, 32768, 1, 1}
-                                         : std::array<int, 4>{1, 1, 10, 65536};
-  auto maximum = minimum;
-  maximum[0] = scn ? 1 : 2;
-  const bool dynamic =
-      !scn && object["schema"] == "signalstudio-detection-model-package-v2" &&
-      object["adaptationVersion"] == 2 &&
-      object["checkpointSha256"] ==
-          "acd997957dd85b7fc560897874b575d4776e80270d7e377d1de7559e513e40e0";
-  const auto declaredMin = input["minShape"].toArray();
-  const auto declaredMax = input["maxShape"].toArray();
-  const bool dynamicShape =
-      dynamic && declaredMin == QJsonArray{1, 1, 1, 2048} &&
-      input["downNums"] == 11 && input["frequencyPowerOfTwo"] == true &&
-      declaredMax.size() == 4 && declaredMax[0].toInt() >= 1 &&
-      declaredMax[1] == 1 && declaredMax[2].toInt() >= 1 &&
-      declaredMax[3].toInt() >= 2048;
-  if ((!dynamic &&
-       object["schema"] != "signalstudio-detection-model-package-v1") ||
-      object["profileId"] != QString::fromStdString(request.profile.id) ||
-      object["profileVersion"].toDouble() != request.profile.version ||
-      object["precision"] != "FP32" || runtime["tensorRt"] != "10.11.0.33" ||
-      runtime["cudaRuntime"].toInt() != 12090 ||
-      runtime["hardwareCompatibility"] != "none" ||
-      runtime["versionCompatible"] != false ||
-      capability != QJsonArray{12, 0} ||
-      runtime["gpu"] != "NVIDIA GeForce RTX 5060 Laptop GPU" ||
-      input["dtype"] != "float32" || input["layout"] != "contiguous-NCHW" ||
-      input["name"] != (scn ? "resnet_32_input:0" : "spectrum") ||
-      (dynamic ? !dynamicShape
-               : (!sameShape(declaredMin, minimum) ||
-                  !sameShape(declaredMax, maximum))) ||
-      heads.size() != 3 || !plainFileName(engine["path"].toString()) ||
-      (!dynamic && engine["sha256"] != (scn ? kScnSha : kFfscnSha)))
-    return fail(error,
-                "Model manifest identity/runtime/precision/shape differs "
-                "from the frozen production contract");
-  const QStringList names =
-      scn ? QStringList{"Identity_1:0", "Identity:0", "Identity_2:0"}
-          : QStringList{"hm", "bw", "off"};
-  for (int index = 0; index < 3; ++index) {
-    const auto head = heads[index].toObject();
-    const auto shape = scn ? std::array<int, 4>{0, 8192, 1, 1}
-                           : std::array<int, 4>{0, 1, 1, 16384};
-    if (head["semantic"] != QStringList{"hm", "bw", "off"}[index] ||
-        head["name"] != names[index] || head["dtype"] != "float32" ||
-        (dynamic
-             ? (head["shape"] != QJsonArray{0, 1, 1, 0} || head["stride"] != 4)
-             : !sameShape(head["shape"].toArray(), shape)))
-      return fail(error, "Model output head contract is invalid");
-  }
-  if (request.modelSha256.empty() ||
-      request.modelSha256 != engine["sha256"].toString().toStdString())
-    return fail(error, "Immutable request model SHA differs from its package");
-  const auto enginePath = QDir(directory).filePath(engine["path"].toString());
-  const auto hash = fileHash(enginePath, kMaximumEngineBytes, error);
-  if (hash.isEmpty() || hash != engine["sha256"].toString())
-    return fail(error,
-                "Model engine SHA-256 does not match its frozen identity");
-  if (engine["bytes"].toDouble() != QFileInfo(enginePath).size())
-    return fail(error, "Model engine byte length differs from its manifest");
-  QJsonObject checked = object;
-  checked["manifestSha256"] = QString::fromLatin1(
-      QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
-  checked["engineAbsolutePath"] = QFileInfo(enginePath).absoluteFilePath();
-  manifest = std::move(checked);
-  return true;
-}
-
 class DetectionModelBackend::Impl {
  public:
   DetectionRequest request;
@@ -341,6 +246,22 @@ class DetectionModelBackend::Impl {
   DetectionModelResourceLimits limits;
   DetectionModelRuntimeHooks hooks;
   bool retryableResourceFailure = false;
+  bool injectedAllocationFailure = false;
+  bool executionCancelled = false;
+  std::uint32_t attemptedExecutionBatch = 0;
+  std::uint64_t neededDeviceBytes = 0;
+  std::uint64_t accountedFreeDeviceBytes = 0;
+  std::uint64_t accountedTotalDeviceBytes = 0;
+  std::uint64_t accountedReservedDeviceBytes = 0;
+
+  bool stopIfCancelled(QString& error) {
+    if (!hooks.cancelled || !hooks.cancelled()) return false;
+    retryableResourceFailure = false;
+    injectedAllocationFailure = false;
+    executionCancelled = true;
+    fail(error, detectionExecutionCancelledMessage());
+    return true;
+  }
 #ifdef SS_DETECTION_TENSORRT
   class Logger final : public nvinfer1::ILogger {
    public:
@@ -376,6 +297,13 @@ class DetectionModelBackend::Impl {
   decltype(&cudaStreamSynchronize) synchronize = nullptr;
   decltype(&cudaMemGetInfo) memoryInfo = nullptr;
   decltype(&cudaGetErrorString) errorString = nullptr;
+  decltype(&cudaGetLastError) lastError = nullptr;
+  int boundDevice = -1;
+  bool deviceBound = false;
+  decltype(&cudaEventCreate) createEvent = nullptr;
+  decltype(&cudaEventDestroy) destroyEvent = nullptr;
+  decltype(&cudaEventRecord) recordEvent = nullptr;
+  decltype(&cudaEventElapsedTime) elapsedEvent = nullptr;
   std::unique_ptr<nvinfer1::IRuntime> runtime;
   std::unique_ptr<nvinfer1::ICudaEngine> engine;
   std::unique_ptr<nvinfer1::IExecutionContext> context;
@@ -388,6 +316,8 @@ class DetectionModelBackend::Impl {
   std::uint32_t modelBins = 0, maximumFrames = 0;
   std::size_t workspaceBytes = 0;
   std::uint64_t streamDrainCount = 0;
+  std::array<cudaEvent_t,64> timingEvents{};
+  std::uint64_t physicalEnqueues = 0;
 
   class StreamDrain {
    public:
@@ -395,8 +325,11 @@ class DetectionModelBackend::Impl {
     ~StreamDrain() {
       // This scope is destroyed before any host buffers used by asynchronous
       // transfers. Preserve the original failure; cleanup cannot overwrite it.
+      // A sticky CUDA error would make the drain return without waiting.
       if (!completed_) {
-        owner_.synchronize(owner_.stream);
+        if (owner_.lastError) owner_.lastError();
+        if (owner_.synchronize && owner_.stream)
+          owner_.synchronize(owner_.stream);
         ++owner_.streamDrainCount;
       }
     }
@@ -412,19 +345,48 @@ class DetectionModelBackend::Impl {
     bool completed_ = false;
   };
 
-  ~Impl() {
-    if (stream && synchronize) synchronize(stream);
+  void releaseCudaResources() {
+    // Clear a sticky allocation error first. Otherwise cudaFree/synchronize
+    // can return that error and leave the earlier buffers allocated. Bind the
+    // device that owns the buffers, destroy the context that aliases the
+    // workspace, then free every pointer. Idempotent.
+    if (lastError) lastError();
+    if (deviceBound && setDevice && boundDevice >= 0) {
+      setDevice(boundDevice);
+      if (lastError) lastError();
+    }
+    if (stream && synchronize) {
+      synchronize(stream);
+      if (lastError) lastError();
+    }
+    for (auto& event : timingEvents) {
+      if (event && destroyEvent) destroyEvent(event);
+      event = nullptr;
+    }
     context.reset();
     engine.reset();
     runtime.reset();
-    for (void* value : memory)
-      if (value && release) release(value);
-    if (stream && destroyStream) destroyStream(stream);
+    if (release) {
+      for (auto& value : memory) {
+        if (!value) continue;
+        release(value);
+        value = nullptr;
+        if (lastError) lastError();
+      }
+    }
+    if (stream && destroyStream) {
+      destroyStream(stream);
+      stream = nullptr;
+      if (lastError) lastError();
+    }
   }
+
+  ~Impl() { releaseCudaResources(); }
 
   bool checkCuda(cudaError_t status, const char* operation, QString& error) {
     if (status == cudaSuccess) return true;
     if (status == cudaErrorMemoryAllocation) retryableResourceFailure = true;
+    if (lastError) lastError();
     return fail(error, QString::fromLatin1(operation) + ": " +
                            QString::fromUtf8(errorString(status)));
   }
@@ -492,6 +454,11 @@ class DetectionModelBackend::Impl {
     SS_RESOLVE_CUDA(synchronize, "cudaStreamSynchronize");
     SS_RESOLVE_CUDA(memoryInfo, "cudaMemGetInfo");
     SS_RESOLVE_CUDA(errorString, "cudaGetErrorString");
+    SS_RESOLVE_CUDA(lastError, "cudaGetLastError");
+    SS_RESOLVE_CUDA(createEvent, "cudaEventCreate");
+    SS_RESOLVE_CUDA(destroyEvent, "cudaEventDestroy");
+    SS_RESOLVE_CUDA(recordEvent, "cudaEventRecord");
+    SS_RESOLVE_CUDA(elapsedEvent, "cudaEventElapsedTime");
 #undef SS_RESOLVE_CUDA
     using RuntimeFactory = void* (*)(void*, int32_t);
     using VersionFunction = int32_t (*)();
@@ -532,9 +499,12 @@ class DetectionModelBackend::Impl {
                   "Engine requires NVIDIA GeForce RTX 5060 Laptop GPU "
                   "SM 12.0; no automatic model/runtime fallback exists");
     if (!checkCuda(setDevice(selected), "cudaSetDevice", error)) return false;
+    boundDevice = selected;
+    deviceBound = true;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     logicalMaximumBatch =
         std::min(request.parameters.batchSize, limits.maximumExecutionBatch);
+    attemptedExecutionBatch = logicalMaximumBatch;
     const auto physicalBatch = scn ? 1 : logicalMaximumBatch;
     modelBins = detectionModelInputBins(request);
     const auto hop =
@@ -565,6 +535,7 @@ class DetectionModelBackend::Impl {
     if (!checkCuda(memoryInfo(&initialFreeBytes, &initialTotalBytes),
                    "cudaMemGetInfo before model", error))
       return false;
+    if (stopIfCancelled(error)) return false;
     const auto enginePath = manifest["engineAbsolutePath"].toString();
     QFile file(enginePath);
     if (!file.open(QIODevice::ReadOnly))
@@ -601,38 +572,81 @@ class DetectionModelBackend::Impl {
             nvinfer1::TensorFormat::kLINEAR)
       return fail(error,
                   "Engine input is not the frozen contiguous float32 tensor");
+    const auto fitsTier = [&](int tier) {
+      const auto candidate = scn
+                                 ? nvinfer1::Dims4(1, 32768, 1, 1)
+                                 : nvinfer1::Dims4(tier, 1,
+                                                   detectionModelTensorFrames(
+                                                       request, maximumFrames),
+                                                   modelBins);
+      for (int profile = 0; profile < engine->getNbOptimizationProfiles();
+           ++profile) {
+        const auto minimum = engine->getProfileShape(
+            inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMIN);
+        const auto maximum = engine->getProfileShape(
+            inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMAX);
+        bool fits = minimum.nbDims == 4 && maximum.nbDims == 4;
+        for (int dimension = 0; fits && dimension < 4; ++dimension)
+          fits = candidate.d[dimension] >= minimum.d[dimension] &&
+                 candidate.d[dimension] <= maximum.d[dimension];
+        if (fits) return profile;
+      }
+      return -1;
+    };
+    QJsonArray supportedTiers;
+    int profileMaximumBatch = 0;
+    if (scn) {
+      if (fitsTier(1) >= 0) {
+        supportedTiers.append(1);
+        profileMaximumBatch = 1;
+      }
+    } else {
+      for (const int tier : {1, 2, 4, 8, 16}) {
+        if (fitsTier(tier) >= 0) {
+          supportedTiers.append(tier);
+          profileMaximumBatch = tier;
+        }
+      }
+    }
+    const int workerLimit = static_cast<int>(logicalMaximumBatch);
+    const int userRequested = static_cast<int>(request.parameters.batchSize);
+    QString profileReason;
+    if (!profileMaximumBatch)
+      return fail(error,
+                  "Installed model package has no optimization profile for "
+                  "execution batch 1, 2, 4, 8 or 16 at this tensor shape");
+    if (scn && userRequested > 1) {
+      profileReason =
+          QString("SCN physical batch is 1; user batch %1 is %2 separate "
+                  "enqueueV3 calls, not one physical batch")
+              .arg(userRequested)
+              .arg(workerLimit);
+    } else if (!scn && workerLimit > profileMaximumBatch) {
+      logicalMaximumBatch = static_cast<std::uint32_t>(profileMaximumBatch);
+      attemptedExecutionBatch = logicalMaximumBatch;
+      profileReason =
+          QString("Engine optimization profile maximum batch is %1; user batch "
+                  "%2 with worker limit %3 selected physical batch %1. The "
+                  "installed engine was not rebuilt.")
+              .arg(profileMaximumBatch)
+              .arg(userRequested)
+              .arg(workerLimit);
+    }
     maximumBatch = scn ? 1 : logicalMaximumBatch;
     const auto shape = scn ? nvinfer1::Dims4(maximumBatch, 32768, 1, 1)
                            : nvinfer1::Dims4(maximumBatch, 1,
                                              detectionModelTensorFrames(
                                                  request, maximumFrames),
                                              modelBins);
-    int selectedProfile = -1;
-    for (int profile = 0; profile < engine->getNbOptimizationProfiles();
-         ++profile) {
-      const auto minimum = engine->getProfileShape(
-          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMIN);
-      const auto maximum = engine->getProfileShape(
-          inputUtf8.constData(), profile, nvinfer1::OptProfileSelector::kMAX);
-      bool fits = minimum.nbDims == 4 && maximum.nbDims == 4;
-      for (int dimension = 0; fits && dimension < 4; ++dimension)
-        fits = shape.d[dimension] >= minimum.d[dimension] &&
-               shape.d[dimension] <= maximum.d[dimension];
-      if (fits) {
-        selectedProfile = profile;
-        break;
-      }
-    }
-    if (selectedProfile < 0) {
-      retryableResourceFailure = true;
+    const int selectedProfile = fitsTier(static_cast<int>(maximumBatch));
+    if (selectedProfile < 0)
       return fail(error,
                   QString("Installed model package cannot execute the actual "
-                          "tensor [%1,%2,%3,%4]; rebuild its resource profiles")
+                          "tensor [%1,%2,%3,%4]")
                       .arg(shape.d[0])
                       .arg(shape.d[1])
                       .arg(shape.d[2])
                       .arg(shape.d[3]));
-    }
     if (!checkCuda(createStream(&stream), "cudaStreamCreate", error) ||
         !context->setOptimizationProfileAsync(selectedProfile, stream) ||
         !checkCuda(synchronize(stream), "profile initialization", error))
@@ -641,18 +655,208 @@ class DetectionModelBackend::Impl {
     if (!context->setInputShape(inputUtf8.constData(), shape))
       return fail(error,
                   "Engine does not accept the frozen maximum batch shape");
-    const auto workspace = context->updateDeviceMemorySizeForShapes();
+    std::int64_t workspace = context->updateDeviceMemorySizeForShapes();
     if (workspace < 0) return fail(error, "Cannot size actual model workspace");
     if (!contiguousTensor(inputUtf8, shape, nvinfer1::TensorIOMode::kINPUT,
                           error))
       return false;
-    workspaceBytes = workspace;
+    int activeProfile = selectedProfile;
+    std::uint32_t boundBatch = maximumBatch;
+    auto bindPhysicalBatch = [&](std::uint32_t batch,
+                                 std::int64_t& workspaceOut) {
+      const auto bound =
+          scn ? nvinfer1::Dims4(batch, 32768, 1, 1)
+              : nvinfer1::Dims4(batch, 1,
+                                detectionModelTensorFrames(request,
+                                                           maximumFrames),
+                                modelBins);
+      const int profile = fitsTier(static_cast<int>(batch));
+      if (profile < 0)
+        return fail(error,
+                    QString("Installed model package cannot execute the actual "
+                            "tensor [%1,%2,%3,%4]")
+                        .arg(bound.d[0])
+                        .arg(bound.d[1])
+                        .arg(bound.d[2])
+                        .arg(bound.d[3]));
+      if (profile != activeProfile &&
+          (!context->setOptimizationProfileAsync(profile, stream) ||
+           !checkCuda(synchronize(stream), "profile initialization", error)))
+        return fail(error,
+                    "Cannot select the actual model resource profile: " +
+                        error);
+      if (profile != activeProfile) activeProfile = profile;
+      if (!context->setInputShape(inputUtf8.constData(), bound))
+        return fail(error,
+                    "Engine does not accept the frozen maximum batch shape");
+      workspaceOut = context->updateDeviceMemorySizeForShapes();
+      if (workspaceOut < 0)
+        return fail(error, "Cannot size actual model workspace");
+      return contiguousTensor(inputUtf8, bound,
+                              nvinfer1::TensorIOMode::kINPUT, error);
+    };
+    std::size_t freeBytes = 0;
+    std::size_t totalBytes = 0;
+    if (!checkCuda(memoryInfo(&freeBytes, &totalBytes), "cudaMemGetInfo",
+                   error))
+      return false;
+    std::uint64_t bytesPerUnitBatch = 0;
+    if (!unitDeviceBytes(modelBins,
+                         detectionModelTensorFrames(request, maximumFrames),
+                         bytesPerUnitBatch)) {
+      retryableResourceFailure = false;
+      return fail(error, detectionBatchOneUnfitMessage(true, 0, freeBytes));
+    }
+    const auto positiveBatch = [](int value) -> std::uint32_t {
+      return value > 0 ? static_cast<std::uint32_t>(value) : 0;
+    };
+    const auto selectBatch = [&](std::uint64_t reserve) {
+      return selectDetectionExecutionBatch(
+          positiveBatch(userRequested), positiveBatch(workerLimit),
+          positiveBatch(profileMaximumBatch), bytesPerUnitBatch,
+          static_cast<std::uint64_t>(freeBytes), reserve);
+    };
+    const auto failUnfit = [&](std::uint64_t reserve) {
+      std::uint64_t needed = 0;
+      const bool fits = detectionExecutionNeededBytes(
+          1, bytesPerUnitBatch, reserve, needed);
+      return fail(error, detectionBatchOneUnfitMessage(!fits, needed,
+                                                       freeBytes));
+    };
+    // Profile maximum is known, and this cudaMemGetInfo call succeeded.
+    // Workspace of the profile-clamped shape is the fixed reserve. A smaller
+    // tier is measured on its own shape before batch 1 is rejected.
+    std::uint64_t reserveBytes = static_cast<std::uint64_t>(workspace);
+    auto vramTier = selectBatch(reserveBytes);
+    if (vramTier == 0 && maximumBatch > 1) {
+      std::int64_t oneWorkspace = 0;
+      if (!bindPhysicalBatch(1, oneWorkspace)) return false;
+      boundBatch = 1;
+      workspace = oneWorkspace;
+      reserveBytes = static_cast<std::uint64_t>(oneWorkspace);
+      vramTier = selectBatch(reserveBytes);
+    }
+    if (vramTier == 0) {
+      // Batch 1 does not fit. A smaller worker limit cannot make a legal tier
+      // below 1, so this is a hard load failure rather than another downgrade.
+      retryableResourceFailure = false;
+      return failUnfit(reserveBytes);
+    }
+    std::uint32_t chosen = 0;
+    for (int index = supportedTiers.size() - 1; index >= 0; --index) {
+      const auto tier =
+          static_cast<std::uint32_t>(supportedTiers.at(index).toInt());
+      if (tier <= vramTier && isDetectionExecutionBatchTier(tier)) {
+        chosen = tier;
+        break;
+      }
+    }
+    if (chosen == 0) {
+      retryableResourceFailure = false;
+      const auto smallest = static_cast<std::uint64_t>(
+          std::max(1, supportedTiers.first().toInt()));
+      const bool fits =
+          (bytesPerUnitBatch == 0 ||
+           smallest <= std::numeric_limits<std::uint64_t>::max() /
+                           bytesPerUnitBatch) &&
+          bytesPerUnitBatch * smallest <=
+              std::numeric_limits<std::uint64_t>::max() - reserveBytes;
+      return fail(error,
+                  QString("No profile-supported execution batch fits available "
+                          "VRAM: needed %1 bytes, free %2 bytes. The load is "
+                          "rejected and no window is skipped.")
+                      .arg(fits ? QString::number(bytesPerUnitBatch * smallest +
+                                                  reserveBytes)
+                                : QString("overflow"))
+                      .arg(QString::number(
+                          static_cast<qulonglong>(freeBytes))));
+    }
+    const auto previousLogical = logicalMaximumBatch;
+    logicalMaximumBatch = detectionReportedLogicalBatch(
+        scn, logicalMaximumBatch, chosen);
+    if (!scn && logicalMaximumBatch != previousLogical) {
+      if (!profileReason.isEmpty()) profileReason += "; ";
+      profileReason +=
+          QString("Available VRAM selected physical batch %1 (profile maximum "
+                  "%2, free %3 bytes, %4 bytes/batch, reserve %5 bytes)")
+              .arg(chosen)
+              .arg(profileMaximumBatch)
+              .arg(QString::number(static_cast<qulonglong>(freeBytes)))
+              .arg(QString::number(bytesPerUnitBatch))
+              .arg(QString::number(reserveBytes));
+    }
+    if (!scn) attemptedExecutionBatch = chosen;
+    if (chosen != boundBatch && !bindPhysicalBatch(chosen, workspace))
+      return false;
+    maximumBatch = chosen;
+    workspaceBytes = static_cast<std::size_t>(workspace);
+    accountedFreeDeviceBytes = static_cast<std::uint64_t>(freeBytes);
+    accountedTotalDeviceBytes = static_cast<std::uint64_t>(totalBytes);
+    accountedReservedDeviceBytes = static_cast<std::uint64_t>(workspace);
+    bool neededFits = false;
+    {
+      std::uint64_t needed = 0;
+      neededFits = detectionExecutionNeededBytes(
+          maximumBatch, bytesPerUnitBatch, accountedReservedDeviceBytes,
+          needed);
+      neededDeviceBytes = neededFits ? needed : 0;
+    }
+    DetectionProfileExtent profileExtent;
+    profileExtent.profileIndex = activeProfile;
+    {
+      const auto capture = [&](nvinfer1::OptProfileSelector selector,
+                               std::int64_t* destination) {
+        const auto dims = engine->getProfileShape(
+            inputUtf8.constData(), activeProfile, selector);
+        if (dims.nbDims != 4)
+          return fail(error, "Engine optimization profile shape is not rank 4");
+        std::int64_t raw[4]{};
+        for (int index = 0; index < 4; ++index)
+          raw[index] = static_cast<std::int64_t>(dims.d[index]);
+        if (!copyDetectionProfileDims(4, raw, destination))
+          return fail(error, "Engine optimization profile shape is not rank 4");
+        return true;
+      };
+      if (!capture(nvinfer1::OptProfileSelector::kMIN, profileExtent.minimum) ||
+          !capture(nvinfer1::OptProfileSelector::kOPT, profileExtent.optimum) ||
+          !capture(nvinfer1::OptProfileSelector::kMAX, profileExtent.maximum))
+        return false;
+      profileExtent.known = true;
+    }
+    if (stopIfCancelled(error)) return false;
+    if (accountedFreeDeviceBytes != 0 &&
+        (!neededFits || neededDeviceBytes > accountedFreeDeviceBytes)) {
+      // Final workspace can differ from the reserve used to pick the tier.
+      // Reject this shape before cudaMalloc. Batch 1 ends the load.
+      attemptedExecutionBatch = maximumBatch;
+      retryableResourceFailure = maximumBatch > 1;
+      injectedAllocationFailure = false;
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          maximumBatch, retryableResourceFailure);
+      return fail(error, detectionBatchFitMessage(
+                             "Execution batch does not fit available VRAM",
+                             maximumBatch, neededDeviceBytes,
+                             accountedFreeDeviceBytes, next));
+    }
+    if (hooks.failDeviceAllocation &&
+        hooks.failDeviceAllocation(maximumBatch, neededDeviceBytes)) {
+      attemptedExecutionBatch = maximumBatch;
+      injectedAllocationFailure = true;
+      retryableResourceFailure = true;
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          maximumBatch, maximumBatch > 1);
+      return fail(error,
+                  detectionBatchFitMessage("Injected device allocation failure",
+                                           maximumBatch, neededDeviceBytes,
+                                           accountedFreeDeviceBytes, next));
+    }
     const std::size_t inputBytes =
         static_cast<std::size_t>(maximumBatch) * modelBins *
         detectionModelTensorFrames(request, maximumFrames) * sizeof(float);
     const std::size_t headBytes = static_cast<std::size_t>(maximumBatch) *
                                   (modelBins / 4) * sizeof(float);
-    const std::size_t allocationBytes = inputBytes + 3 * headBytes + workspace;
+    const std::size_t allocationBytes = inputBytes + 3 * headBytes +
+                                        static_cast<std::size_t>(workspace);
     const auto logicalBatch = static_cast<std::size_t>(logicalMaximumBatch);
     const auto sourceBytes =
         logicalBatch * request.profile.fftSize * maximumFrames * sizeof(float);
@@ -670,8 +874,6 @@ class DetectionModelBackend::Impl {
     const auto hostWorkingSet =
         sourceBytes + preparedBytes +
         std::max<std::size_t>(12 * logicalHeadBytes, temporaryBytes);
-    std::size_t freeBytes = 0;
-    std::size_t totalBytes = 0;
     if (!checkCuda(memoryInfo(&freeBytes, &totalBytes), "cudaMemGetInfo",
                    error))
       return false;
@@ -698,10 +900,19 @@ class DetectionModelBackend::Impl {
     const std::array<std::size_t, 5> sizes{inputBytes, headBytes, headBytes,
                                            headBytes,
                                            static_cast<std::size_t>(workspace)};
-    for (std::size_t index = 0; index < memory.size(); ++index)
-      if (sizes[index] && !checkCuda(allocate(&memory[index], sizes[index]),
-                                     "cudaMalloc", error))
+    for (std::size_t index = 0; index < memory.size(); ++index) {
+      if (!sizes[index]) continue;
+      void* allocated = nullptr;
+      const auto status = allocate(&allocated, sizes[index]);
+      if (!checkCuda(status, "cudaMalloc", error)) {
+        // Ignore a pointer written by a failed cudaMalloc. The physical tier
+        // is what the next legal downshift must shrink.
+        memory[index] = nullptr;
+        attemptedExecutionBatch = maximumBatch;
         return false;
+      }
+      memory[index] = allocated;
+    }
     context->setDeviceMemoryV2(memory[4], static_cast<int64_t>(workspace));
     if (!context->setTensorAddress(inputUtf8.constData(), memory[0]))
       return fail(error, "Cannot bind the bounded model input/workspace");
@@ -720,7 +931,9 @@ class DetectionModelBackend::Impl {
     }
     evidence = {
         {"backend", scn ? "scn-tensorrt" : "ffscn-tensorrt"},
-        {"modelSha256", manifest["engine"].toObject()["sha256"]},
+        {"modelSha256", manifest["loadedEngineSha256"]},
+        {"checkpointSha256", manifest["loadedCheckpointSha256"]},
+        {"engineAbsolutePath", manifest["engineAbsolutePath"]},
         {"manifestSha256", manifest["manifestSha256"]},
         {"profileId", QString::fromStdString(request.profile.id)},
         {"profileVersion", static_cast<int>(request.profile.version)},
@@ -732,8 +945,12 @@ class DetectionModelBackend::Impl {
         {"deviceIndex", selected},
         {"computeCapability", QJsonArray{12, 0}},
         {"engineMaximumBatch", static_cast<int>(maximumBatch)},
-        {"optimizationProfile", selectedProfile},
+        {"optimizationProfile", activeProfile},
         {"logicalMaximumBatch", static_cast<int>(logicalMaximumBatch)},
+        {"physicalBatch", static_cast<int>(maximumBatch)},
+        {"profileMaximumBatch", profileMaximumBatch},
+        {"profileSupportedTiers", supportedTiers},
+        {"batchProfileReason", profileReason},
         {"requestedMaximumBatch",
          static_cast<int>(request.parameters.batchSize)},
         {"modelInputKind",
@@ -767,21 +984,37 @@ class DetectionModelBackend::Impl {
         {"engineBlobBytes", QString::number(engineBytes.size())},
         {"engineBlobBudgetBytes",
          QString::number(limits.maximumEngineBlobBytes)}};
+    DetectionDeviceAccount account;
+    account.cudaDeviceIndex = selected;
+    account.requestedBatch = request.parameters.batchSize;
+    account.logicalBatch = logicalMaximumBatch;
+    account.physicalBatch = maximumBatch;
+    account.freeDeviceBytes = accountedFreeDeviceBytes;
+    account.totalDeviceBytes = accountedTotalDeviceBytes;
+    account.reservedDeviceBytes = accountedReservedDeviceBytes;
+    account.neededDeviceBytes = neededDeviceBytes;
+    writeDetectionDeviceEvidence(evidence, account, profileExtent);
+    for(auto& event:timingEvents)
+      if(!checkCuda(createEvent(&event),"cudaEventCreate timing",error)) return false;
+    evidence["cudaEventTiming"]=true;
     return true;
   }
 
   bool forward(const std::vector<float>& sourceFrames, std::uint32_t batch,
                DetectionModelOutput& result, QString& error,
                std::uint32_t actualFrames) {
+    if (stopIfCancelled(error)) return false;
     const auto frames =
         actualFrames ? actualFrames : request.profile.modelFrames;
     if (!batch || batch > logicalMaximumBatch || !frames ||
         frames > maximumFrames)
       return fail(error, "Actual model window exceeds its planned allocation");
+    QElapsedTimer adaptationTimer;adaptationTimer.start();
     std::vector<float> input;
     if (!prepareDetectionModelInput(request, sourceFrames, batch, input, error,
                                     frames))
       return false;
+    const double adaptationMs=adaptationTimer.nsecsElapsed()/1e6;
     const bool scn = request.profile.backend == DetectionBackendKind::Scn;
     const auto shape =
         scn ? nvinfer1::Dims4(1, 32768, 1, 1)
@@ -806,15 +1039,24 @@ class DetectionModelBackend::Impl {
     const std::uint32_t calls = scn ? batch : 1;
     const auto inputElements = scn ? modelBins : input.size();
     const auto outputElements = scn ? output.width : elements;
+    double enqueueHostMs=0;
     for (std::uint32_t call = 0; call < calls; ++call) {
+      if (stopIfCancelled(error)) return false;
+      if(call*4+3>=timingEvents.size()) return fail(error,"CUDA timing call capacity exceeded");
+      if(!checkCuda(recordEvent(timingEvents[call*4],stream),"cudaEventRecord input",error)) return false;
       if (!checkCuda(copy(memory[0], input.data() + call * inputElements,
                           inputElements * sizeof(float), cudaMemcpyHostToDevice,
                           stream),
                      "cudaMemcpyAsync input", error))
         return false;
+      if(!checkCuda(recordEvent(timingEvents[call*4+1],stream),"cudaEventRecord enqueue start",error)) return false;
+      QElapsedTimer enqueueTimer;enqueueTimer.start();
       if (!context->enqueueV3(stream))
         return fail(error,
                     "TensorRT model enqueue failed: " + logger.lastError());
+      enqueueHostMs+=enqueueTimer.nsecsElapsed()/1e6;
+      ++physicalEnqueues;
+      if(!checkCuda(recordEvent(timingEvents[call*4+2],stream),"cudaEventRecord enqueue end",error)) return false;
       const auto offset = call * outputElements;
       const std::array<float*, 3> destinations{output.hm.data() + offset,
                                                output.bw.data() + offset,
@@ -828,13 +1070,28 @@ class DetectionModelBackend::Impl {
         if (hooks.failAfterQueuedOutput && hooks.failAfterQueuedOutput(index))
           return fail(error, "Injected model failure after queued output copy");
       }
+      if(!checkCuda(recordEvent(timingEvents[call*4+3],stream),"cudaEventRecord output end",error)) return false;
     }
     if (!drain.complete(error)) return false;
+    std::array<double,3> gpuMs{};
+    for(std::uint32_t call=0;call<calls;++call)
+      for(std::size_t part=0;part<gpuMs.size();++part) {
+        float elapsed=0;
+        if(!checkCuda(elapsedEvent(&elapsed,timingEvents[call*4+part],timingEvents[call*4+part+1]),
+            "cudaEventElapsedTime",error)) return false;
+        if(!std::isfinite(elapsed) || elapsed<0) return fail(error,"CUDA event interval is not finite/nonnegative");
+        gpuMs[part]+=elapsed;
+      }
     for (const auto* head : {&output.hm, &output.bw, &output.off})
       if (!std::all_of(head->begin(), head->end(),
                        [](float value) { return std::isfinite(value); }))
         return fail(error, "Model returned a non-finite output head");
     result = std::move(output);
+    evidence["lastInference"]=QJsonObject{{"cudaEventIntervals",true},
+        {"h2dMs",gpuMs[0]},{"gpuStreamMs",gpuMs[1]},{"d2hMs",gpuMs[2]},
+        {"hostEnqueueMs",enqueueHostMs},{"inputAdaptationMs",adaptationMs},
+        {"physicalEnqueueCalls",int(calls)},{"logicalBatch",int(batch)}};
+    evidence["physicalEnqueueCount"]=QString::number(physicalEnqueues);
     evidence["lastActualFrames"] = static_cast<int>(frames);
     evidence["lastTensorFrames"] =
         static_cast<int>(detectionModelTensorFrames(request, frames));
@@ -869,12 +1126,13 @@ QJsonObject DetectionModelBackend::evidence() const {
 bool DetectionModelBackend::load(const DetectionRequest& request,
                                  QString& error) {
   reset();
-  if (!limits_.maximumExecutionBatch || limits_.maximumExecutionBatch > 2)
-    return fail(error, "Execution batch resource limit must be one or two");
+  if (!isDetectionExecutionBatchTier(limits_.maximumExecutionBatch) ||
+      !isDetectionExecutionBatchTier(request.parameters.batchSize))
+    return fail(error, "Execution batch must be 1, 2, 4, 8 or 16");
   QString batchFallbackReason;
   for (auto batch = std::min(request.parameters.batchSize,
                              limits_.maximumExecutionBatch);
-       batch > 0; --batch) {
+       batch > 0; batch = batch == 1 ? 0 : batch / 2) {
     auto candidate = std::make_unique<Impl>();
     candidate->request = request;
     candidate->limits = limits_;
@@ -885,14 +1143,25 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
       return false;
 #ifdef SS_DETECTION_TENSORRT
     if (!candidate->initialize(QFileInfo(modelRoot_).absolutePath(), error)) {
-      if (batch > 1 && candidate->retryableResourceFailure) {
+      const auto attempted = candidate->attemptedExecutionBatch
+                                 ? candidate->attemptedExecutionBatch
+                                 : batch;
+      const auto next = nextDetectionWorkerLimitAfterResourceFailure(
+          attempted, candidate->retryableResourceFailure);
+      if (next != 0) {
         batchFallbackReason = error;
+        // The for-loop halves this value. next is attempted / 2.
+        batch = attempted;
         continue;
       }
       return false;
     }
-    if (!batchFallbackReason.isEmpty())
+    if (!batchFallbackReason.isEmpty()) {
       candidate->evidence["batchAdaptationReason"] = batchFallbackReason;
+      if (detectionAdaptationWasInjected(batchFallbackReason))
+        candidate->evidence["allocationFailureKind"] =
+            QStringLiteral("injected");
+    }
     impl_ = std::move(candidate);
     error.clear();
     return true;
@@ -902,7 +1171,9 @@ bool DetectionModelBackend::load(const DetectionRequest& request,
                 "production inference is unavailable");
 #endif
   }
-  return fail(error, "No execution batch fits the installed model resources");
+  return fail(error,
+              "No execution batch fits the installed model resources. The load "
+              "is rejected and no window is skipped.");
 }
 bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t batch,
@@ -910,7 +1181,9 @@ bool DetectionModelBackend::infer(const std::vector<float>& sourceFrames,
                                   std::uint32_t actualFrames) {
   if (!impl_) return fail(error, "Production model has not passed preflight");
 #ifdef SS_DETECTION_TENSORRT
-  return impl_->forward(sourceFrames, batch, output, error, actualFrames);
+  const bool completed = impl_->forward(sourceFrames, batch, output, error, actualFrames);
+  if (!completed && impl_->executionCancelled) reset();
+  return completed;
 #else
   Q_UNUSED(sourceFrames);
   Q_UNUSED(batch);

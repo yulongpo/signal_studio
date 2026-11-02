@@ -1,0 +1,13 @@
+{
+  "changedAfterDebugFull": [
+    "app/main.cpp"
+  ],
+  "unknownProductionMatlabProfileVerified": false,
+  "reviewState": "Pending independent final review",
+  "releaseFullHead": "717ab8f4146daba9a349ab2aa8854f47f9ab69f3",
+  "debugFullHead": "064b509ba8384bd0f7a13abab40cb810675d91b6",
+  "finalCliDeploymentCases": 12,
+  "finalCodeHead": "05d80d54c8bf1f73788a84cdd8438ccf617eacb4",
+  "testAndBusinessCppUnchanged": true,
+  "stage": "Local validation freeze before independent review"
+}

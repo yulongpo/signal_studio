@@ -1,13 +1,19 @@
 #include "infrastructure/detection_task.h"
 
+#include <QScopeGuard>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QStorageInfo>
+#include <QStringList>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <limits>
+#include <optional>
 #include <unordered_set>
 
 #include "application/annotation_service.h"
@@ -16,11 +22,13 @@
 #include "infrastructure/detection_frequency_analysis.h"
 #include "infrastructure/detection_projection.h"
 #include "infrastructure/detection_protocol.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 #include "infrastructure/detection_refined_publication.h"
 #include "infrastructure/detection_source.h"
 #include "infrastructure/detection_store.h"
 #include "infrastructure/detection_time_analysis.h"
 #include "infrastructure/detection_worker_client.h"
+#include "infrastructure/runtime_log.h"
 #include "infrastructure/source_loader.h"
 
 namespace signalstudio {
@@ -45,8 +53,45 @@ std::string boundedErrorSummary(const QString& error) {
       .toStdString();
 }
 
+QString detectionAction(bool sealed, bool fused) {
+  if (sealed && fused) return QStringLiteral("seal,online-fusion");
+  if (sealed) return QStringLiteral("seal");
+  if (fused) return QStringLiteral("online-fusion");
+  return QStringLiteral("none");
+}
+void logDetection(const DetectionRun& run, const QString& event, std::uint32_t batch,
+                  std::size_t openTracks, std::size_t sealedTracks,
+                  std::uint64_t comparisons, const QString& action,
+                  const QString& errorText) {
+  const auto error = errorText.isEmpty() ? QString::fromStdString(run.error) : errorText;
+  const auto resolved =
+      error.contains(QLatin1String("frequency-fusion-comparison-limit-exceeded"))
+          ? QStringLiteral("open-set-limit")
+          : action;
+  const auto summary = QString::fromStdString(boundedErrorSummary(error));
+  RuntimeLog::write(
+      QStringLiteral("detection"),
+      QStringList{"run=" + QString::fromStdString(run.request.runId),
+                  "phase=" + QString::fromStdString(run.computationPhase),
+                  "windows=" + QString::number(run.completedWindows) + "/" +
+                      QString::number(run.eligibleWindows),
+                  "batch=" + QString::number(batch), "event=" + event,
+                  "error=" + summary, "open=" + QString::number(openTracks),
+                  "sealed=" + QString::number(sealedTracks),
+                  "comparisons=" + QString::number(comparisons),
+                  "action=" + resolved}
+          .join(' '));
+}
 std::uint64_t nowMilliseconds() {
   return static_cast<std::uint64_t>(QDateTime::currentMSecsSinceEpoch());
+}
+bool captureParentSteadyNanoseconds(std::uint64_t& nanoseconds) {
+  const auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+  if (count < 0) return false;
+  nanoseconds = static_cast<std::uint64_t>(count);
+  return true;
 }
 std::string digest(const QByteArray& bytes) {
   return QCryptographicHash::hash(bytes, QCryptographicHash::Sha256)
@@ -455,7 +500,150 @@ void preserveFrequencyEvidence(
     annotation.originEvidence = std::move(origin);
   }
 }
+std::function<std::optional<std::uint64_t>(const QString&)> volumeFreeBytesProbe;
+
+std::optional<std::uint64_t> volumeFreeBytes(const QString& path) {
+  if (volumeFreeBytesProbe) return volumeFreeBytesProbe(path);
+  if (path.isEmpty()) return std::nullopt;
+  const QStorageInfo volume(path);
+  if (!volume.isValid() || !volume.isReady() || volume.bytesAvailable() < 0)
+    return std::nullopt;
+  return static_cast<std::uint64_t>(volume.bytesAvailable());
+}
+QString legacyCombinedPreflightError(const DetectionSourcePlan& plan,
+                                     const DetectionRequest& request) {
+  if (!request.legacyCombinedEvidence || !plan.eligibleWindowCount) return {};
+  const auto perWindow =
+      plan.modelHeadBytesPerWindow + plan.estimatedWindowEvidenceBytes;
+  if (!perWindow) return {};
+  const auto windows = plan.eligibleWindowCount;
+  const bool overflow = windows > ~std::uint64_t{0} / perWindow;
+  const auto required = overflow ? std::uint64_t{0} : windows * perWindow;
+  if (!overflow && required <= request.evidenceBudgetBytes) return {};
+  const auto requiredText =
+      overflow ? QString("more than %1").arg(QString::number(~std::uint64_t{0}))
+               : QString::number(required);
+  return QString(
+             "Legacy combined evidence budget rejected at preflight: %1 windows "
+             "require %2 bytes; allowed %3 bytes. Reduce the range, increase "
+             "the frame interval, or set a raw-head quota.")
+      .arg(windows)
+      .arg(requiredText)
+      .arg(request.evidenceBudgetBytes);
+}
+QString jsonObservationPreflightError(const DetectionSourcePlan& plan,
+                                      const DetectionRequest& request) {
+  if (!plan.eligibleWindowCount || !plan.estimatedWindowEvidenceBytes) return {};
+  const auto perWindow = plan.estimatedWindowEvidenceBytes;
+  const auto windows = plan.eligibleWindowCount;
+  if (windows <= request.evidenceBudgetBytes / perWindow) return {};
+  return QString(
+             "JSON observation evidence budget rejected before inference: up to "
+             "%1 windows x %2 mapping bytes; limit %3 bytes. Reduce the range "
+             "or explicitly provision bounded metadata storage.")
+      .arg(windows)
+      .arg(perWindow)
+      .arg(request.evidenceBudgetBytes);
+}
+QString explicitRawHeadPreflightError(const DetectionSourcePlan& plan,
+                                      const DetectionRequest& request) {
+  if (!request.rawHeadBudgetBytes || !plan.modelHeadBytesPerWindow ||
+      !plan.eligibleWindowCount)
+    return {};
+  const auto perWindow = plan.modelHeadBytesPerWindow;
+  const auto windows = plan.eligibleWindowCount;
+  if (windows <= request.rawHeadBudgetBytes / perWindow) return {};
+  return QString(
+             "Raw model head disk budget rejected before inference: %1 windows "
+             "x %2 bytes; limit %3 bytes. Reduce the range, increase the frame "
+             "interval or explicitly provision a bounded artifact quota.")
+      .arg(windows)
+      .arg(perWindow)
+      .arg(request.rawHeadBudgetBytes);
+}
+QString retainedRawHeadPreflight(const QString& directory,
+                                 const DetectionSourcePlan& plan,
+                                 DetectionRequest& request) {
+  if (!request.retainRawModelOutput || !plan.eligibleWindowCount ||
+      !plan.modelHeadBytesPerWindow)
+    return {};
+  const auto windows = plan.eligibleWindowCount;
+  const auto perWindow = plan.modelHeadBytesPerWindow;
+  if (windows > std::numeric_limits<std::uint64_t>::max() / perWindow) {
+    return QString(
+               "Raw model output retention rejected before inference: %1 "
+               "windows x %2 bytes overflow the disk quota.")
+        .arg(windows)
+        .arg(perWindow);
+  }
+  const auto required = windows * perWindow;
+  if (request.rawHeadBudgetBytes != 0 && required > request.rawHeadBudgetBytes) {
+    return QString(
+               "Raw model head disk budget rejected before inference: %1 windows "
+               "x %2 bytes; limit %3 bytes. Reduce the range, increase the frame "
+               "interval or explicitly provision a bounded artifact quota.")
+        .arg(windows)
+        .arg(perWindow)
+        .arg(request.rawHeadBudgetBytes);
+  }
+  const auto available = volumeFreeBytes(directory);
+  if (!available) {
+    return QString(
+               "Raw model output retention rejected before inference: %1 "
+               "windows x %2 bytes require %3 bytes; remaining disk bytes are "
+               "unavailable.")
+        .arg(windows)
+        .arg(perWindow)
+        .arg(required);
+  }
+  if (required > *available) {
+    return QString(
+               "Raw model output retention rejected before inference: %1 "
+               "windows x %2 bytes require %3 bytes; %4 bytes remain.")
+        .arg(windows)
+        .arg(perWindow)
+        .arg(required)
+        .arg(*available);
+  }
+  if (request.rawHeadBudgetBytes == 0) request.rawHeadBudgetBytes = required;
+  return {};
+}
 }  // namespace
+
+bool detectionModelEvidenceIsDurable(const DetectionRequest& request) {
+  return request.legacyCombinedEvidence || request.rawHeadBudgetBytes > 0;
+}
+void preserveDurableModelEvidence(AnnotationSourceSet& set,
+                                  const DetectionRequest& request,
+                                  const QJsonObject& evidence) {
+  // Mappings receive modelEvidence only while raw heads or the legacy combined
+  // ledger are stored. Recovery rebuilds supplemental text from those mappings.
+  // A last-batch lastInference object that never reaches disk must not make
+  // encodeSourceSet disagree with the recovered publication.
+  if (!detectionModelEvidenceIsDurable(request)) return;
+  preserveRuntimeEvidence(set, evidence);
+}
+
+QString applyDetectionEvidencePreflight(const QString& projectDirectory,
+                                        const DetectionSourcePlan& plan,
+                                        DetectionRequest& request) {
+  if (request.legacyCombinedEvidence)
+    return legacyCombinedPreflightError(plan, request);
+  if (request.retainRawModelOutput) {
+    if (const auto disk =
+            retainedRawHeadPreflight(projectDirectory, plan, request);
+        !disk.isEmpty())
+      return disk;
+  } else if (const auto raw = explicitRawHeadPreflightError(plan, request);
+             !raw.isEmpty()) {
+    return raw;
+  }
+  return jsonObservationPreflightError(plan, request);
+}
+void setDetectionVolumeFreeBytesProbeForTest(
+    std::function<std::optional<std::uint64_t>(const QString&)> probe) {
+  volumeFreeBytesProbe = std::move(probe);
+}
 
 bool recoverDetectionPublication(const QString& directory,
                                  const DetectionRun& run,
@@ -639,19 +827,60 @@ DetectionTaskManager::~DetectionTaskManager() {
   for (const auto& job : jobs_) job->cancelled = true;
   if (thread_.joinable()) thread_.join();
 }
-bool DetectionTaskManager::enqueue(const QString& directory,
-                                   const FileMetadata& metadata,
-                                   DetectionRequest request, QString& error) {
-  const auto valid = validateDetectionRequest(request);
+bool DetectionTaskManager::prepareQueuedRun(
+    const QString& directory, const FileMetadata& metadata,
+    DetectionRequest request, QueuedDetectionRun& prepared, QString& error,
+    const std::function<bool()>& cancel) const {
+  const auto runId = request.runId;
+  bool accepted = false;
+  const QScopeGuard rejected([&] {
+    if (accepted || error.startsWith(QStringLiteral("Cancelled during")))
+      return;
+    DetectionRun snap;
+    snap.request.runId = runId;
+    snap.computationPhase = "preflight";
+    snap.error = error.toStdString();
+    logDetection(snap, QStringLiteral("preflight-rejected"), 0, 0, 0, 0,
+                 QStringLiteral("none"), error);
+  });
+  const auto preparationCancelled = [&] {
+    if (cancel && cancel()) {
+      error = QStringLiteral("Cancelled during detection preparation");
+      return true;
+    }
+    return false;
+  };
+  struct ObservedMark {
+    const char* name = nullptr;
+    std::uint64_t steadyNanoseconds = 0;
+  };
+  std::vector<ObservedMark> observed;
+  const auto observe = [&](const char* name) {
+    std::uint64_t nanoseconds = 0;
+    if (!captureParentSteadyNanoseconds(nanoseconds)) return;
+    observed.push_back(ObservedMark{name, nanoseconds});
+  };
+  if (preparationCancelled()) return false;
+  // Freeze itself is C's call. This records that a fixture, or a snapshot C
+  // already froze, was still in place when preparation started.
+  if (request.profile.backend == DetectionBackendKind::Fixture ||
+      (!request.modelManifestPath.empty() && !request.modelSha256.empty()))
+    observe(kDetectionMarkModelSnapshotReady);
+  observe(kDetectionMarkPreflightStart);
+  const auto valid =
+      validateDetectionRequest(request, directory.toStdString());
   if (!valid || !QDir(directory).exists()) {
     error = valid ? "Create or save a project directory before detection"
                   : QString::fromStdString(valid.error);
     return false;
   }
+  if (preparationCancelled()) return false;
   const auto current = annotationSourceIdentity(
       metadata, request.sourceIdentity.projectGeneration);
   if (current.fileId != request.sourceIdentity.fileId ||
       current.path != request.sourceIdentity.path ||
+      current.selectedSampleChannel !=
+          request.sourceIdentity.selectedSampleChannel ||
       current.sampleFormat != request.sourceIdentity.sampleFormat ||
       current.sampleRateHz != request.sourceIdentity.sampleRateHz ||
       current.centerFrequencyHz != request.sourceIdentity.centerFrequencyHz ||
@@ -660,7 +889,9 @@ bool DetectionTaskManager::enqueue(const QString& directory,
     error = "Source metadata differs from the immutable detection request";
     return false;
   }
+  if (preparationCancelled()) return false;
   DetectionSourceConfig config;
+  config.preferGpu = request.gpuDspPreferred;
   config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
@@ -670,11 +901,42 @@ bool DetectionTaskManager::enqueue(const QString& directory,
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
   config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.rawHeadBudgetBytes = request.rawHeadBudgetBytes;
+  config.legacyCombinedRawHeads = request.legacyCombinedEvidence;
   config.maximumCandidates = request.parameters.topK;
   DetectionSourcePlan plan;
+  if (preparationCancelled()) return false;
   if (!makeDetectionSourcePlan(metadata, request.requestedRange, config, plan,
-                               error, request.sourceIdentity.projectGeneration))
+                               error, request.sourceIdentity.projectGeneration,
+                               cancel))
     return false;
+  observe(kDetectionMarkSourcePlanReady);
+  if (preparationCancelled()) return false;
+  // Raw-head retention and the JSON observation ledger are both known before
+  // a worker, task directory, or .f32 file is created.
+  if (const auto rejection =
+          applyDetectionEvidencePreflight(directory, plan, request);
+      !rejection.isEmpty()) {
+    prepared = {};
+    prepared.run.lifecycle = DetectionLifecycle::Failed;
+    prepared.run.computationPhase = "preflight";
+    prepared.run.error = rejection.toStdString();
+    prepared.run.request = std::move(request);
+    error = rejection;
+    return false;
+  }
+  std::string resourceProfile;
+  if (!assessDetectionResourcePreflight(directory, plan, request, resourceProfile, error)) {
+    prepared = {};
+    prepared.run.request = request;
+    prepared.run.lifecycle = DetectionLifecycle::Failed;
+    prepared.run.computationPhase = "preflight";
+    prepared.run.error = error.toStdString();
+    prepared.run.performanceJson = std::move(resourceProfile);
+    return false;
+  }
+  observe(kDetectionMarkPreflightEnd);
+  if (preparationCancelled()) return false;
   std::uint64_t pipelineReserve = 0;
   const auto executionBatch = detectionExecutionBatchSize(
       plan, request.parameters.batchSize, pipelineReserve);
@@ -684,6 +946,7 @@ bool DetectionTaskManager::enqueue(const QString& directory,
         "budget after reducing the execution batch";
     return false;
   }
+  if (preparationCancelled()) return false;
   request.contextRange = {
       {std::min(request.requestedRange.time.begin, plan.contextRange.begin),
        std::max(std::min(request.requestedRange.time.end,
@@ -691,33 +954,118 @@ bool DetectionTaskManager::enqueue(const QString& directory,
                 plan.contextRange.end)},
       {metadata.centerFrequencyHz - metadata.sampleRateHz / 2,
        metadata.centerFrequencyHz + metadata.sampleRateHz / 2}};
+  if (preparationCancelled()) return false;
+  if (request.sourceIdentity.quickFingerprint.empty()) {
+    if (preparationCancelled()) return false;
+    request.sourceIdentity.quickFingerprint =
+        iqSourceFingerprint(QString::fromStdString(metadata.path))
+            .toStdString();
+  }
+  if (preparationCancelled()) return false;
+  prepared = {};
+  prepared.executionBatchSize = executionBatch;
+  prepared.publicationBudgetBytes =
+      request.workingSetBudgetBytes - pipelineReserve;
+  prepared.sourcePlan = std::move(plan);
+  prepared.hasSourcePlan = true;
+  prepared.run.request = std::move(request);
+  prepared.run.performanceJson = std::move(resourceProfile);
+  prepared.run.device = "CPU spectrum / isolated worker";
+  prepared.run.runtime = "worker-v1";
+  error.clear();
+  accepted = true;
+  for (const auto& mark : observed)
+    noteSteadyMark(runId, mark.name, mark.steadyNanoseconds);
+  return true;
+}
+bool DetectionTaskManager::persistQueuedRun(const QString& directory,
+                                            const DetectionRun& run,
+                                            QString& error) const {
+  if (!persistRun_(directory, run, error)) return false;
+  // The manifest file from this call does not yet contain the mark. queue
+  // adopts it and writes the timeline on its own successful persist.
+  std::uint64_t nanoseconds = 0;
+  if (captureParentSteadyNanoseconds(nanoseconds))
+    noteSteadyMark(run.request.runId, kDetectionMarkManifestCommitted,
+                   nanoseconds);
+  return true;
+}
+bool DetectionTaskManager::canEnqueue(const std::string& runId,
+                                      QString& error) const {
   std::lock_guard lock(mutex_);
   const auto queued = std::count_if(
       jobs_.begin(), jobs_.end(),
       [](const auto& job) { return !detectionIsTerminal(job->run.lifecycle); });
   if (queued >= 32 || jobs_.size() >= 4096 ||
       std::any_of(jobs_.begin(), jobs_.end(), [&](const auto& job) {
-        return job->run.request.runId == request.runId;
+        return job->run.request.runId == runId;
       })) {
     error = "Task queue is full or the run ID already exists";
+    return false;
+  }
+  return true;
+}
+bool DetectionTaskManager::enqueue(const QString& directory,
+                                   const FileMetadata& metadata,
+                                   DetectionRequest request, QString& error) {
+  QueuedDetectionRun prepared;
+  if (!prepareQueuedRun(directory, metadata, std::move(request), prepared,
+                        error))
+    return false;
+  return queuePreparedRun(directory, metadata, std::move(prepared), error);
+}
+bool DetectionTaskManager::queuePreparedRun(const QString& directory,
+                                            const FileMetadata& metadata,
+                                            QueuedDetectionRun prepared,
+                                            QString& error) {
+  std::lock_guard lock(mutex_);
+  const auto queued = std::count_if(
+      jobs_.begin(), jobs_.end(),
+      [](const auto& job) { return !detectionIsTerminal(job->run.lifecycle); });
+  if (queued >= 32 || jobs_.size() >= 4096 ||
+      std::any_of(jobs_.begin(), jobs_.end(), [&](const auto& job) {
+        return job->run.request.runId == prepared.run.request.runId;
+      })) {
+    error = "Task queue is full or the run ID already exists";
+    DetectionRun snap = prepared.run;
+    snap.computationPhase = "preflight";
+    logDetection(snap, QStringLiteral("enqueue-rejected"), 0, 0, 0, 0,
+                 QStringLiteral("none"), error);
     return false;
   }
   auto job = std::make_shared<Job>();
   job->directory = directory;
   job->metadata = metadata;
-  job->executionBatchSize = executionBatch;
-  job->publicationBudgetBytes = request.workingSetBudgetBytes - pipelineReserve;
-  if (request.sourceIdentity.quickFingerprint.empty()) {
-    request.sourceIdentity.quickFingerprint =
-        iqSourceFingerprint(QString::fromStdString(metadata.path))
-            .toStdString();
-    job->metadata.availability.fingerprint =
-        request.sourceIdentity.quickFingerprint;
+  job->executionBatchSize = prepared.executionBatchSize;
+  job->publicationBudgetBytes = prepared.publicationBudgetBytes;
+  job->sourcePlan = std::move(prepared.sourcePlan);
+  job->hasSourcePlan = prepared.hasSourcePlan;
+  job->metadata.availability.fingerprint =
+      prepared.run.request.sourceIdentity.quickFingerprint;
+  job->run = std::move(prepared.run);
+  adoptSteadyMarksLocked(job);
+  const bool manifestRecorded = std::any_of(
+      job->steadyMarks.begin(), job->steadyMarks.end(),
+      [](const SteadyMark& mark) {
+        return mark.name == kDetectionMarkManifestCommitted;
+      });
+  if (!manifestRecorded) {
+    std::uint64_t nanoseconds = 0;
+    if (captureParentSteadyNanoseconds(nanoseconds))
+      job->steadyMarks.push_back(
+          SteadyMark{kDetectionMarkManifestCommitted, nanoseconds});
   }
-  job->run.request = std::move(request);
-  job->run.device = "CPU spectrum / isolated worker";
-  job->run.runtime = "worker-v1";
-  if (!persistRun_(directory, job->run, error)) return false;
+  materializeTimelineLocked(job);
+  if (!persistRun_(directory, job->run, error)) {
+    if (!job->run.request.runId.empty() && !job->steadyMarks.empty())
+      pendingSteadyMarks_[job->run.request.runId] = std::move(job->steadyMarks);
+    DetectionRun snap = job->run;
+    snap.computationPhase = snap.computationPhase.empty() ? "preflight"
+                                                         : snap.computationPhase;
+    logDetection(snap, QStringLiteral("enqueue-rejected"), 0, 0, 0, 0,
+                 QStringLiteral("none"), error);
+    return false;
+  }
   jobs_.push_back(std::move(job));
   return true;
 }
@@ -764,17 +1112,37 @@ void DetectionTaskManager::invalidateSource(const std::string& runId,
   }
   cancel(runId);
 }
+void DetectionTaskManager::bindSchedulingProbeForTest(
+    std::function<void()> beforeProducerTerminalLock,
+    std::function<void()> beforePumpJoin) {
+  beforeProducerTerminalLock_ = std::move(beforeProducerTerminalLock);
+  beforePumpJoin_ = std::move(beforePumpJoin);
+}
 void DetectionTaskManager::pump() {
-  std::lock_guard lock(mutex_);
+  std::unique_lock lock(mutex_);
   if (active_ && !active_->finished) return;
-  if (thread_.joinable()) thread_.join();
+  // finish() stores the terminal run before execute()'s preview guard locks
+  // mutex_. Join outside this lock so that guard can run and the producer
+  // can exit; the caller then reads the terminal snapshots().
+  if (thread_.joinable()) {
+    std::jthread joining = std::move(thread_);
+    lock.unlock();
+    if (beforePumpJoin_) beforePumpJoin_();
+    joining.join();
+    lock.lock();
+  }
   active_.reset();
   for (const auto& job : jobs_) {
     if (job->started || job->run.lifecycle != DetectionLifecycle::Queued)
       continue;
     active_ = job;
     job->started = true;
-    thread_ = std::jthread([this, job] { execute(job); });
+    thread_ = std::jthread([this, job] {
+      try { execute(job); }
+      catch(const std::exception& exception) {
+        finish(job,DetectionLifecycle::Failed,"Unhandled detection stage exception: "+QString::fromUtf8(exception.what()));
+      } catch(...) { finish(job,DetectionLifecycle::Failed,"Unknown detection stage exception"); }
+    });
     break;
   }
 }
@@ -783,6 +1151,72 @@ std::vector<DetectionRun> DetectionTaskManager::snapshots() const {
   std::vector<DetectionRun> result;
   for (const auto& job : jobs_) result.push_back(job->run);
   return result;
+}
+void DetectionTaskManager::retainPreview(DetectionRun run,
+                                        DetectionPreviewSnapshot preview) {
+  preview.runId = run.request.runId;
+  preview.fileId = run.request.sourceIdentity.fileId;
+  preview.projectGeneration = run.request.sourceIdentity.projectGeneration;
+  std::lock_guard lock(mutex_);
+  for (auto& existing : jobs_) {
+    if (existing->run.request.runId != run.request.runId) continue;
+    const bool terminal = detectionIsTerminal(run.lifecycle);
+    existing->run = std::move(run);
+    existing->preview = std::move(preview);
+    existing->started = true;
+    existing->finished = terminal;
+    adoptSteadyMarksLocked(existing);
+    return;
+  }
+  auto job = std::make_shared<Job>();
+  job->started = true;
+  job->finished = detectionIsTerminal(run.lifecycle);
+  job->run = std::move(run);
+  job->preview = std::move(preview);
+  adoptSteadyMarksLocked(job);
+  jobs_.push_back(std::move(job));
+}
+namespace {
+bool samePreviewScope(const DetectionRun& run, const std::string& fileId,
+                      std::uint32_t sampleChannel,
+                      std::uint64_t projectGeneration) {
+  const auto& identity = run.request.sourceIdentity;
+  return identity.fileId == fileId &&
+         identity.selectedSampleChannel == sampleChannel &&
+         identity.projectGeneration == projectGeneration;
+}
+bool previewTracksVisible(const DetectionPreviewSnapshot& preview) {
+  return !preview.events.empty() && (!preview.sealed || preview.unpublished);
+}
+}  // namespace
+DetectionPreviewSnapshot DetectionTaskManager::previewFor(
+    const std::string& fileId, std::uint32_t sampleChannel,
+    std::uint64_t projectGeneration) const {
+  std::lock_guard lock(mutex_);
+  // Newest first. Another channel's later job is not a candidate. A terminal
+  // snapshot is used only while its tracks are still visible.
+  for (auto it = jobs_.rbegin(); it != jobs_.rend(); ++it) {
+    const auto& job = *it;
+    if (!samePreviewScope(job->run, fileId, sampleChannel, projectGeneration))
+      continue;
+    if (!detectionIsTerminal(job->run.lifecycle) ||
+        previewTracksVisible(job->preview))
+      return job->preview;
+  }
+  return {};
+}
+void DetectionTaskManager::discardUnpublishedPreview(
+    const std::string& fileId, std::uint32_t sampleChannel,
+    std::uint64_t projectGeneration) {
+  std::lock_guard lock(mutex_);
+  for (auto& job : jobs_) {
+    if (!samePreviewScope(job->run, fileId, sampleChannel, projectGeneration))
+      continue;
+    if (!job->preview.unpublished) continue;
+    job->preview.events.clear();
+    job->preview.dropped = 0;
+    job->preview.unpublished = false;
+  }
 }
 bool DetectionTaskManager::takePublication(const std::string& runId,
                                            DetectionPublication& publication) {
@@ -797,24 +1231,180 @@ bool DetectionTaskManager::takePublication(const std::string& runId,
   }
   return false;
 }
+QJsonObject bindDetectionPerformanceTimings(QJsonObject performance,
+                                           const QJsonObject& tensorRtCudaEvents) {
+  performance.remove("gpu");
+  QJsonObject events = tensorRtCudaEvents;
+  for (const auto* display : {"qrhi", "qrhiMs", "displayMs", "gpuDsp"})
+    events.remove(display);
+  performance.insert("tensorRtInference", events);
+  return performance;
+}
+std::string DetectionTaskManager::performanceSnapshot(const std::shared_ptr<Job>& job) const {
+  // Called while mutex_ protects both the producer and UI snapshots.
+  QJsonObject batches;
+  for(std::size_t i=1;i<job->batches.size();++i)
+    if(job->batches[i]) batches[QString::number(i)]=QString::number(job->batches[i]);
+  auto profile = bindDetectionPerformanceTimings(QJsonObject{
+      {"schema","signal-studio-detection-profile-v1"},
+      {"pipelineStages",job->profiling.snapshot()},{"sourceStages",job->sourceProfile},
+      {"logicalBatchDistribution",batches},
+      {"modelProfile",job->modelProfile},
+      {"worker",job->workerDiagnostic},
+      {"requestedBatch",int(job->run.request.parameters.batchSize)},
+      {"executionBatchLimit",int(job->executionBatchSize)},
+      {"firstDecodedCandidateMs",double(job->firstDecodedCandidateMs)},
+      {"frequencyTracksReadyMs",double(job->frequencyReadyMs)},
+      {"timingBoundary","host stage totals may nest; CUDA timings are stream-event intervals; not UI paint latency"}},
+      job->gpuProfile);
+  const auto prior = QJsonDocument::fromJson(QByteArray::fromStdString(job->run.performanceJson));
+  if (prior.isObject() && prior.object().contains("resources"))
+    profile.insert("resources", prior.object().value("resources"));
+  if (!job->steadyMarks.empty())
+    profile.insert(QStringLiteral("timeline"), timelineObject(job));
+  return QJsonDocument(profile).toJson(QJsonDocument::Compact).toStdString();
+}
+QJsonObject DetectionTaskManager::timelineObject(
+    const std::shared_ptr<Job>& job) const {
+  QJsonArray marks;
+  auto ordered = job->steadyMarks;
+  std::stable_sort(ordered.begin(), ordered.end(), [](const auto& a, const auto& b) {
+    return a.steadyNanoseconds < b.steadyNanoseconds;
+  });
+  for (const auto& mark : ordered) {
+    marks.append(QJsonObject{
+        {QStringLiteral("name"), QString::fromStdString(mark.name)},
+        {QStringLiteral("steadyNs"),
+         QString::number(static_cast<qulonglong>(mark.steadyNanoseconds))}});
+  }
+  return QJsonObject{
+      {QStringLiteral("clock"), QStringLiteral("steady_clock_ns")},
+      {QStringLiteral("runId"), QString::fromStdString(job->run.request.runId)},
+      {QStringLiteral("marks"), marks}};
+}
+void DetectionTaskManager::rememberTimelineLocked(
+    const std::shared_ptr<Job>& job) const {
+  if (!job || job->run.performanceJson.empty()) return;
+  const auto document = QJsonDocument::fromJson(
+      QByteArray::fromStdString(job->run.performanceJson));
+  if (!document.isObject()) return;
+  const auto marks = document.object()
+                         .value(QStringLiteral("timeline"))
+                         .toObject()
+                         .value(QStringLiteral("marks"))
+                         .toArray();
+  for (const auto& value : marks) {
+    const auto object = value.toObject();
+    const auto name =
+        object.value(QStringLiteral("name")).toString().toStdString();
+    if (name.empty()) continue;
+    bool ok = false;
+    const auto parsed =
+        object.value(QStringLiteral("steadyNs")).toString().toULongLong(&ok);
+    if (!ok) continue;
+    const auto nanoseconds = static_cast<std::uint64_t>(parsed);
+    mergeSteadyMark(job->steadyMarks, SteadyMark{name, nanoseconds});
+  }
+}
+void DetectionTaskManager::materializeTimelineLocked(
+    const std::shared_ptr<Job>& job) const {
+  if (!job) return;
+  rememberTimelineLocked(job);
+  if (job->steadyMarks.empty()) return;
+  QJsonObject root;
+  if (!job->run.performanceJson.empty()) {
+    const auto document = QJsonDocument::fromJson(
+        QByteArray::fromStdString(job->run.performanceJson));
+    if (!document.isObject()) return;
+    root = document.object();
+  }
+  if (!root.contains(QStringLiteral("schema"))) {
+    root.insert(QStringLiteral("schema"),
+                QStringLiteral("signal-studio-detection-profile-v1"));
+  }
+  root.insert(QStringLiteral("timeline"), timelineObject(job));
+  job->run.performanceJson =
+      QJsonDocument(root).toJson(QJsonDocument::Compact).toStdString();
+}
+void DetectionTaskManager::adoptSteadyMarksLocked(
+    const std::shared_ptr<Job>& job) const {
+  if (!job) return;
+  rememberTimelineLocked(job);
+  const auto& runId = job->run.request.runId;
+  if (!runId.empty()) {
+    auto pending = pendingSteadyMarks_.find(runId);
+    if (pending != pendingSteadyMarks_.end()) {
+      for (auto& mark : pending->second) mergeSteadyMark(job->steadyMarks, std::move(mark));
+      pendingSteadyMarks_.erase(pending);
+    }
+  }
+  materializeTimelineLocked(job);
+}
+void DetectionTaskManager::noteSteadyMark(const std::string& runId,
+                                          const char* name,
+                                          std::uint64_t steadyNanoseconds) const {
+  if (runId.empty() || name == nullptr || name[0] == '\0') return;
+  SteadyMark mark{name, steadyNanoseconds};
+  std::lock_guard lock(mutex_);
+  for (auto& job : jobs_) {
+    if (job->run.request.runId != runId) continue;
+    rememberTimelineLocked(job);
+    mergeSteadyMark(job->steadyMarks, std::move(mark));
+    materializeTimelineLocked(job);
+    return;
+  }
+  mergeSteadyMark(pendingSteadyMarks_[runId], std::move(mark));
+}
+void DetectionTaskManager::mergeSteadyMark(std::vector<SteadyMark>& marks, SteadyMark mark) {
+  const auto found = std::find_if(marks.begin(), marks.end(),
+      [&](const auto& existing) { return existing.name == mark.name; });
+  if (found == marks.end()) marks.push_back(std::move(mark));
+  else found->steadyNanoseconds = std::min(found->steadyNanoseconds, mark.steadyNanoseconds);
+}
+void DetectionTaskManager::discardPendingSteadyMarks(const std::string& runId) const {
+  std::lock_guard lock(mutex_);
+  pendingSteadyMarks_.erase(runId);
+}
 bool DetectionTaskManager::checkpoint(const std::shared_ptr<Job>& job,
                                       QString& error) {
   DetectionRun run;
   {
     std::lock_guard lock(mutex_);
+    rememberTimelineLocked(job);
+    job->run.performanceJson=performanceSnapshot(job);
     run = job->run;
+  }
+  if (!profileDetectionCheckpointResources(job->directory, run, error)) return false;
+  {
+    std::lock_guard lock(mutex_);
+    job->run.performanceJson = run.performanceJson;
   }
   return persistRun_(job->directory, run, error);
 }
 void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
                                   DetectionLifecycle lifecycle,
                                   const QString& error) {
+  // QProcess is created, stopped and destroyed on the producer thread. Keep
+  // its observed exit/error separate from a caller-requested cancellation.
+  if(job->worker) {
+    job->worker->stop(lifecycle==DetectionLifecycle::Completed && !job->cancelled);
+    auto diagnostic=job->worker->diagnostics();
+    job->worker.reset();
+    const std::lock_guard lock(mutex_);
+    job->workerDiagnostic=std::move(diagnostic);
+  }
   DetectionRun terminal;
   {
     std::lock_guard lock(mutex_);
     // Cancellation is accepted before this commit point. Afterwards callers
     // receive false while the immutable terminal snapshot is being persisted.
     job->finishing = true;
+    std::uint64_t terminalNanoseconds = 0;
+    if (captureParentSteadyNanoseconds(terminalNanoseconds))
+      job->steadyMarks.push_back(
+          SteadyMark{kDetectionMarkPipelineTerminal, terminalNanoseconds});
+    rememberTimelineLocked(job);
+    job->run.performanceJson=performanceSnapshot(job);
     terminal = job->run;
     terminal.lifecycle =
         job->cancelled ? DetectionLifecycle::Cancelled : lifecycle;
@@ -839,7 +1429,8 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
       std::lock_guard lock(mutex_);
       needsPrefix = job->publication.annotations.empty();
     }
-    if (needsPrefix) {
+    if (needsPrefix &&
+        !detectionPrefixRecoveryWouldRepeatFusion(terminal.error)) {
       DetectionPublication prefix;
       QString recoveryError;
       if (recoverDetectionPublication(job->directory, terminal, prefix,
@@ -874,7 +1465,12 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
   }
   for (;;) {
     QString writeError;
-    const bool persisted = persistRun_(job->directory, terminal, writeError);
+    bool persisted=false;
+    try { persisted=profileDetectionCheckpointResources(job->directory, terminal, writeError) &&
+                    persistRun_(job->directory,terminal,writeError); }
+    catch(const std::exception& exception) {
+      writeError="Terminal persistence exception: "+QString::fromUtf8(exception.what());
+    } catch(...) {writeError="Unknown terminal persistence exception";}
     std::lock_guard lock(mutex_);
     if (!persisted) {
       terminal.lifecycle = DetectionLifecycle::Failed;
@@ -895,11 +1491,106 @@ void DetectionTaskManager::finish(const std::shared_ptr<Job>& job,
     job->finished = true;
     break;
   }
+  DetectionRun logged;
+  QString stderrTail;
+  std::size_t openTracks = 0, sealedTracks = 0;
+  std::uint64_t comparisons = 0;
+  bool frameSealed = false, frameFused = false;
+  std::uint32_t batch = 0;
+  {
+    std::lock_guard lock(mutex_);
+    logged = job->run;
+    stderrTail = job->workerDiagnostic.value(QStringLiteral("stderrTail")).toString();
+    openTracks = job->openTracks;
+    sealedTracks = job->sealedTracks;
+    comparisons = job->frameComparisons;
+    frameSealed = job->frameSealed;
+    frameFused = job->frameFused;
+    batch = job->checkpointBatch;
+  }
+  QString event;
+  if (logged.lifecycle == DetectionLifecycle::Completed)
+    event = QStringLiteral("phase");
+  else if (logged.lifecycle == DetectionLifecycle::Cancelled)
+    event = QStringLiteral("cancelled");
+  else if (logged.lifecycle == DetectionLifecycle::Interrupted)
+    event = QStringLiteral("interrupted");
+  else if (logged.lifecycle == DetectionLifecycle::Failed)
+    event = logged.computationPhase == "publishing" ? QStringLiteral("publish-failed")
+                                                   : QStringLiteral("failed");
+  if (!event.isEmpty())
+    logDetection(logged, event, batch, openTracks, sealedTracks, comparisons,
+                 detectionAction(frameSealed, frameFused),
+                 QString::fromStdString(logged.error));
+  if (logged.lifecycle == DetectionLifecycle::Failed && !stderrTail.trimmed().isEmpty())
+    RuntimeLog::write(
+        QStringLiteral("detection"),
+        QStringList{"run=" + QString::fromStdString(logged.request.runId),
+                    "phase=" + QString::fromStdString(logged.computationPhase),
+                    "windows=" + QString::number(logged.completedWindows) + "/" +
+                        QString::number(logged.eligibleWindows),
+                    "batch=" + QString::number(batch), "event=worker-stderr",
+                    "error=" + stderrTail.simplified()}
+            .join(' '));
 }
 void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   QString error;
   const auto request = job->run.request;
   const auto cancelled = [&] { return job->cancelled.load(); };
+  const auto markNow = [&](const char* name) {
+    std::uint64_t nanoseconds = 0;
+    if (!captureParentSteadyNanoseconds(nanoseconds)) return;
+    noteSteadyMark(request.runId, name, nanoseconds);
+  };
+  bool notedFirstRead = false;
+  bool notedFirstInfer = false;
+  bool notedFirstModelInput = false;
+  bool notedFirstPreview = false;
+  job->clock.start();
+  const auto measured=[&](const char* name,const auto& action) {
+    DetectionProfileScope timing(job->profiling,QString::fromLatin1(name),&mutex_);
+    return action();
+  };
+  const auto notePhase = [&](const char* phase) {
+    DetectionRun snap;
+    std::size_t openTracks = 0, sealedTracks = 0;
+    std::uint64_t comparisons = 0;
+    bool frameSealed = false, frameFused = false;
+    std::uint32_t batch = 0;
+    {
+      std::lock_guard lock(mutex_);
+      if (job->run.computationPhase == phase) return;
+      job->run.computationPhase = phase;
+      snap = job->run;
+      openTracks = job->openTracks;
+      sealedTracks = job->sealedTracks;
+      comparisons = job->frameComparisons;
+      frameSealed = job->frameSealed;
+      frameFused = job->frameFused;
+      batch = job->checkpointBatch;
+    }
+    logDetection(snap, QStringLiteral("phase"), batch, openTracks, sealedTracks,
+                 comparisons, detectionAction(frameSealed, frameFused), {});
+  };
+  const auto noteCheckpoint = [&](std::uint32_t batch) {
+    DetectionRun snap;
+    std::size_t openTracks = 0, sealedTracks = 0;
+    std::uint64_t comparisons = 0;
+    bool frameSealed = false, frameFused = false;
+    {
+      std::lock_guard lock(mutex_);
+      job->checkpointBatch = batch;
+      snap = job->run;
+      openTracks = job->openTracks;
+      sealedTracks = job->sealedTracks;
+      comparisons = job->frameComparisons;
+      frameSealed = job->frameSealed;
+      frameFused = job->frameFused;
+    }
+    logDetection(snap, QStringLiteral("checkpoint"), batch, openTracks, sealedTracks,
+                 comparisons, detectionAction(frameSealed, frameFused),
+                 QString::fromStdString(snap.error));
+  };
   {
     std::lock_guard lock(mutex_);
     job->run.lifecycle = DetectionLifecycle::Validating;
@@ -909,8 +1600,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
+  noteCheckpoint(0);
   FixedDetectionSource source;
   DetectionSourceConfig config;
+  config.preferGpu = request.gpuDspPreferred;
   config.inputAdaptationVersion = request.inputAdaptationVersion;
   config.profileId = request.profile.id;
   config.profileVersion = request.profile.version;
@@ -920,10 +1613,21 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
   config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.rawHeadBudgetBytes = request.rawHeadBudgetBytes;
+  config.legacyCombinedRawHeads = request.legacyCombinedEvidence;
   config.maximumCandidates = request.parameters.topK;
+  const DetectionSourcePlan* preparedPlan = nullptr;
+  auto openConfig = config;
+  if (job->hasSourcePlan) {
+    preparedPlan = &job->sourcePlan;
+    // Preflight may raise request.rawHeadBudgetBytes after the plan is built.
+    // Reuse the planning config so that quota is not a false grid mismatch.
+    openConfig = job->sourcePlan.config;
+  }
   if (cancelled() ||
-      !source.open(job->metadata, request.requestedRange, config, error,
-                   request.sourceIdentity.projectGeneration)) {
+      !source.open(job->metadata, request.requestedRange, openConfig, error,
+                   request.sourceIdentity.projectGeneration, cancelled,
+                   preparedPlan)) {
     if (!cancelled()) {
       std::lock_guard lock(mutex_);
       job->run.sourceValidity =
@@ -935,6 +1639,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
+  markNow(kDetectionMarkSourceOpen);
   const auto& plan = source.plan();
   {
     std::lock_guard lock(mutex_);
@@ -949,9 +1654,29 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
-  DetectionWorkerClient worker;
-  if (!worker.start(workerExecutable_, request, error, cancelled,
-                    job->executionBatchSize)) {
+  // One process for this run. finish() stops and destroys it. There is no
+  // cross-run worker, engine, or CUDA context pool.
+  job->worker=std::make_unique<DetectionWorkerClient>();
+  auto& worker=*job->worker;
+  std::optional<DetectionModelWindow> preparedFirstWindow;
+  const auto prepareFirstWindow = [&](QString& why) {
+    if (cancelled()) { why = "Cancelled during initial window preparation"; return false; }
+    DetectionModelWindow window;
+    if (!measured("read-model-window", [&] {
+          return source.readModelWindow(0, window, why, cancelled);
+        })) return false;
+    preparedFirstWindow = std::move(window);
+    notedFirstRead = true;
+    markNow("t_first_iq_read");
+    return !cancelled();
+  };
+  const bool workerStarted = measured("worker-start", [&] {
+    return worker.start(workerExecutable_, request, error, cancelled,
+                        job->executionBatchSize, prepareFirstWindow);
+  });
+  for (const auto& stamp : worker.parentClockStamps())
+    noteSteadyMark(request.runId, stamp.name.c_str(), stamp.steadyNanoseconds);
+  if (!workerStarted) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
@@ -963,13 +1688,77 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
   publication.sourceSet = sourceSetForRequest(request);
   auto& set = publication.sourceSet;
   const bool fixture = request.profile.backend == DetectionBackendKind::Fixture;
+  if (!fixture) {
+    const auto model = worker.evidence();
+    QJsonObject profile;
+    for (const char* key : {"profileSupportedTiers", "profileMaximumBatch",
+                            "physicalBatch", "logicalMaximumBatch",
+                            "batchProfileReason", "engineMaximumBatch",
+                            "optimizationProfile", "batchAdaptationReason",
+                            "requestedMaximumBatch", "deviceResourceAccount",
+                            "engineProfileExtent", "cudaDeviceIndex", "deviceMemory",
+                            "executionProfile", "freeDeviceBytes", "totalDeviceBytes",
+                            "reservedDeviceBytes", "neededDeviceBytes", "profileMin",
+                            "profileOpt", "profileMax"})
+      if (model.contains(QLatin1String(key)))
+        profile.insert(QLatin1String(key), model.value(QLatin1String(key)));
+    std::lock_guard lock(mutex_);
+    job->modelProfile = profile;
+  }
   DetectionResultProjector projector;
+  bool previewFinal = false;
+  const auto publishPreview = [&] {
+    if (fixture) return;
+    bool hasEvents = false;
+    {
+      std::lock_guard lock(mutex_);
+      job->preview.runId = request.runId;
+      job->preview.fileId = request.sourceIdentity.fileId;
+      job->preview.projectGeneration = request.sourceIdentity.projectGeneration;
+      job->preview.events = projector.visiblePreviewEvents();
+      job->preview.dropped = projector.droppedPreviewEvents();
+      hasEvents = !job->preview.events.empty();
+    }
+    if (!notedFirstPreview && hasEvents) {
+      notedFirstPreview = true;
+      markNow(kDetectionMarkFirstPreview);
+    }
+  };
+  const auto previewGuard = qScopeGuard([&] {
+    // Fixture runs do not seal a preview. A test probe still takes mutex_
+    // after finish() so it can reproduce the non-fixture terminal lock.
+    if (fixture && !beforeProducerTerminalLock_) return;
+    if (!fixture) {
+      QString ignored;
+      projector.sealPreview(previewFinal, ignored);
+    }
+    if (beforeProducerTerminalLock_) beforeProducerTerminalLock_();
+    std::lock_guard lock(mutex_);
+    if (fixture) return;
+    job->preview.runId = request.runId;
+    job->preview.fileId = request.sourceIdentity.fileId;
+    job->preview.projectGeneration = request.sourceIdentity.projectGeneration;
+    job->preview.sealed = true;
+    // A completed publication clears dashed tracks. Failure, cancellation, and
+    // interruption keep the preview that already exists and mark it unpublished.
+    const bool published =
+        previewFinal && job->run.lifecycle == DetectionLifecycle::Completed;
+    if (published) {
+      job->preview.events.clear();
+      job->preview.dropped = 0;
+      job->preview.unpublished = false;
+    } else {
+      job->preview.events = projector.visiblePreviewEvents();
+      job->preview.dropped = projector.droppedPreviewEvents();
+      job->preview.unpublished = !job->preview.events.empty();
+    }
+  });
   if (!fixture && !projector.reset(request, plan.eligibleWindowCount,
                                    job->publicationBudgetBytes / 4, error)) {
     finish(job, DetectionLifecycle::Failed, error);
     return;
   }
-  if (!fixture) preserveRuntimeEvidence(set, worker.evidence());
+  if (!fixture) preserveDurableModelEvidence(set, request, worker.evidence());
   {
     std::lock_guard lock(mutex_);
     job->run.lifecycle = DetectionLifecycle::Running;
@@ -985,17 +1774,18 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return;
     }
     std::vector<DetectionModelWindow> windows;
-    {
-      std::lock_guard lock(mutex_);
-      job->run.computationPhase = "reading";
-    }
+    const auto batchNumber = static_cast<std::uint32_t>(index + 1);
+    notePhase("reading");
     std::vector<float> tensor;
     QJsonArray mappings;
     for (std::uint32_t batch = 0;
          batch < job->executionBatchSize && index < plan.eligibleWindowCount;
          ++batch, ++index) {
       DetectionModelWindow window;
-      if (!source.readModelWindow(index, window, error, cancelled)) {
+      const bool read = index == 0 && preparedFirstWindow
+          ? (window = std::move(*preparedFirstWindow), preparedFirstWindow.reset(), true)
+          : measured("read-model-window",[&] { return source.readModelWindow(index, window, error, cancelled); });
+      if (!read) {
         if (!cancelled()) {
           const auto path = QString::fromStdString(request.sourceIdentity.path);
           std::lock_guard lock(mutex_);
@@ -1008,6 +1798,10 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         finish(job, DetectionLifecycle::Failed, error);
         return;
       }
+      if (!notedFirstRead) {
+        notedFirstRead = true;
+        markNow("t_first_iq_read");
+      }
       mappings.append(mapping(window, plan));
       const auto& input =
           request.profile.maximumPsdOnly ||
@@ -1019,6 +1813,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     }
     {
       std::lock_guard lock(mutex_);
+      job->sourceProfile=source.profiling();
       for (const auto& window : windows) {
         const auto end = window.firstFrameIndex + window.frames.size();
         job->run.readFrames +=
@@ -1032,7 +1827,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                     window.reportRange);
       }
     }
-    if (!checkpoint(job, error)) {
+    notePhase("checkpoint");
+    if (!measured("checkpoint-metadata",[&] {return checkpoint(job,error);})) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -1052,13 +1848,19 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
                           static_cast<int>(plan.actualWindowFrames),
                           static_cast<int>(config.fftSize)});
     DetectionWorkerPacket response;
-    {
-      std::lock_guard lock(mutex_);
-      job->run.computationPhase = "inference";
+    notePhase("inference");
+    if (!notedFirstModelInput) {
+      notedFirstModelInput = true;
+      markNow(kDetectionMarkFirstModelInput);
     }
-    if (!worker.exchange(std::move(packet), response, error, cancelled)) {
+    if (!notedFirstInfer) markNow("t_first_infer_start");
+    if (!measured("worker-roundtrip",[&] { return worker.exchange(std::move(packet), response, error, cancelled); })) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
+    }
+    if (!notedFirstInfer) {
+      notedFirstInfer = true;
+      markNow("t_first_infer_end");
     }
     const auto sourcePath = QString::fromStdString(request.sourceIdentity.path);
     if (iqSourceFingerprint(sourcePath).toStdString() !=
@@ -1075,22 +1877,62 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       return;
     }
     auto results = response.envelope["payload"].toObject()["windows"].toArray();
+    {
+      const std::lock_guard lock(mutex_);
+      if(windows.size()<job->batches.size()) ++job->batches[windows.size()];
+      job->workerDiagnostic=worker.diagnostics();
+      const auto last=response.envelope["payload"].toObject()["modelEvidence"].toObject()["lastInference"].toObject();
+      for(const auto* key:{"h2dMs","gpuStreamMs","d2hMs","hostEnqueueMs","inputAdaptationMs","physicalEnqueueCalls"})
+        if(last[key].isDouble()) job->gpuProfile[key]=job->gpuProfile[key].toDouble()+last[key].toDouble();
+      job->gpuProfile["cudaEventIntervals"]=last["cudaEventIntervals"].toBool();
+    }
     if (!fixture)
-      preserveRuntimeEvidence(
-          set,
+      preserveDurableModelEvidence(
+          set, request,
           response.envelope["payload"].toObject()["modelEvidence"].toObject());
     auto nextPublication = publication;
     auto nextPublicationBytes = job->publicationBytes;
-    if (!fixture &&
-        (!decodeProductionResults(request, response, results, error) ||
+    if (!fixture) {
+      notePhase("decoding");
+      if (!measured("decode-heads",[&] {return decodeProductionResults(request, response, results, error);}) ||
          (request.profile.backend == DetectionBackendKind::Scn &&
           !postprocessScnResults(windows, plan, request, results, mappings,
-                                 error, cancelled)) ||
-         !storeDetectionHeadEvidence(job->directory, request, response,
-                                     mappings, error) ||
-         !projector.consume(results, mappings, error, cancelled))) {
-      finish(job, DetectionLifecycle::Failed, error);
-      return;
+                                 error, cancelled))) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
+      if (request.legacyCombinedEvidence || request.rawHeadBudgetBytes > 0) {
+        notePhase("storing-heads");
+        if (!measured("store-raw-heads",[&] {return storeDetectionHeadEvidence(job->directory, request, response, mappings, error);})) {
+          finish(job, DetectionLifecycle::Failed, error);
+          return;
+        }
+      }
+      notePhase("tracking");
+      if (!measured("track-windows",[&] {return projector.consume(results, mappings, error, cancelled);})) {
+        finish(job, DetectionLifecycle::Failed, error);
+        return;
+      }
+      {
+        const auto stats = projector.frameStats();
+        std::lock_guard lock(mutex_);
+        job->openTracks = stats.openTracks;
+        job->sealedTracks = stats.sealedTracks;
+        job->frameComparisons = stats.comparisons;
+        job->frameSealed = stats.sealed;
+        job->frameFused = stats.fused;
+      }
+      publishPreview();
+      bool decodedNow = false;
+      {
+        const std::lock_guard lock(mutex_);
+        if(job->firstDecodedCandidateMs<0 && std::any_of(results.begin(),results.end(),
+            [](const auto& value){return !value.toObject()["candidates"].toArray().isEmpty();})) {
+          job->firstDecodedCandidateMs=job->clock.elapsed();
+          decodedNow = true;
+        }
+      }
+      if (decodedNow) markNow(kDetectionMarkFirstCandidateDecoded);
     }
     if (fixture && !appendFixtureAnnotations(
                        request, plan.eligibleWindowCount, windows, results,
@@ -1120,7 +1962,9 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     for (const auto& window : windows) {
       addCoverage(next, DetectionCoverageKind::Completed, window.reportRange);
     }
-    if (!appendDetectionChunk(job->directory, next, results, mappings, error)) {
+    notePhase("checkpoint");
+    next.computationPhase = "checkpoint";
+    if (!measured("append-chunk-and-manifest",[&] {return appendDetectionChunk(job->directory, next, results, mappings, error);})) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
@@ -1130,6 +1974,8 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       if (job->run.sourceValidity != DetectionSourceValidity::Current)
         next.sourceValidity = job->run.sourceValidity;
       job->run = std::move(next);
+      materializeTimelineLocked(job);
+      job->checkpointBatch = batchNumber;
       job->publication.sourceSet = publication.sourceSet;
       job->publicationBytes = nextPublicationBytes;
       job->publication.annotations.insert(
@@ -1137,7 +1983,9 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
           std::make_move_iterator(nextPublication.annotations.begin()),
           std::make_move_iterator(nextPublication.annotations.end()));
     }
+    noteCheckpoint(batchNumber);
   }
+  markNow(kDetectionMarkInferenceComplete);
   DetectionWorkerPacket end{
       workerEnvelope("completed", "end", 0, {},
                      QString::fromStdString(request.runId),
@@ -1157,15 +2005,18 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         DetectionTimeStrategy::Coarse)
       frequencyRequest.parameters.bandwidthMarginDb =
           DetectionParameters{}.bandwidthMarginDb;
-    {
-      std::lock_guard lock(mutex_);
-      job->run.computationPhase = "frequency";
+    notePhase("frequency");
+    if (!measured("finalize-frequency-tracks",[&] {return projector.finish(tracks, error, cancelled);})) {
+      finish(job, DetectionLifecycle::Failed, error);
+      return;
     }
-    if (!projector.finish(tracks, error, cancelled) ||
-        (request.profile.backend != DetectionBackendKind::Scn &&
-         !applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
+    // Finish fuses tracks after the last window publish. Show survivor boxes
+    // through refinement; the terminal guard still clears dashed previews.
+    publishPreview();
+    if ((request.profile.backend != DetectionBackendKind::Scn &&
+         !measured("frequency-analysis",[&] {return applyDetectionFrequencyAnalysis(source, frequencyRequest, tracks,
                                           frequencyEvidence, error,
-                                          cancelled)) ||
+                                          cancelled);})) ||
         !projectFrequencyTracks(request, set, tracks,
                                 job->publicationBudgetBytes / 2, publication,
                                 error)) {
@@ -1175,23 +2026,33 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     preserveFrequencyEvidence(publication, frequencyEvidence);
     {
       std::lock_guard lock(mutex_);
-      job->run.computationPhase = "refine";
+      job->frequencyReadyMs=job->clock.elapsed();
+      job->sourceProfile=source.profiling();
       job->run.totalRefinementCandidates = publication.annotations.size();
     }
+    markNow(kDetectionMarkFrequencyComplete);
+    notePhase("refine");
     if (!checkpoint(job, error)) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
+    noteCheckpoint(job->checkpointBatch);
     const auto refinedProgress = [&](std::size_t done, std::size_t total) {
       std::lock_guard lock(mutex_);
       job->run.refinedCandidates = done;
       job->run.totalRefinementCandidates = total;
     };
-    if (!applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
-                                    publication, error, cancelled,
-                                    refinedProgress) ||
+    if (!measured("time-refinement",[&] {
+          if (!applyDetectionTimeAnalysis(source, job->metadata, request, tracks,
+                                          publication, error, cancelled,
+                                          refinedProgress,
+                                          QDir(job->directory).filePath("sample-scratch")))
+            return false;
+          markNow("t_sample_refine_complete");
+          return true;
+        }) ||
         !projector.attachWindowEvidence(publication, error) ||
-        !fuseDetectionPublication(request, publication, error, cancelled) ||
+        !measured("fuse-publication",[&] {return fuseDetectionPublication(request, publication, error, cancelled);}) ||
         !validateDetectionPublicationBudget(
             publication, job->publicationBudgetBytes / 2, error)) {
       finish(job, DetectionLifecycle::Failed, error);
@@ -1199,8 +2060,9 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
     }
     {
       std::lock_guard lock(mutex_);
-      job->run.computationPhase = "publishing";
+      job->sourceProfile=source.profiling();
     }
+    notePhase("publishing");
     // Final projections are durable before they are visible. Interrupted final
     // shards without the end marker recover the raw frequency observations.
     const auto shardBudget = std::min<std::uint64_t>(
@@ -1218,7 +2080,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         std::lock_guard lock(mutex_);
         next = job->run;
       }
-      if (!appendDetectionChunk(job->directory, next, shard, {}, error)) {
+      if (!measured("flush-final-shards",[&] {return appendDetectionChunk(job->directory, next, shard, {}, error);})) {
         return false;
       }
       {
@@ -1226,6 +2088,7 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
         if (job->cancelled) next.lifecycle = DetectionLifecycle::Cancelling;
         next.sourceValidity = job->run.sourceValidity;
         job->run = std::move(next);
+        materializeTimelineLocked(job);
       }
       shard = {};
       shardBytes = 0;
@@ -1260,11 +2123,13 @@ void DetectionTaskManager::execute(const std::shared_ptr<Job>& job) {
       finish(job, DetectionLifecycle::Failed, error);
       return;
     }
+    markNow(kDetectionMarkFinalShardPersisted);
     {
       std::lock_guard lock(mutex_);
       job->publication = std::move(publication);
     }
   }
+  previewFinal = true;
   finish(job, DetectionLifecycle::Completed);
 }
 }  // namespace signalstudio

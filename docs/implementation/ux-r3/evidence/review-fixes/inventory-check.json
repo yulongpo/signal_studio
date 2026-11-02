@@ -1,0 +1,30 @@
+{
+  "pass": true,
+  "cases": [
+    {
+      "configuration": "debug",
+      "exactMatch": true,
+      "count": 106,
+      "suite": "main"
+    },
+    {
+      "configuration": "debug",
+      "exactMatch": true,
+      "count": 12,
+      "suite": "narrowband"
+    },
+    {
+      "configuration": "release",
+      "exactMatch": true,
+      "count": 106,
+      "suite": "main"
+    },
+    {
+      "configuration": "release",
+      "exactMatch": true,
+      "count": 12,
+      "suite": "narrowband"
+    }
+  ],
+  "schemaVersion": 1
+}

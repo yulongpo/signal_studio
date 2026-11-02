@@ -522,6 +522,10 @@ void testSerialization() {
   session.setAuxiliaryMode(AuxiliaryMode::Psd);
   session.setAuxiliaryRange(-110, -10, false);
   session.setPsdFromSelection(true);
+  // This is a current v6 canonical fixture, not a legacy migration fixture.
+  // Both explicit empty and absent optional R5 indices must remain canonical
+  // when no detection has run; exercise the two representations separately.
+  for (auto& file : session.project().files) file.currentDetectionSlots.emplace();
   QString error;
   check(ProjectStore::save(path, session.project(), error),
         "Valid native project must save");
@@ -574,6 +578,31 @@ void testSerialization() {
   check(ProjectStore::save(comparisonPath, loaded, error) &&
             readFile(comparisonPath) == sourceBytes,
         "Every serialized field must survive a canonical roundtrip");
+
+  // Exercise the missing-field compatibility path independently, retaining the
+  // exact canonical byte comparison for every other serialized field.
+  auto legacyRoot = QJsonDocument::fromJson(sourceBytes).object();
+  auto legacyFiles = legacyRoot["files"].toArray();
+  for (qsizetype i = 0; i < legacyFiles.size(); ++i) {
+    auto file = legacyFiles[i].toObject();
+    check(file.contains("currentDetectionSlots") && file["currentDetectionSlots"].isArray() &&
+              file["currentDetectionSlots"].toArray().isEmpty(),
+          "The current fixture must explicitly serialize its empty R5 slot index");
+    file.remove("currentDetectionSlots");
+    legacyFiles[i] = file;
+  }
+  legacyRoot["files"] = legacyFiles;
+  const auto legacyPath = directory.filePath(QStringLiteral("legacy-no-slots.json"));
+  writeFile(legacyPath, QJsonDocument(legacyRoot).toJson());
+  Project legacyLoaded;
+  check(ProjectStore::load(legacyPath, legacyLoaded, error),
+        "A legacy v6 project without optional R5 slots must still load");
+  for (const auto& file : legacyLoaded.files)
+    check(!file.currentDetectionSlots,
+          "No-run legacy files must retain an absent optional R5 slot index");
+  check(ProjectStore::save(comparisonPath, legacyLoaded, error) &&
+            readFile(comparisonPath) == readFile(legacyPath),
+        "Missing-slot compatibility must preserve all canonical serialized fields");
 
   Project edgeProject;
   FileState edgeFile;
@@ -871,6 +900,508 @@ void testInt16IqFilePipeline() {
         "STFT must not read samples before or after the visible time range");
 }
 
+void testProjectWriteGuardBlocksChannelEdits() {
+  Session session;
+  seedPrototypeFiles(session);
+  const auto file1 = session.project().activeFileId;
+  const auto file2 = session.project().files[1].metadata.id;
+  const auto markA =
+      session.addMark({{7'600'000'000, 8'400'000'000}, {96e6, 110e6}});
+  const auto markB =
+      session.addMark({{8'000'000'000, 8'880'000'000}, {100e6, 114e6}});
+  check(!markA.empty() && !markB.empty(),
+        "Guard fixture must create two source marks");
+  session.selectMarks({markA}, markA);
+  check(session.createChannelFromActiveMark(),
+        "Guard fixture must create channel A");
+  const auto channelA = session.project().activeChannelId;
+  session.selectMarks({markB}, markB);
+  check(session.createChannelFromActiveMark(),
+        "Guard fixture must create channel B");
+  const auto channelB = session.project().activeChannelId;
+  check(channelA != channelB && session.activateFile(file2),
+        "Guard fixture must open the second file");
+  const auto markC =
+      session.addMark({{2'000'000'000, 2'320'000'000}, {2447e6, 2453e6}});
+  session.selectMarks({markC}, markC);
+  check(!markC.empty() && session.createChannelFromActiveMark(),
+        "Guard fixture must create a channel on another file");
+  const auto channelC = session.project().activeChannelId;
+  check(session.activateFile(file1) && session.activateChannel(channelA),
+        "Guard fixture must return to channel A");
+  session.selectMarks({markA}, markA);
+
+  auto directRequest = annotationChannelRequest(
+      *session.activeFile(), markA, session.activeFile()->view.time,
+      session.projectGeneration());
+  directRequest.name = "Guarded direct";
+  const auto reusable = *session.activeChannel();
+  const auto visible = reusable.visibleSourceTime;
+  const TimeRange narrowed{
+      visible.begin, visible.begin + std::max<SampleIndex>(
+                                         1, (visible.end - visible.begin) / 2)};
+  check(narrowed.begin < narrowed.end && narrowed != visible,
+        "Guard fixture must have a distinct channel view");
+
+  bool reject = true;
+  int guardCalls = 0;
+  session.setProjectWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  const auto token = ProjectStore::stateToken(session.project());
+  const auto generation = session.projectGeneration();
+  const auto epoch = session.contentEpoch();
+  std::vector<std::size_t> channelCounts;
+  std::vector<std::size_t> markCounts;
+  for (const auto& file : session.project().files) {
+    channelCounts.push_back(file.channels.size());
+    markCounts.push_back(file.marks.size());
+  }
+  const auto* sourceSnapshot = reusable.sourceSnapshot.get();
+  auto expectFrozen = [&](const char* message) {
+    check(ProjectStore::stateToken(session.project()) == token, message);
+    check(session.projectGeneration() == generation &&
+              session.contentEpoch() == epoch &&
+              session.project().activeFileId == file1 &&
+              session.project().activeChannelId == channelA &&
+              session.project().narrowbandWorkspaceOpen,
+          message);
+    for (std::size_t index = 0; index < channelCounts.size(); ++index) {
+      check(session.project().files[index].channels.size() ==
+                    channelCounts[index] &&
+                session.project().files[index].marks.size() ==
+                    markCounts[index],
+            message);
+    }
+    const auto* channel = session.activeChannel();
+    const auto* mark = findMark(*session.activeFile(), markA);
+    check(channel && mark && !mark->deleted &&
+              channel->name == reusable.name &&
+              channel->configVersion == reusable.configVersion &&
+              channel->centerFrequencyHz == reusable.centerFrequencyHz &&
+              channel->bandwidthHz == reusable.bandwidthHz &&
+              channel->sourceTime == reusable.sourceTime &&
+              channel->visibleSourceTime == reusable.visibleSourceTime &&
+              channel->psdAxisMinimum == reusable.psdAxisMinimum &&
+              channel->psdAxisMaximum == reusable.psdAxisMaximum &&
+              channel->sourceSnapshot.get() == sourceSnapshot,
+          message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    expectFrozen(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    expectFrozen(message);
+  };
+
+  rejectWrite([&] { return !session.setPsdFromSelection(true); },
+              "Rejecting guard must block serialized PSD source scope changes");
+  rejectWrite([&] { return !session.setEffectiveBandwidthHz(
+                          session.activeFile()->metadata.effectiveBandwidthHz * .8); },
+              "Rejecting guard must block effective bandwidth changes");
+  rejectWrite([&] { return !session.activateChannel(channelC); },
+              "Rejecting guard must block cross-file channel activation");
+  rejectWrite([&] { return !session.activateChannel(channelB); },
+              "Rejecting guard must block same-file channel activation");
+  leaveWrite([&] { return session.activateChannel(channelA); },
+             "Current channel activation must stay a no-op under the guard");
+  leaveWrite([&] { return !session.activateChannel("missing-channel"); },
+             "Unknown channel activation must fail without the guard");
+  rejectWrite([&] { return !session.activateFile(file2); },
+              "Rejecting guard must block activation of another file");
+  rejectWrite([&] { return !session.activateFile(file1); },
+              "Rejecting guard must block clearing the active channel");
+  leaveWrite([&] { return !session.activateFile("missing-file"); },
+             "Unknown file activation must fail without the guard");
+  rejectWrite([&] { return !session.createChannelFromActiveMark(); },
+              "Rejecting guard must block channel creation from the active mark");
+  rejectWrite(
+      [&] {
+        return session
+            .createChannel("Guarded named", reusable.sourceMarkId,
+                           reusable.centerFrequencyHz, reusable.bandwidthHz,
+                           reusable.outputSampleRateHz, reusable.sourceTime,
+                           reusable.filter, false, reusable.preserveSourceTime)
+            .empty();
+      },
+      "Rejecting guard must block explicit channel creation");
+  rejectWrite(
+      [&] {
+        const auto direct = session.createAnnotationChannel(directRequest);
+        return !direct.ok && direct.id.empty();
+      },
+      "Rejecting guard must block annotation channel creation");
+  rejectWrite(
+      [&] {
+        auto updated = reusable;
+        updated.name = "Blocked rename";
+        return !session.updateChannel(channelA, updated);
+      },
+      "Rejecting guard must block channel update");
+  leaveWrite(
+      [&] {
+        auto updated = reusable;
+        updated.sourceTime.begin += 1;
+        return !session.updateChannel(channelA, updated);
+      },
+      "Invalid channel update must fail without the guard");
+  rejectWrite([&] { return !session.removeChannel(channelA); },
+              "Rejecting guard must block channel deletion");
+  leaveWrite([&] { return !session.removeChannel("missing-channel"); },
+             "Unknown channel deletion must fail without the guard");
+  rejectWrite(
+      [&] {
+        const auto deleted = session.deleteSelectedMarks(true);
+        return deleted.marks == 0 && deleted.channels == 0;
+      },
+      "Rejecting guard must block deletion of a linked channel");
+  rejectWrite([&] { return !session.setChannelPsdRange(-90, -15); },
+              "Rejecting guard must block channel PSD range edits");
+  leaveWrite(
+      [&] {
+        return !session.setChannelPsdRange(reusable.psdAxisMinimum,
+                                           reusable.psdAxisMaximum);
+      },
+      "Unchanged channel PSD range must fail without the guard");
+  leaveWrite(
+      [&] {
+        return !session.setChannelAmplitudeRange(
+            reusable.waveformAxisMinimum, reusable.waveformAxisMaximum,
+            reusable.waveformAutoScale);
+      },
+      "Unchanged channel amplitude range must fail without the guard");
+  rejectWrite(
+      [&] {
+        return !session.setChannelView(narrowed,
+                                       reusable.visibleBasebandFrequency);
+      },
+      "Rejecting guard must block channel view edits");
+  leaveWrite(
+      [&] {
+        return session.restoreChannelViewSnapshot(session.channelViewSnapshot());
+      },
+      "Restoring the current channel view must stay a no-op");
+  leaveWrite(
+      [&] { return !session.channelBack() && !session.channelForward(); },
+      "Empty channel history must fail without the guard");
+  expectFrozen("Rejected channel operations must preserve the exact project");
+
+  reject = false;
+  check(session.activateChannel(channelC) &&
+            session.project().activeFileId == file2 &&
+            session.project().activeChannelId == channelC &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must allow cross-file channel activation");
+  check(session.activateChannel(channelA) &&
+            session.project().activeFileId == file1 &&
+            session.project().activeChannelId == channelA &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must allow returning to the original channel");
+  auto released = *session.activeChannel();
+  released.name = "After release";
+  check(session.updateChannel(channelA, released),
+        "Released guard must allow a valid channel update");
+  const auto* updated = session.activeChannel();
+  check(updated && updated->name == "After release" &&
+            updated->configVersion == reusable.configVersion + 1 &&
+            updated->centerFrequencyHz == reusable.centerFrequencyHz &&
+            updated->bandwidthHz == reusable.bandwidthHz &&
+            updated->sourceTime == reusable.sourceTime &&
+            updated->sourceSnapshot.get() == sourceSnapshot,
+        "Released update must keep channel geometry and its source snapshot");
+  check(session.createChannelFromActiveMark() &&
+            session.fileForChannel(channelA)->channels.size() == 3,
+        "Released guard must allow creating a channel from the active mark");
+  const auto named = session.createChannel(
+      "Released named", reusable.sourceMarkId, reusable.centerFrequencyHz,
+      reusable.bandwidthHz, reusable.outputSampleRateHz, reusable.sourceTime,
+      reusable.filter, false, reusable.preserveSourceTime);
+  check(!named.empty() &&
+            session.fileForChannel(channelA)->channels.size() == 4,
+        "Released guard must allow explicit channel creation");
+  check(session.removeChannel(channelB) && !session.fileForChannel(channelB) &&
+            session.fileForChannel(channelA),
+        "Released guard must allow deleting one channel and keep the others");
+  check(session.setChannelPsdRange(-80, -10) && session.activeChannel() &&
+            session.activeChannel()->psdAxisMinimum == -80 &&
+            session.activeChannel()->psdAxisMaximum == -10,
+        "Released guard must allow a valid channel PSD range");
+  check(session.activateChannel(channelA) &&
+            session.project().activeChannelId == channelA,
+        "Released guard must restore the original channel");
+  session.project().narrowbandWorkspaceOpen = false;
+  reject = true;
+  const auto reopenCalls = guardCalls;
+  check(!session.activateChannel(channelA) &&
+            session.project().activeFileId == file1 &&
+            session.project().activeChannelId == channelA &&
+            !session.project().narrowbandWorkspaceOpen,
+        "Rejecting guard must block reopening the narrowband workspace");
+  check(guardCalls == reopenCalls + 1,
+        "Reopening the workspace must consult the guard");
+  reject = false;
+  check(session.activateChannel(channelA) &&
+            session.project().narrowbandWorkspaceOpen,
+        "Released guard must reopen the current channel workspace");
+  check(session.activateFile(file1) && session.project().activeFileId == file1 &&
+            session.project().activeChannelId.empty() &&
+            !session.project().narrowbandWorkspaceOpen,
+        "Released same-file activation must still clear channel navigation");
+}
+
+void testProjectWriteGuardBlocksSelection() {
+  Session session;
+  seedPrototypeFiles(session);
+  const auto markA =
+      session.addMark({{7'600'000'000, 8'400'000'000}, {96e6, 110e6}});
+  const auto markB =
+      session.addMark({{8'000'000'000, 8'880'000'000}, {100e6, 114e6}});
+  const auto markC =
+      session.addMark({{8'900'000'000, 9'200'000'000}, {102e6, 108e6}});
+  check(!markA.empty() && !markB.empty() && !markC.empty(),
+        "Selection guard fixture must create three marks");
+  auto* file = session.activeFile();
+  const auto* created = findMark(*file, markA);
+  check(created && created->segments.size() == 1, "Mark A must start with one segment");
+  const auto firstSegment = created->segments.front().id;
+  check(session.annotations().splitSegment(*file, markA, firstSegment, 8'000'000'000).ok,
+        "Selection guard fixture must split mark A");
+  const auto* split = findMark(*file, markA);
+  check(split && split->segments.size() == 2, "Split must expose two segments");
+  const auto secondSegment = split->segments[1].id;
+  check(session.annotations().select(*file, {markA}, markA, firstSegment).ok,
+        "Selection guard fixture must select the first segment");
+  check(session.annotations().beginRevision(*file, markA).ok,
+        "Selection guard fixture must open a revision edit");
+  check(session.setPsdFromSelection(true), "Selection guard fixture must enable PSD scope");
+  session.annotations().reconcileSelection(*file);
+  check(file->selectionSampleChannel && file->activeMarkId == markA &&
+            file->activeSegmentId == firstSegment &&
+            file->revisionEditingAnnotationId == markA &&
+            file->display.psdFromSelection,
+        "Selection guard fixture must commit its selection context");
+
+  bool reject = true;
+  int guardCalls = 0;
+  int notes = 0;
+  session.setProjectWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  session.annotations().setWroteNotifier([&] {
+    ++notes;
+    session.noteProjectWrite();
+  });
+  const auto token = ProjectStore::stateToken(session.project());
+  const auto generation = session.projectGeneration();
+  const auto epoch = session.contentEpoch();
+  const auto revisionId = findMark(*file, markA)->revisionId;
+  const auto revisionCount = findMark(*file, markA)->revisions.size();
+  const auto range = findMark(*file, markA)->range;
+  const auto selected = file->selectedMarkIds;
+  const auto anchor = file->selectionAnchorId;
+  const auto editing = file->revisionEditingAnnotationId;
+  const auto view = file->view;
+  const auto markCount = file->marks.size();
+  const std::vector<std::string> order{markA, markB, markC};
+  auto expectFrozen = [&](const char* message) {
+    check(ProjectStore::stateToken(session.project()) == token, message);
+    check(session.projectGeneration() == generation &&
+              session.contentEpoch() == epoch && notes == 0,
+          message);
+    const auto* current = session.activeFile();
+    const auto* mark = findMark(*current, markA);
+    check(current && mark && current->marks.size() == markCount && !mark->deleted &&
+              mark->revisionId == revisionId && mark->revisions.size() == revisionCount &&
+              mark->activeSegmentId == firstSegment && mark->range == range &&
+              current->selectedMarkIds == selected && current->activeMarkId == markA &&
+              current->activeSegmentId == firstSegment &&
+              current->selectionAnchorId == anchor &&
+              current->revisionEditingAnnotationId == editing &&
+              current->display.psdFromSelection && current->view == view,
+          message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    expectFrozen(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    expectFrozen(message);
+  };
+
+  rejectWrite(
+      [&] {
+        session.selectMarks({markB}, markB);
+        return session.activeFile()->activeMarkId == markA &&
+               session.activeFile()->selectedMarkIds == selected;
+      },
+      "Rejecting guard must block Session selection changes");
+  rejectWrite(
+      [&] {
+        const auto denied =
+            session.annotations().select(*session.activeFile(), {markC}, markC);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block a direct selection change");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().chooseSelection(
+            *session.activeFile(), markC, AnnotationSelectionMode::Range, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block range selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().chooseSelection(
+            *session.activeFile(), markB, AnnotationSelectionMode::Toggle, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block toggle selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().select(*session.activeFile(), {});
+        return !denied.ok && denied.error == "detection commit" &&
+               !session.activeFile()->selectedMarkIds.empty() &&
+               session.activeFile()->display.psdFromSelection;
+      },
+      "Rejecting guard must block clearing the selection");
+  rejectWrite(
+      [&] {
+        const auto denied = session.annotations().select(
+            *session.activeFile(), {markA}, markA, secondSegment);
+        const auto* mark = findMark(*session.activeFile(), markA);
+        return !denied.ok && denied.error == "detection commit" && mark &&
+               mark->activeSegmentId == firstSegment && mark->range == range &&
+               mark->revisionId == revisionId;
+      },
+      "Rejecting guard must block an active segment switch");
+  rejectWrite(
+      [&] {
+        return !session.focusMark(markB) && session.activeFile()->view == view &&
+               session.activeFile()->activeMarkId == markA;
+      },
+      "Rejecting guard must stop focus before selection or the view changes");
+  rejectWrite(
+      [&] {
+        const auto deleted = session.deleteSelectedMarks(false);
+        const auto* mark = findMark(*session.activeFile(), markA);
+        return deleted.marks == 0 && deleted.channels == 0 && mark && !mark->deleted;
+      },
+      "Rejecting guard must block deleting the selected mark");
+  leaveWrite(
+      [&] {
+        const auto denied = session.annotations().select(*session.activeFile(), {markA},
+                                                         "missing-mark");
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Invalid selection must fail without the project write guard");
+  const auto hoverCalls = guardCalls;
+  check(session.annotations().hover(*session.activeFile(), markB),
+        "Hover must update while the project write guard rejects");
+  check(guardCalls == hoverCalls && session.activeFile()->hoveredMarkId == markB,
+        "Hover must not consult the project write guard");
+  expectFrozen("Hover must leave the serialized project unchanged");
+  leaveWrite(
+      [&] {
+        session.annotations().reconcileSelection(*session.activeFile());
+        return session.activeFile()->activeMarkId == markA &&
+               session.activeFile()->hoveredMarkId == markB;
+      },
+      "Clean reconcile must not consult the project write guard");
+
+  file->metadata.sampleFormat.selectedChannel = 1;
+  const auto mismatched = ProjectStore::stateToken(session.project());
+  const auto mismatchCalls = guardCalls;
+  const auto hovered = file->hoveredMarkId;
+  session.annotations().reconcileSelection(*file);
+  check(ProjectStore::stateToken(session.project()) == mismatched &&
+            file->selectedMarkIds == selected && file->activeMarkId == markA &&
+            file->hoveredMarkId == hovered && file->revisionEditingAnnotationId == editing &&
+            guardCalls == mismatchCalls + 1 && session.contentEpoch() == epoch,
+        "Rejecting guard must block channel-mismatch selection cleanup");
+  file->metadata.sampleFormat.selectedChannel = 0;
+  expectFrozen("Restoring the sample channel must restore the serialized project");
+
+  reject = false;
+  const auto selectNotes = notes;
+  const auto selectEpoch = session.contentEpoch();
+  session.selectMarks({markB}, markB);
+  check(session.activeFile()->activeMarkId == markB &&
+            session.activeFile()->selectedMarkIds == std::vector<std::string>{markB} &&
+            notes == selectNotes + 1 &&
+            session.contentEpoch() == selectEpoch + 1,
+        "Released guard must apply Session selection and notify once");
+  const auto repeatNotes = notes;
+  const auto repeatEpoch = session.contentEpoch();
+  const auto repeat =
+      session.annotations().select(*session.activeFile(), {markB}, markB);
+  check(repeat.ok && !repeat.changed && notes == repeatNotes &&
+            session.contentEpoch() == repeatEpoch,
+        "Repeating the current selection must not inflate the content epoch");
+  const auto rangeNotes = notes;
+  const auto ranged = session.annotations().chooseSelection(
+      *session.activeFile(), markC, AnnotationSelectionMode::Range, order);
+  check(ranged.ok && ranged.changed && notes == rangeNotes + 1 &&
+            session.activeFile()->selectionAnchorId == markB &&
+            session.activeFile()->selectedMarkIds.size() == 2,
+        "Released guard must apply range selection and notify once");
+  const auto toggleNotes = notes;
+  const auto toggled = session.annotations().chooseSelection(
+      *session.activeFile(), markA, AnnotationSelectionMode::Toggle, order);
+  check(toggled.ok && toggled.changed && notes == toggleNotes + 1 &&
+            std::find(session.activeFile()->selectedMarkIds.begin(),
+                      session.activeFile()->selectedMarkIds.end(),
+                      markA) != session.activeFile()->selectedMarkIds.end(),
+        "Released guard must apply toggle selection and notify once");
+  const auto segmentRevision = findMark(*session.activeFile(), markA)->revisionId;
+  const auto segmentCount = findMark(*session.activeFile(), markA)->revisions.size();
+  const auto segmentNotes = notes;
+  const auto switched = session.annotations().select(*session.activeFile(), {markA},
+                                                     markA, secondSegment);
+  check(switched.ok && switched.changed && notes == segmentNotes + 1 &&
+            findMark(*session.activeFile(), markA)->activeSegmentId == secondSegment &&
+            findMark(*session.activeFile(), markA)->revisionId == segmentRevision &&
+            findMark(*session.activeFile(), markA)->revisions.size() == segmentCount,
+        "Released segment switch must notify once without a new revision");
+  check(session.setPsdFromSelection(true), "Released guard must allow PSD selection scope");
+  const auto clearNotes = notes;
+  const auto cleared = session.annotations().select(*session.activeFile(), {});
+  check(cleared.ok && cleared.changed && notes == clearNotes + 1 &&
+            session.activeFile()->selectedMarkIds.empty() &&
+            !session.activeFile()->display.psdFromSelection,
+        "Released guard must clear the selection, PSD scope, and notify once");
+  const auto createNotes = notes;
+  const auto createEpoch = session.contentEpoch();
+  const auto createdId =
+      session.addMark({{9'300'000'000, 9'500'000'000}, {103e6, 107e6}});
+  check(!createdId.empty() && session.activeFile()->activeMarkId == createdId &&
+            notes == createNotes + 1 &&
+            session.contentEpoch() == createEpoch + 1,
+        "Creating a mark must notify once for the command and its selection");
+  const auto focusNotes = notes;
+  const auto focusEpoch = session.contentEpoch();
+  const auto viewBeforeFocus = session.activeFile()->view;
+  check(session.focusMark(markB) && session.activeFile()->activeMarkId == markB &&
+            session.activeFile()->view != viewBeforeFocus &&
+            notes == focusNotes + 1 &&
+            session.contentEpoch() == focusEpoch + 2,
+        "Focus must notify once for selection and once for the view change");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
@@ -885,6 +1416,8 @@ int main(int argc, char* argv[]) {
     testSelectionAndChannels();
     std::cout
         << "PASS selection, focus, linked deletion and fixed demo channels\n";
+    testProjectWriteGuardBlocksChannelEdits();
+    std::cout << "PASS project write guard blocks channel navigation and edits\n";
     testAuxiliarySnapshotsAndPsdScope();
     std::cout << "PASS independent auxiliary modes, combined snapshot history "
                  "and PSD scope\n";
@@ -897,6 +1430,8 @@ int main(int argc, char* argv[]) {
     testInt16IqFilePipeline();
     std::cout << "PASS int16 IQ metadata, mapped reads, waveform, Welch PSD "
                  "and STFT\n";
+    testProjectWriteGuardBlocksSelection();
+    std::cout << "PASS project write guard blocks persisted selection\n";
   } catch (const std::exception& error) {
     std::cerr << "FAIL " << error.what() << '\n';
     return 1;

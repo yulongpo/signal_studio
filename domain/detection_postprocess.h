@@ -83,6 +83,9 @@ struct FrequencyTrack {
   std::uint64_t hits = 0;
   std::uint64_t windowDenominator = 0;
   double windowCoverage = 0;
+  // Runtime preview identity. Not part of the persisted publication record.
+  std::string previewId;
+  std::uint64_t previewRevision = 0;
 };
 struct WindowObservation {
   std::string runId, fileId, windowId;
@@ -93,16 +96,18 @@ struct WindowObservation {
   std::vector<DecodedCandidate> candidates;
 };
 struct FrequencyTrackerLimits {
-  std::size_t maximumWindows = 100000;
+  // 262144 windows is 65.536 s at 0.25 ms, above 60 s and below the one-million cap.
+  std::size_t maximumWindows = 262144;
   std::size_t maximumCandidatesPerWindow = 512;
   std::size_t maximumActiveTracks = 4096;
   std::size_t maximumTracks = 32768;
-  std::size_t maximumEvidenceBands = 100000;
+  std::size_t maximumEvidenceBands = 262144;
   std::size_t maximumAssociationPairs = 262144;
   std::uint64_t maximumAssociationComparisons = 4000000;
   std::uint64_t maximumFusionComparisons = 4000000;
   std::uint64_t residentByteBudget = 32 * 1024 * 1024;
   std::size_t maximumIdBytes = 256;
+  std::size_t maximumPreviewEvents = 1024;
 };
 struct FrequencyTrackerConfig {
   std::string runId, fileId;
@@ -111,6 +116,9 @@ struct FrequencyTrackerConfig {
   // coordinates. Zero retains the historical inputBins/4 convention.
   std::size_t peakIndexLimit = 0;
   double firstBinHz = 0, binWidthHz = 0;
+  // Zero is valid. Association then keeps every pair, including disjoint
+  // bands, because IoU is never negative. Positive thresholds skip pairs
+  // whose intervals cannot meet the predicate.
   double matchIou = .3;
   std::uint32_t minHits = 2, maxMiss = 1;
   double mergeToleranceHz = 100000;
@@ -121,9 +129,48 @@ struct FrequencyTrackerConfig {
   FrequencyTrackerLimits limits;
 };
 
+enum class PreviewTrackPhase {
+  Created,
+  Updated,
+  Stable,
+  Closed,
+  Merged,
+  Finalized
+};
+struct PreviewTrackEvent {
+  std::string trackId;
+  std::string absorbedId;
+  std::uint64_t revision = 0;
+  std::uint64_t sequence = 0;
+  PreviewTrackPhase phase = PreviewTrackPhase::Created;
+  std::string runId, fileId;
+  FrequencyRange frequency;
+  // False until a later time-refinement stage publishes activity. Preview
+  // events never invent an activity interval.
+  bool timeLocalized = false;
+  std::uint64_t hits = 0;
+  // Windows observed so far. This is not an activity interval.
+  TimeRange observedSupport{};
+};
+
+// Last committed frame. comparisons counts broad-phase candidates in that
+// frame's open-set fusion. Sealed history is not scanned. Pairs the
+// frequency-interval index proves cannot match are not counted.
+struct FrequencyTrackerFrameStats {
+  std::size_t openTracks = 0;
+  std::size_t sealedTracks = 0;
+  std::uint64_t comparisons = 0;
+  bool sealed = false;
+  bool fused = false;
+};
+
 // A bounded deterministic single-run tracker. Each successful consume is
 // atomic; retries/foreign scope/out-of-order windows fail without mutation.
-// finish may also be called after cancellation for explicit partial recovery.
+// Each frame fuses only tracks that are still inside the burst interval.
+// finish seals those open tracks and does not scan already sealed history.
+// Preview events are a side channel and are not frequency-track results.
+// previewEvents() is the bounded log. visiblePreviewEvents() keeps the latest
+// geometry of each remaining track and is not evicted with that log.
 class FrequencyTracker {
  public:
   FrequencyTracker();
@@ -137,12 +184,20 @@ class FrequencyTracker {
   bool consume(const WindowObservation&, std::string& error,
                const PostprocessCancellation& cancelled = {});
   bool finish(std::vector<FrequencyTrack>&, std::string& error,
-              const PostprocessCancellation& cancelled = {}) const;
+              const PostprocessCancellation& cancelled = {});
+  bool sealPreview(bool finalized, std::string& error);
+  const std::vector<PreviewTrackEvent>& previewEvents() const;
+  // One current geometry per remaining trackId, sorted by sequence. A Merged
+  // event stores the survivor envelope and removes absorbedId.
+  std::vector<PreviewTrackEvent> visiblePreviewEvents() const;
+  std::uint64_t droppedPreviewEvents() const;
+  FrequencyTrackerFrameStats frameStats() const;
   std::uint64_t processedWindows() const;
   std::size_t retainedTracks() const;
 
  private:
   struct State;
+  static void rememberPreview(State&, PreviewTrackEvent);
   std::unique_ptr<State> state_;
 };
 

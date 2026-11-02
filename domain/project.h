@@ -79,7 +79,12 @@ enum class ChannelProcessingState {
   SourceMissing,
   Invalid
 };
-enum class NarrowbandPage { Observe, Modulation, DeepLearning, Demodulation };
+// Keep the old in-memory indices for callers of activatePageForAcceptance().
+// Persistence uses names, with legacy v6 names accepted by ProjectStore.
+enum class NarrowbandPage {
+  Observe = 0, Constellation = 1, Recognition = 2, Demodulation = 3, Eye = 4,
+  Modulation = Constellation, DeepLearning = Recognition
+};
 enum class NarrowbandWaveform { IQ, Magnitude, Phase, Envelope };
 
 struct DisplaySettings {
@@ -122,6 +127,9 @@ struct FileMetadata {
   double effectiveBandwidthHz = 0;
   FileAvailability availability;
   SampleFormat sampleFormat;
+  // Bounded content identity for safe file relocation; independent of mtime.
+  std::string referenceSignature;
+  std::uint64_t referenceBytes = 0;
 };
 struct Channel {
   std::string id;
@@ -140,6 +148,8 @@ struct Channel {
   bool wholeSource = false;
   bool preserveSourceTime = true;
   NarrowbandPage page = NarrowbandPage::Observe;
+  bool syncPanelExpanded = false;
+  bool constellationDecisions = false, constellationReference = false;
   TimeRange visibleSourceTime;
   FrequencyRange visibleBasebandFrequency;
   int psdFftSize = 4096;
@@ -187,6 +197,29 @@ struct AnnotationViewFilter {
   double minimumMean = 0;
 };
 
+// FileId is supplied by the owning FileState. A present (even empty) vector
+// is the authoritative index; absence means a legacy v6 project to migrate.
+struct CurrentDetectionSlot {
+  std::uint32_t sampleChannel = 0;
+  std::string committedRunId;
+  std::uint64_t generation = 0;
+  // The next configuration needs a run; the committed result stays viewable.
+  bool stale = false;
+  // Pending is not a formal result. Persist it to authorize crash recovery.
+  std::string pendingRunId;
+  std::vector<std::string> retiredRunIds;
+  // Only IDs needed by retained channel snapshots; never historical geometry.
+  std::vector<std::string> retiredAnnotationIds;
+  // Persisted on this file+channel. An accepted start sets it and clears the
+  // previous formal algorithm result. Failure does not clear it; only a
+  // complete publication does. Other files and IQ channels keep their own slots.
+  bool suppressFormalResults = false;
+  // This channel's terminal preview was not published. It does not block the
+  // next successful publication and is not consulted for any other file.
+  bool unpublishedPreview = false;
+  bool operator==(const CurrentDetectionSlot&) const = default;
+};
+
 struct FileState {
   FileMetadata metadata;
   ViewRange view;
@@ -203,28 +236,48 @@ struct FileState {
       navigationEnvelope;  // Session-only; rebuilt by actual source scanning.
   std::vector<AnnotationSourceSet> sourceSets;
   std::vector<DetectionRun> detectionRuns;
+  std::optional<std::vector<CurrentDetectionSlot>> currentDetectionSlots;
   std::string activeSegmentId, revisionEditingAnnotationId,
       revisionEditingBaseRevisionId;
   std::array<bool, 3> annotationLayers{true, true, true};
   AnnotationViewFilter annotationFilter;
 };
+inline bool formalDetectionSuppressed(const FileState& file, std::uint32_t channel) {
+  if (!file.currentDetectionSlots) return false;
+  for (const auto& slot : *file.currentDetectionSlots)
+    if (slot.sampleChannel == channel) return slot.suppressFormalResults;
+  return false;
+}
 inline bool annotationInContext(const FileState& file,
                                 const Annotation& value) {
   if (value.deleted ||
       (!value.fileId.empty() && value.fileId != file.metadata.id))
     return false;
+  if (value.sourceKind == AnnotationSource::Algorithm && value.sourceSetId.empty() &&
+      formalDetectionSuppressed(file, file.metadata.sampleFormat.selectedChannel))
+    return false;
   for (const auto& source : file.sourceSets)
-    if (source.id == value.sourceSetId)
-      return !source.deleted &&
-             source.sampleChannel == file.metadata.sampleFormat.selectedChannel;
+    if (source.id == value.sourceSetId) {
+      if (source.deleted || source.sampleChannel != file.metadata.sampleFormat.selectedChannel)
+        return false;
+      if (value.sourceKind == AnnotationSource::Algorithm &&
+          formalDetectionSuppressed(file, source.sampleChannel))
+        return false;
+      if (value.sourceKind == AnnotationSource::Algorithm && file.currentDetectionSlots) {
+        for (const auto& slot : *file.currentDetectionSlots)
+          if (slot.sampleChannel == source.sampleChannel)
+            return !slot.committedRunId.empty() &&
+                   slot.committedRunId == source.runId;
+        return false;
+      }
+      return true;
+    }
   return value.sourceSetId.empty();  // Unmigrated legacy projection.
 }
-inline bool annotationVisible(const FileState& file, const Annotation& value) {
+inline bool annotationMatchesFilter(const FileState& file,
+                                    const Annotation& value) {
   const auto& filter = file.annotationFilter;
   return annotationInContext(file, value) &&
-         file.annotationLayers[static_cast<int>(value.sourceKind)] &&
-         (filter.source < 0 ||
-          filter.source == static_cast<int>(value.sourceKind)) &&
          (filter.review < 0 ||
           filter.review == static_cast<int>(value.reviewStatus)) &&
          (filter.runId.empty() ||
@@ -236,6 +289,27 @@ inline bool annotationVisible(const FileState& file, const Annotation& value) {
           (value.originEvidence && value.originEvidence->scoreMean &&
            *value.originEvidence->scoreMean >= filter.minimumMean));
 }
+inline bool annotationEligibleForTab(const FileState& file,
+                                     const Annotation& value,
+                                     AnnotationSource source) {
+  if (source == AnnotationSource::Algorithm &&
+      formalDetectionSuppressed(file, file.metadata.sampleFormat.selectedChannel))
+    return false;
+  return value.sourceKind == source && annotationMatchesFilter(file, value);
+}
+inline bool annotationSelectable(const FileState& file,
+                                  const Annotation& value) {
+  return annotationInContext(file, value);
+}
+inline bool annotationOverlayVisible(const FileState& file,
+                                      const Annotation& value) {
+  return annotationInContext(file, value) &&
+         file.annotationLayers[static_cast<int>(value.sourceKind)];
+}
+inline bool annotationVisible(const FileState& file, const Annotation& value) {
+  // plotHidden keeps the detection-table row. Drawing and hit testing skip it.
+  return annotationOverlayVisible(file, value) && !value.plotHidden;
+}
 struct AnnotationCounts {
   std::size_t total = 0, matching = 0, selected = 0;
 };
@@ -243,12 +317,15 @@ inline AnnotationCounts annotationCounts(const FileState& file) {
   AnnotationCounts counts;
   for (const auto& value : file.marks) {
     if (annotationInContext(file, value)) ++counts.total;
-    if (annotationVisible(file, value)) ++counts.matching;
+    if (annotationSelectable(file, value)) ++counts.matching;
   }
   counts.selected = file.selectedMarkIds.size();
   return counts;
 }
 struct Project {
+  std::string projectId;
+  // Session-only resolved asset root. The .ssproj manifest owns its reference.
+  std::string assetDirectory;
   std::string name = "未命名工程";
   std::string activeFileId;
   std::string activeChannelId;

@@ -13,6 +13,7 @@ class QCheckBox;
 class QVBoxLayout;
 class QDoubleSpinBox;
 class QLineEdit;
+class QStackedWidget;
 namespace signalstudio {
 class UnsignedValueEdit;
 class AdaptiveValueEdit;
@@ -24,7 +25,6 @@ class AnnotationPanel final : public QWidget {
   explicit AnnotationPanel(Session&, QWidget* parent = nullptr);
   ~AnnotationPanel() override;
   QWidget* inspectorWidget() const { return inspector_; }
-  QWidget* layerWidget() const { return layerBar_; }
   const std::vector<std::string>& sortedVisibleIds() const;
   void refresh();
   void revealActive();
@@ -32,13 +32,21 @@ class AnnotationPanel final : public QWidget {
   void discardDrafts();
   void editRange();
   void deleteSelected(bool currentSegmentOnly = false);
+  void showImportLabelsDialog();
   bool importLabels(const QString&, QString* error = nullptr,
                     bool preview = true);
+  void setSourceTab(AnnotationSource, bool reconcile = true);
+  void setDetectionPreviewNote(const QString& note);
+  void setDetectionClearanceNote(const QString& note);
+  AnnotationSource sourceTab() const { return sourceTab_; }
+  void convertSelected(bool currentSegmentOnly = false,
+                       bool allowExplicitDuplicate = false);
  signals:
   void changed();
   void hoverChanged(const QString& id, const QString& segmentId);
   void message(const QString&);
   void createChannelRequested();
+  void sourceTabChanged(int source);
 
  protected:
   bool eventFilter(QObject*, QEvent*) override;
@@ -55,6 +63,8 @@ class AnnotationPanel final : public QWidget {
   void action(const AnnotationResult&);
   void chooseRow(const QModelIndex&, Qt::KeyboardModifiers, bool toggle);
   void filterChanged();
+  void setSelectedPlotHidden(bool hidden);
+  void applyOverlaySource(FileState&, AnnotationSource);
   void geometry(int);
   void editCell(const QModelIndex&);
   bool finishCell(bool commit, bool focusTable = false);
@@ -63,18 +73,32 @@ class AnnotationPanel final : public QWidget {
   Session& session_;
   AnnotationTableModel* model_ = nullptr;
   QTableView* table_ = nullptr;
-  QComboBox* source_ = nullptr;
+  AnnotationSource sourceTab_ = AnnotationSource::ImportedLabel;
+  QStackedWidget* tablePages_ = nullptr;
+  struct TabState {
+    QTableView* table = nullptr;
+    AnnotationTableModel* model = nullptr;
+    QCheckBox* selectAll = nullptr;
+    std::size_t page = 0;
+    AnnotationViewFilter filter;
+    QString query;
+  };
+  std::array<TabState, 3> tabs_{};
+  QLineEdit* query_ = nullptr;
   QComboBox* status_ = nullptr;
   QComboBox* segments_ = nullptr;
-  QComboBox* run_ = nullptr;
   QDoubleSpinBox* minimumScore_ = nullptr;
-  QCheckBox* layers_[3]{};
   QLabel* count_ = nullptr;
+  QLabel* detectionStatus_ = nullptr;
+  QString detectionPreviewNote_;
+  QString detectionClearanceNote_;
   QCheckBox* selectAll_ = nullptr;
   QLabel* detail_ = nullptr;
+  QLabel* rangeSummary_ = nullptr;
   QLabel* error_ = nullptr;
   QWidget* inspector_ = nullptr;
-  QWidget* layerBar_ = nullptr;
+  QWidget* geometryEditor_ = nullptr;
+  QLabel* readOnlyRange_ = nullptr;
   AnnotationEvidenceWidget* evidencePanel_ = nullptr;
   AdaptiveValueEdit* begin_ = nullptr;
   AdaptiveValueEdit* end_ = nullptr;

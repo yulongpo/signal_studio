@@ -53,6 +53,9 @@ struct DetectionRefinementOptions {
   std::size_t roiFrequencyRows = 512;
   std::size_t roiTimeColumns = 64;
   std::size_t workingCellBudget = 4 * 1024 * 1024;
+  // Caller-owned result grant; the historical default preserves the domain
+  // run limit. Reject before growing activity output, never truncate it.
+  std::size_t maximumActivitySegments = annotationSegmentBudget;
   // Checked between bounded stages and every 4096 sample cells/coarse frames.
   std::function<bool()> cancelled;
 };
@@ -98,9 +101,20 @@ struct DetectionRefinementEvidence {
   double effectiveCoarseSplitGapSeconds = 0;
 };
 
+// ResourceLimit may drop one measurement and keep a labelled fallback.
+// WorkingCellLimit, HardFailure and Cancelled must not publish activity.
+enum class DetectionFailureCode : int {
+  None = 0,
+  ResourceLimit = 1,
+  HardFailure = 2,
+  Cancelled = 3,
+  WorkingCellLimit = 4,
+};
+
 struct DetectionRefinementResult {
   bool ok = true;
   std::string error;
+  DetectionFailureCode failureCode = DetectionFailureCode::None;
   RefineMethod method = RefineMethod::None;
   RefineStatus status = RefineStatus::Skipped;
   ViewRange observation;

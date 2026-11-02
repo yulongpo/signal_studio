@@ -101,6 +101,92 @@ std::string manual(AnnotationService& service, FileState& file) {
   return result.id;
 }
 
+void checkSourceUnchanged(const FileState& file, const Annotation& before) {
+  const auto* source = findAnnotation(file, before.id);
+  check(source && source->name == before.name && source->range == before.range &&
+            source->fileId == before.fileId && source->sourceSetId == before.sourceSetId &&
+            source->originRecordId == before.originRecordId &&
+            source->sourceKind == before.sourceKind && source->classLabel == before.classLabel &&
+            source->note == before.note && source->activeSegmentId == before.activeSegmentId &&
+            source->revisionId == before.revisionId && source->segments == before.segments &&
+            source->observation == before.observation &&
+            source->observationFrequencyFrame == before.observationFrequencyFrame &&
+            source->observationTimeQuality == before.observationTimeQuality &&
+            source->originEvidence == before.originEvidence &&
+            source->conversionSnapshot == before.conversionSnapshot &&
+            source->reviewStatus == before.reviewStatus &&
+            source->reviewRevisionId == before.reviewRevisionId &&
+            source->reviewHistory == before.reviewHistory && source->revisions == before.revisions &&
+            source->derivedFrom == before.derivedFrom && source->deleted == before.deleted,
+        "Read-only source identity, geometry, quality, or immutable evidence changed");
+}
+
+Annotation convertSourceToManual(AnnotationService& service, FileState& file,
+                                  const std::string& sourceId) {
+  const auto before = *findAnnotation(file, sourceId);
+  const auto setBefore = *findSourceSet(file, before.sourceSetId);
+  const auto history = service.historySize(file);
+  const auto editId = file.revisionEditingAnnotationId;
+  const auto editRevision = file.revisionEditingBaseRevisionId;
+  const auto segment = before.segments.empty() ? "missing" : before.segments.front().id;
+  check(before.sourceKind != AnnotationSource::Manual && !service.canEdit(file, sourceId) &&
+            !service.beginRevision(file, sourceId) &&
+            !service.rename(file, sourceId, "Forbidden", "Forbidden") &&
+            !service.commitGeometry(file, sourceId, segment, geometry()) &&
+            !service.commitObservationFrequency(file, sourceId, {99'950'000, 100'050'000}) &&
+            !service.addSegment(file, sourceId, geometry()) &&
+            !service.deleteSegment(file, sourceId, segment) &&
+            !service.splitSegment(file, sourceId, segment, 300) &&
+            !service.mergeSegments(file, sourceId, {segment, "other"}) &&
+            !service.adoptObservation(file, sourceId) &&
+            !service.restoreOrigin(file, sourceId) &&
+            !service.confirmSegment(file, sourceId, segment) &&
+            !service.reviewBatch(file, {sourceId}, ReviewStatus::Accepted) &&
+            !service.deleteBatch(file, {sourceId}),
+        "Imported and Algorithm sources must reject direct writes before conversion");
+  Channel channel;
+  const auto request = annotationChannelRequest(file, sourceId, file.view.time);
+  check(!prepareAnnotationChannel(file, request, channel) &&
+            !service.bindChannelSource(file, channel, request) &&
+            !service.bindChannelSource(file, channel, sourceId, segment) &&
+            !channel.sourceSnapshot && channel.annotationId.empty() &&
+            service.historySize(file) == history &&
+            file.revisionEditingAnnotationId == editId &&
+            file.revisionEditingBaseRevisionId == editRevision,
+        "Read-only channel/write rejections must leave candidates, drafts, and history unchanged");
+  checkSourceUnchanged(file, before);
+  std::vector<std::string> created;
+  const auto converted = service.convertToManual(file, {sourceId}, {}, created);
+  checkResult(converted, "Explicit conversion to Manual failed");
+  check(converted.changed && created.size() == 1 && service.historySize(file) == history + 1,
+        "Explicit conversion must create one atomic Manual command");
+  const auto copy = *findAnnotation(file, created.front());
+  check(copy.id != sourceId && copy.sourceSetId != before.sourceSetId &&
+            copy.revisionId != before.revisionId && copy.sourceKind == AnnotationSource::Manual &&
+            service.canEdit(file, copy.id) && copy.name == before.name &&
+            copy.note == before.note && copy.classLabel == before.classLabel &&
+            copy.reviewStatus == before.reviewStatus && copy.segments.size() == before.segments.size() &&
+            copy.observation == before.observation &&
+            copy.observationFrequencyFrame == before.observationFrequencyFrame &&
+            copy.observationTimeQuality == before.observationTimeQuality && copy.conversionSnapshot,
+        "Conversion must preserve content and quality in an independent editable Manual copy");
+  for (std::size_t i = 0; i < copy.segments.size(); ++i) {
+    auto expected = before.segments[i];
+    check(expected.id != copy.segments[i].id, "Copied segments require independent identities");
+    expected.id = copy.segments[i].id;
+    check(expected == copy.segments[i], "Conversion changed segment geometry/frame/quality");
+  }
+  const auto& snapshot = *copy.conversionSnapshot;
+  check(snapshot.sourceAnnotationId == before.id && snapshot.sourceRevisionId == before.revisionId &&
+            snapshot.sourceKind == before.sourceKind && snapshot.sourceSet == setBefore &&
+            snapshot.sourceSegments == before.segments && snapshot.sourceObservation == before.observation &&
+            snapshot.sourceOriginEvidence == *before.originEvidence &&
+            *findSourceSet(file, setBefore.id) == setBefore,
+        "Conversion must retain complete independent source evidence");
+  checkSourceUnchanged(file, before);
+  return copy;
+}
+
 void testLegacyCompatibility() {
   static_assert(std::is_same_v<Mark, Annotation>);
   static_assert(std::is_const_v<
@@ -149,24 +235,30 @@ void testSourcesAndImmutableOrigin() {
   const auto raw = imported.originEvidence->originalFieldsJson;
   checkResult(service.publishSourceSet(file, importedSet, {imported}),
               "Import publication failed");
-  auto* label = findAnnotation(file, "label-1");
-  const auto origin = label->originEvidence;
+  const auto source = *findAnnotation(file, "label-1");
+  const auto sourceOrigin = source.originEvidence;
+  auto* label = findAnnotation(file, source.id);
   check(label->reviewStatus == ReviewStatus::Pending &&
             label->segments.size() == 2,
         "Imported burst label must be Pending and multi-segment");
+  const auto copy = convertSourceToManual(service, file, source.id);
+  label = findAnnotation(file, copy.id);
+  const auto origin = label->originEvidence;
   const auto segmentId = label->segments.front().id;
   check(service.canEdit(file, label->id),
-        "Imported sources must support direct editing without a revision gate");
+        "Explicit Manual copies must support direct editing");
   checkResult(service.beginRevision(file, label->id),
               "Beginning explicit revision failed");
   checkResult(
       service.commitGeometry(file, label->id, segmentId, geometry(101, 500)),
       "Revision geometry failed");
-  label = findAnnotation(file, "label-1");
-  check(label->sourceKind == AnnotationSource::ImportedLabel &&
-            label->originEvidence == origin,
-        "Human revision must preserve source and immutable origin ownership");
-  check(label->originEvidence->originalFieldsJson == raw &&
+  label = findAnnotation(file, copy.id);
+  check(label->sourceKind == AnnotationSource::Manual &&
+            label->originEvidence == origin && label->conversionSnapshot == copy.conversionSnapshot,
+        "Human revision must preserve Manual identity and both immutable evidence records");
+  check(label->conversionSnapshot->sourceOriginEvidence.originalFieldsJson == raw &&
+            label->conversionSnapshot->sourceOriginEvidence.originalSegments[0].range == geometry() &&
+            sourceOrigin->originalFieldsJson == raw &&
             label->originEvidence->originalSegments[0].range == geometry(),
         "Unknown origin fields and original geometry changed");
   check(label->revisions.size() == 2 &&
@@ -179,7 +271,7 @@ void testSourcesAndImmutableOrigin() {
   const auto historyCount = service.historySize(file);
   const auto repeated =
       service.reviewBatch(file, {label->id, label->id}, ReviewStatus::Accepted);
-  check(repeated.ok && !repeated.changed && file.marks.size() == 2 &&
+  check(repeated.ok && !repeated.changed && file.marks.size() == 3 &&
             label->reviewHistory.size() == reviewCount &&
             service.historySize(file) == historyCount,
         "Repeated acceptance must be idempotent");
@@ -192,8 +284,10 @@ void testSourcesAndImmutableOrigin() {
   checkResult(service.restoreOrigin(file, label->id),
               "Restoring original geometry failed");
   check(label->segments.front().range == geometry() &&
-            label->sourceKind == AnnotationSource::ImportedLabel,
+            label->sourceKind == AnnotationSource::Manual &&
+            label->conversionSnapshot->sourceKind == AnnotationSource::ImportedLabel,
         "Restoring origin must not change source identity");
+  checkSourceUnchanged(file, source);
   check(validateFileAnnotations(file).ok,
         "Source invariants failed after revisions");
 }
@@ -210,7 +304,8 @@ void testUnknownObservation() {
   annotation.originEvidence = evidence;
   checkResult(service.publishSourceSet(file, set, {annotation}),
               "Observation publication failed");
-  const auto* unknown = findAnnotation(file, "unknown");
+  const auto source = *findAnnotation(file, "unknown");
+  const auto* unknown = findAnnotation(file, source.id);
   check(unknown->segments.empty() && unknown->range == ViewRange{},
         "Unknown time must not fabricate an active rectangle");
   const auto reviewCount = unknown->reviewHistory.size();
@@ -220,16 +315,18 @@ void testUnknownObservation() {
             unknown->reviewHistory.size() == reviewCount &&
             service.historySize(file) == historyCount,
         "Confirmation must not turn an observation into a located segment");
-  checkResult(service.reviewBatch(file, {unknown->id}, ReviewStatus::Accepted),
+  const auto copy = convertSourceToManual(service, file, source.id);
+  unknown = findAnnotation(file, copy.id);
+  checkResult(service.reviewBatch(file, {copy.id}, ReviewStatus::Accepted),
               "Unknown object can be reviewed");
   Channel channel;
-  check(!service.bindChannelSource(file, channel, "unknown", "missing"),
+  check(!service.bindChannelSource(file, channel, copy.id, "missing"),
         "Unknown time cannot bind a nonexistent located segment");
-  checkResult(service.beginRevision(file, "unknown"),
+  checkResult(service.beginRevision(file, copy.id),
               "Observation revision session failed");
-  checkResult(service.adoptObservation(file, "unknown"),
+  checkResult(service.adoptObservation(file, copy.id),
               "Explicit observation adoption failed");
-  unknown = findAnnotation(file, "unknown");
+  unknown = findAnnotation(file, copy.id);
   check(unknown->segments.size() == 1 &&
             unknown->segments[0].timeQuality == TimeQuality::Manual &&
             unknown->reviewStatus == ReviewStatus::Pending,
@@ -246,6 +343,7 @@ void testUnknownObservation() {
   invalid.segments[0].timeQuality = TimeQuality::Unknown;
   check(!validateAnnotation(invalid, annotationBounds(file.metadata)),
         "Unknown-time segment must be rejected");
+  checkSourceUnchanged(file, source);
 }
 
 void testPendingSingleSegmentConfirmation() {
@@ -256,7 +354,8 @@ void testPendingSingleSegmentConfirmation() {
       annotationFixture(set, "pending-event", {geometry(), geometry(800, 900)});
   checkResult(service.publishSourceSet(file, set, {imported}),
               "Multi-segment confirmation fixture publication failed");
-  auto* annotation = findAnnotation(file, imported.id);
+  const auto copy = convertSourceToManual(service, file, imported.id);
+  auto* annotation = findAnnotation(file, copy.id);
   const auto firstId = annotation->segments.front().id;
   const auto secondId = annotation->segments.back().id;
   checkResult(service.select(file, {annotation->id}, annotation->id, secondId),
@@ -345,10 +444,11 @@ void testConfirmationUndoRedoAndRejection() {
   AnnotationService service;
   const auto set =
       sourceFixture(file, "confirmation-history", AnnotationSource::Algorithm);
-  const auto event = annotationFixture(set, "confirmation-event",
+  auto event = annotationFixture(set, "confirmation-event",
                                        {geometry(), geometry(800, 900)});
   checkResult(service.publishSourceSet(file, set, {event}),
               "Confirmation history fixture publication failed");
+  event = convertSourceToManual(service, file, event.id);
   auto* annotation = findAnnotation(file, event.id);
   const auto segmentId = annotation->segments.front().id;
   const auto revisionId = annotation->revisionId;
@@ -427,10 +527,11 @@ void testConfirmationGeometryInvalidation() {
   auto file = fileFixture();
   AnnotationService service;
   const auto set = sourceFixture(file, "confirmed-geometry");
-  const auto event = annotationFixture(set, "geometry-event",
+  auto event = annotationFixture(set, "geometry-event",
                                        {geometry(), geometry(800, 900)});
   checkResult(service.publishSourceSet(file, set, {event}),
               "Confirmed geometry fixture publication failed");
+  event = convertSourceToManual(service, file, event.id);
   auto* annotation = findAnnotation(file, event.id);
   const auto firstId = annotation->segments.front().id;
   const auto secondId = annotation->segments.back().id;
@@ -507,7 +608,7 @@ void testConfirmationAvailableAndEffectiveBounds() {
   file.metadata.availability.availableSamples = 1000;
   AnnotationService service;
   const auto set = sourceFixture(file, "confirmation-prefix");
-  const auto event =
+  auto event =
       annotationFixture(set, "prefix-event",
                         {geometry(),
                          geometry(800, 1000),
@@ -515,6 +616,7 @@ void testConfirmationAvailableAndEffectiveBounds() {
                          {{100, 600}, {99'600'000, 99'700'000}}});
   checkResult(service.publishSourceSet(file, set, {event}),
               "Confirmation prefix fixture publication failed");
+  event = convertSourceToManual(service, file, event.id);
   auto* annotation = findAnnotation(file, event.id);
   const auto origin = annotation->originEvidence;
   const auto atBoundary = annotation->segments[1].id;
@@ -561,9 +663,10 @@ void testConfirmationCurrentSourceAndRevision() {
   file.metadata.availability.fingerprint = "original-fingerprint";
   AnnotationService service;
   const auto set = sourceFixture(file, "confirmation-source");
-  const auto event = annotationFixture(set, "source-event");
+  auto event = annotationFixture(set, "source-event");
   checkResult(service.publishSourceSet(file, set, {event}),
               "Confirmation source fixture publication failed");
+  event = convertSourceToManual(service, file, event.id);
   auto* annotation = findAnnotation(file, event.id);
   const auto segmentId = annotation->segments.front().id;
   const auto reviewCount = annotation->reviewHistory.size();
@@ -577,10 +680,10 @@ void testConfirmationCurrentSourceAndRevision() {
           "Loading/failed source cannot confirm a segment");
   }
   file.metadata = metadataBefore;
-  file.sourceSets.front().deleted = true;
+  findSourceSet(file, annotation->sourceSetId)->deleted = true;
   check(!service.confirmSegment(file, event.id, segmentId),
         "Deleted source set cannot confirm a segment");
-  file.sourceSets.front().deleted = false;
+  findSourceSet(file, annotation->sourceSetId)->deleted = false;
   file.metadata.path = "replacement.iq";
   check(!service.confirmSegment(file, event.id, segmentId),
         "Changed source path cannot confirm an old label");
@@ -656,17 +759,20 @@ void testPhysicalAndAvailableBounds() {
   checkResult(service.publishSourceSet(file, set, {annotation}),
               "Physical label tail outside available/effective bounds must be "
               "retained");
+  const auto source = *findAnnotation(file, annotation.id);
+  annotation = convertSourceToManual(service, file, source.id);
   check(!service.createManual(file, "Unavailable", geometry(1000, 2000)),
         "Manual creation cannot exceed available prefix");
   check(!service.createManual(file, "Outside effective",
                               {{1, 10}, {99'600'000, 99'700'000}}),
         "Manual creation cannot exceed effective band");
-  checkResult(service.beginRevision(file, "tail-label"),
+  checkResult(service.beginRevision(file, annotation.id),
               "Tail label revision session failed");
-  check(!service.commitGeometry(file, "tail-label",
+  check(!service.commitGeometry(file, annotation.id,
                                 annotation.segments.front().id,
                                 geometry(8000, 9000)),
         "Manual edit cannot claim unavailable samples");
+  checkSourceUnchanged(file, source);
   auto invalidSet = sourceFixture(file, "physical-overflow");
   auto invalid =
       annotationFixture(invalidSet, "overrun", {geometry(9000, 11000)});
@@ -801,12 +907,22 @@ void testUnifiedSelectionOrderFilterAndHover() {
         "Selection must not have a table page or tree preview cap");
   file.annotationFilter.minimumMean = .9;
   service.reconcileSelection(file);
+  check(file.selectedMarkIds == order && file.activeMarkId == order[267] &&
+            file.hoveredMarkId == target->id,
+        "A table filter must not invalidate legal graph/tree selection or overlay hover");
+  std::vector<std::string> matching;
+  for (const auto& id : order)
+    if (annotationEligibleForTab(file, *findAnnotation(file, id), AnnotationSource::Algorithm))
+      matching.push_back(id);
+  check(matching.empty() && annotationCounts(file).total == 268 &&
+            !service.chooseSelection(file, order[100], AnnotationSelectionMode::Replace, matching),
+        "The table's filtered ID order must exclude below-threshold rows");
+  checkResult(service.select(file, matching), "Applying the table filter intersection failed");
   check(file.selectedMarkIds.empty() && file.activeMarkId.empty() &&
             file.activeSegmentId.empty() && file.selectionAnchorId.empty() &&
-            file.hoveredMarkId.empty() &&
-            annotationCounts(file).matching == 0 &&
+            file.hoveredMarkId == target->id &&
             annotationCounts(file).total == 268,
-        "A filter must prune selected, current, anchor, and hover identities");
+        "The table must intersect its selection explicitly while overlay hover stays independent");
   file.annotationFilter.minimumMean = 0;
   service.reconcileSelection(file);
   check(file.selectedMarkIds.empty(),
@@ -814,8 +930,18 @@ void testUnifiedSelectionOrderFilterAndHover() {
   checkResult(service.select(file, order), "Select before hiding layer failed");
   file.annotationLayers[2] = false;
   service.reconcileSelection(file);
-  check(file.selectedMarkIds.empty() && file.activeMarkId.empty(),
-        "A closed source layer must prune its entire selection");
+  service.hover(file, target->id, target->activeSegmentId);
+  check(file.selectedMarkIds == order && file.activeMarkId == order.back() &&
+            file.hoveredMarkId.empty() && annotationCounts(file).matching == order.size() &&
+            annotationCounts(file).selected == order.size() &&
+            annotationSelectable(file, *target) &&
+            annotationEligibleForTab(file, *target, AnnotationSource::Algorithm) &&
+            !annotationOverlayVisible(file, *target) && !annotationVisible(file, *target),
+        "A hidden overlay must retain table selection and eligibility while preventing graph hover/drawing");
+  checkResult(service.chooseSelection(file, order[210], AnnotationSelectionMode::Replace, order),
+              "A table row with a hidden overlay must remain selectable");
+  check(file.selectedMarkIds == std::vector<std::string>{order[210]},
+        "Table selection must not depend on the graph layer switch");
   file.annotationLayers[2] = true;
   checkResult(service.select(file, {order[0]}, order[0]),
               "Select before sample-channel change failed");
@@ -859,36 +985,55 @@ void testAtomicBatchAndConcurrentUndo() {
   check(file.marks.size() == 2 &&
             findSegment(*findAnnotation(file, id), segmentId),
         "Redo must keep both sources and stable IDs");
+  const auto sourceBefore = *findAnnotation(file, algorithm.id);
+  const auto copy = convertSourceToManual(service, file, algorithm.id);
   auto* manualObject = findAnnotation(file, id);
   auto* algorithmObject = findAnnotation(file, algorithm.id);
+  auto* copiedObject = findAnnotation(file, copy.id);
   const auto oldManual = manualObject->reviewStatus;
   const auto oldAlgorithm = algorithmObject->reviewStatus;
+  const auto oldCopy = copiedObject->reviewStatus;
   check(!service.reviewBatch(file, {id, algorithm.id, "missing"},
                              ReviewStatus::Rejected),
         "Missing batch review target must reject");
   check(manualObject->reviewStatus == oldManual &&
             algorithmObject->reviewStatus == oldAlgorithm,
         "Failed batch review must not partially change valid objects");
+  const auto historyBefore = service.historySize(file);
+  check(!service.reviewBatch(file, {id, algorithm.id}, ReviewStatus::Rejected) &&
+            !service.deleteBatch(file, {id, algorithm.id}) &&
+            manualObject->reviewStatus == oldManual && !manualObject->deleted &&
+            service.historySize(file) == historyBefore,
+        "A read-only member must atomically reject otherwise valid Manual review/deletion targets");
+  checkSourceUnchanged(file, sourceBefore);
+  check(!service.reviewBatch(file, {id, copy.id, "missing"}, ReviewStatus::Rejected) &&
+            manualObject->reviewStatus == oldManual && copiedObject->reviewStatus == oldCopy,
+        "A missing member after valid Manual targets must reject the entire review batch");
   checkResult(
-      service.reviewBatch(file, {id, algorithm.id}, ReviewStatus::Rejected),
+      service.reviewBatch(file, {id, copy.id}, ReviewStatus::Rejected),
       "Atomic review batch failed");
   check(manualObject->reviewStatus == ReviewStatus::Rejected &&
-            algorithmObject->reviewStatus == ReviewStatus::Rejected,
+            copiedObject->reviewStatus == ReviewStatus::Rejected &&
+            algorithmObject->reviewStatus == oldAlgorithm,
         "Batch review should change exactly the selected objects");
   checkResult(service.undo(file), "Atomic review undo failed");
   check(manualObject->reviewStatus == oldManual &&
-            algorithmObject->reviewStatus == oldAlgorithm,
+            copiedObject->reviewStatus == oldCopy && algorithmObject->reviewStatus == oldAlgorithm,
         "Undo batch review must restore all selected objects together");
   check(!service.deleteBatch(file, {id, "missing"}) && !manualObject->deleted,
         "Batch delete must prevalidate all targets");
-  checkResult(service.deleteBatch(file, {id, algorithm.id}),
+  check(!service.deleteBatch(file, {id, copy.id, "missing"}) &&
+            !manualObject->deleted && !copiedObject->deleted,
+        "A missing member after valid Manual targets must reject the entire deletion batch");
+  checkResult(service.deleteBatch(file, {id, copy.id}),
               "Soft deletion failed");
-  check(file.marks.size() == 2 && manualObject->deleted &&
-            algorithmObject->deleted,
+  check(file.marks.size() == 3 && manualObject->deleted &&
+            copiedObject->deleted && !algorithmObject->deleted,
         "Deletion must preserve immutable source evidence");
   checkResult(service.undo(file), "Soft deletion undo failed");
-  check(!manualObject->deleted && !algorithmObject->deleted,
+  check(!manualObject->deleted && !copiedObject->deleted && !algorithmObject->deleted,
         "Soft deletion undo failed to restore objects");
+  checkSourceUnchanged(file, sourceBefore);
   check(validateFileAnnotations(file).ok,
         "Concurrent history left invalid state");
 }
@@ -1034,6 +1179,10 @@ void testSourceIdempotenceAndValidation() {
   check(findAnnotation(file, "bb")->segments[0].range.frequency.lowerHz ==
             -100'000,
         "Validation must not modify stored frequency coordinates");
+  check(!service.canUndo(file) && !service.canRedo(file) && service.historySize(file) == 0 &&
+            !service.undo(file) && file.marks.size() == 2 &&
+            findSourceSet(file, set.id) && findSourceSet(file, baseband.id),
+        "Imported source management must not enter Manual undo or remove/resurrect system sources");
 }
 
 void testBudgetsAndIndependentHistories() {
@@ -1091,6 +1240,7 @@ void testDirectEditsPreserveOriginAndMetadataQuality() {
     auto file = fileFixture();
     AnnotationService service;
     std::string id;
+    std::optional<Annotation> originalSource;
     if (source == AnnotationSource::Manual) {
       id = manual(service, file);
     } else {
@@ -1098,7 +1248,8 @@ void testDirectEditsPreserveOriginAndMetadataQuality() {
       checkResult(service.publishSourceSet(
                       file, set, {annotationFixture(set, "direct-event")}),
                   "Direct-edit publication failed");
-      id = "direct-event";
+      originalSource = *findAnnotation(file, "direct-event");
+      id = convertSourceToManual(service, file, originalSource->id).id;
     }
     auto* annotation = findAnnotation(file, id);
     const auto origin = annotation->originEvidence;
@@ -1112,7 +1263,7 @@ void testDirectEditsPreserveOriginAndMetadataQuality() {
       checkResult(
           service.rename(file, id, "Name " + std::to_string(int(review)),
                          "Edited note"),
-          "All sources must allow direct metadata edits");
+          "Manual creation and explicit source copies must allow direct metadata edits");
       check(annotation->reviewStatus == review &&
                 annotation->segments.front().confirmed == confirmed &&
                 annotation->reviewRevisionId == annotation->revisionId,
@@ -1143,7 +1294,8 @@ void testDirectEditsPreserveOriginAndMetadataQuality() {
               annotation->originEvidence == origin &&
               annotation->originRecordId == originId &&
               annotation->sourceSetId == setId &&
-              annotation->sourceKind == source && file.marks.size() == 1,
+              annotation->sourceKind == AnnotationSource::Manual &&
+              file.marks.size() == (originalSource ? 2u : 1u),
           "Direct edits must preserve provenance, precision, and object "
           "identity");
     checkResult(service.undo(file), "Geometry undo failed");
@@ -1151,6 +1303,13 @@ void testDirectEditsPreserveOriginAndMetadataQuality() {
         annotation->segments.front().range.time.begin == geometry().time.begin,
         "One geometry submission must correspond to one undo");
     check(validateFileAnnotations(file).ok, "Direct edit invariant failed");
+    if (originalSource) {
+      checkSourceUnchanged(file, *originalSource);
+      check(annotation->conversionSnapshot &&
+                annotation->conversionSnapshot->sourceKind == source &&
+                annotation->conversionSnapshot->sourceOriginEvidence == *originalSource->originEvidence,
+            "Repeated Manual edits and undo must preserve the actual Imported/Algorithm provenance");
+    }
   }
 }
 
@@ -1172,6 +1331,9 @@ void testUnknownFrequencyAndEditContext() {
   const auto originalEvidence = *publishedOrigin;
   check(originalEvidence == *evidence,
         "Publication must retain the complete fixture evidence contents");
+  const auto sourceBefore = *findAnnotation(file, value.id);
+  value = convertSourceToManual(service, file, value.id);
+  const auto manualOrigin = value.originEvidence;
   checkResult(service.select(file, {value.id}, value.id),
               "Observation selection failed");
   const auto context = annotationEditContext(file, value.id, 23);
@@ -1188,8 +1350,9 @@ void testUnknownFrequencyAndEditContext() {
             annotation->observation->frequency == next &&
             annotation->observationTimeQuality ==
                 TimeQuality::WindowObservation &&
-            annotation->originEvidence == publishedOrigin &&
-            *annotation->originEvidence == originalEvidence,
+            annotation->originEvidence == manualOrigin &&
+            annotation->conversionSnapshot->sourceOriginEvidence == originalEvidence &&
+            findAnnotation(file, sourceBefore.id)->originEvidence == publishedOrigin,
         "Frequency editing must retain unknown activity time and origin");
   check(!annotationEditContextMatches(file, context, 23),
         "A newer object revision must invalidate an old draft");
@@ -1210,6 +1373,7 @@ void testUnknownFrequencyAndEditContext() {
   file.metadata.centerFrequencyHz += 100;
   check(!service.canEdit(file, value.id),
         "Physical source identity validation remains required");
+  checkSourceUnchanged(file, sourceBefore);
 }
 
 void testSegmentDeletionSnapshotAndConcurrentUndo() {
@@ -1221,6 +1385,8 @@ void testSegmentDeletionSnapshotAndConcurrentUndo() {
       annotationFixture(set, "delete-event", {geometry(), geometry(700, 900)});
   checkResult(service.publishSourceSet(file, set, {value}),
               "Delete fixture failed");
+  const auto sourceBefore = *findAnnotation(file, value.id);
+  value = convertSourceToManual(service, file, value.id);
   checkResult(service.reviewBatch(file, {value.id}, ReviewStatus::Accepted),
               "Delete confirmation failed");
   auto* annotation = findAnnotation(file, value.id);
@@ -1264,6 +1430,7 @@ void testSegmentDeletionSnapshotAndConcurrentUndo() {
   check(!findAnnotation(file, value.id)->deleted &&
             findAnnotation(file, "later-result"),
         "One undo must restore last-segment object deletion");
+  checkSourceUnchanged(file, sourceBefore);
 }
 
 void testRestoreOriginPreservesConfirmedSibling() {
@@ -1271,10 +1438,12 @@ void testRestoreOriginPreservesConfirmedSibling() {
   AnnotationService service;
   const auto set =
       sourceFixture(file, "restore-sibling", AnnotationSource::Algorithm);
-  const auto value = annotationFixture(set, "restore-object",
+  auto value = annotationFixture(set, "restore-object",
                                        {geometry(), geometry(700, 900)});
   checkResult(service.publishSourceSet(file, set, {value}),
               "Restore fixture failed");
+  const auto sourceBefore = *findAnnotation(file, value.id);
+  value = convertSourceToManual(service, file, value.id);
   checkResult(service.reviewBatch(file, {value.id}, ReviewStatus::Accepted),
               "Restore Accepted setup failed");
   auto* annotation = findAnnotation(file, value.id);
@@ -1305,6 +1474,7 @@ void testRestoreOriginPreservesConfirmedSibling() {
             annotation->segments.back() == edited &&
             annotation->revisionId == beforeRevision,
         "One undo must restore exactly the geometry before restoration");
+  checkSourceUnchanged(file, sourceBefore);
 }
 
 void testLocatedChannelRequestsAndRelations() {
@@ -1314,10 +1484,12 @@ void testLocatedChannelRequestsAndRelations() {
   AnnotationService service;
   const auto set =
       sourceFixture(file, "channel-requests", AnnotationSource::Algorithm);
-  const auto event = annotationFixture(set, "request-event",
+  auto event = annotationFixture(set, "request-event",
                                        {geometry(), geometry(800, 1400)});
   checkResult(service.publishSourceSet(file, set, {event}),
               "Channel request fixture failed");
+  const auto sourceBefore = *findAnnotation(file, event.id);
+  event = convertSourceToManual(service, file, event.id);
   auto* annotation = findAnnotation(file, event.id);
   const auto first = annotation->segments.front().id;
   const auto second = annotation->segments.back().id;
@@ -1434,6 +1606,7 @@ void testLocatedChannelRequestsAndRelations() {
   check(!failed && failed.field == "source" &&
             failed.error.find("fixture read failure") != std::string::npos,
         "A failed source must expose its saved I/O cause");
+  checkSourceUnchanged(file, sourceBefore);
 }
 
 void testLegacyChannelBindingFrequencyBounds() {
@@ -1452,6 +1625,8 @@ void testLegacyChannelBindingFrequencyBounds() {
     }
     checkResult(service.publishSourceSet(file, set, {event}),
                 "Legacy binding fixture failed");
+    const auto sourceBefore = *findAnnotation(file, event.id);
+    event = convertSourceToManual(service, file, event.id);
     const auto* annotation = findAnnotation(file, event.id);
     const auto segmentId = annotation->segments.front().id;
     for (const auto frequency : {FrequencyRange{99.875e6, 100.075e6},
@@ -1484,6 +1659,7 @@ void testLegacyChannelBindingFrequencyBounds() {
               validateFileAnnotations(file).ok,
           "An accepted legacy binding must satisfy canonical full-range "
           "validation after physical-frequency conversion");
+    checkSourceUnchanged(file, sourceBefore);
   }
 }
 
@@ -1537,6 +1713,8 @@ void testUserRangeChannelsPreserveUnknownTime() {
   observation.originEvidence = evidence;
   checkResult(service.publishSourceSet(file, set, {observation}),
               "Unknown-time fixture failed");
+  const auto sourceBefore = *findAnnotation(file, observation.id);
+  observation = convertSourceToManual(service, file, observation.id);
   auto request = annotationChannelRequest(file, observation.id, {800, 1200}, 7);
   check(request.bindingKind == ChannelBindingKind::UserRange &&
             request.segmentId.empty() &&
@@ -1598,6 +1776,290 @@ void testUserRangeChannelsPreserveUnknownTime() {
             file.channels.front().sourceRelation ==
                 ChannelSourceRelation::Current,
         "Unknown-time channels and undo must retain valid physical snapshots");
+  checkSourceUnchanged(file, sourceBefore);
+}
+
+std::string persistedSelection(const FileState& file) {
+  std::string text;
+  auto put = [&](const std::string& value) {
+    text.append(value);
+    text.push_back('|');
+  };
+  for (const auto& id : file.selectedMarkIds) put(id);
+  put(file.activeMarkId);
+  put(file.activeSegmentId);
+  put(file.selectionAnchorId);
+  put(file.selectionSampleChannel
+          ? std::to_string(*file.selectionSampleChannel)
+          : std::string{"-"});
+  put(file.display.psdFromSelection ? "1" : "0");
+  put(file.revisionEditingAnnotationId);
+  put(file.revisionEditingBaseRevisionId);
+  for (const auto& mark : file.marks) {
+    put(mark.id);
+    put(mark.revisionId);
+    put(mark.activeSegmentId);
+    put(std::to_string(mark.revisions.size()));
+    put(std::to_string(mark.reviewHistory.size()));
+    put(std::to_string(mark.range.time.begin));
+    put(std::to_string(mark.range.time.end));
+    put(std::to_string(mark.range.frequency.lowerHz));
+    put(std::to_string(mark.range.frequency.upperHz));
+    put(mark.deleted ? "1" : "0");
+    put(mark.name);
+    put(std::to_string(static_cast<int>(mark.sourceKind)));
+    for (const auto& revision : mark.revisions) put(revision.action);
+  }
+  return text;
+}
+
+void testSelectionWriteGuard() {
+  auto file = fileFixture();
+  AnnotationService service;
+  const auto idA = manual(service, file);
+  const auto idB = manual(service, file);
+  auto importedSet = sourceFixture(file, "imported-selection");
+  auto imported = annotationFixture(importedSet, "imported-selection-label");
+  checkResult(service.publishSourceSet(file, importedSet, {imported}),
+              "Imported selection fixture failed");
+  const auto importedId = imported.id;
+  auto algorithmSet =
+      sourceFixture(file, "algorithm-selection", AnnotationSource::Algorithm);
+  auto algorithm =
+      annotationFixture(algorithmSet, "algorithm-selection-result");
+  checkResult(service.publishSourceSet(file, algorithmSet, {algorithm}),
+              "Algorithm selection fixture failed");
+  const auto algorithmId = algorithm.id;
+  auto* markA = findAnnotation(file, idA);
+  const auto first = markA->segments.front().id;
+  checkResult(service.splitSegment(file, idA, first, 300),
+              "Selection guard split failed");
+  check(markA->segments.size() == 2, "Selection guard split must add a segment");
+  const auto second = markA->segments[1].id;
+  checkResult(service.select(file, {idA}, idA, first),
+              "Initial segment selection failed");
+  file.display.psdFromSelection = true;
+  checkResult(service.beginRevision(file, idA), "Revision edit setup failed");
+  service.reconcileSelection(file);
+  check(file.selectionSampleChannel &&
+            *file.selectionSampleChannel ==
+                file.metadata.sampleFormat.selectedChannel &&
+            file.revisionEditingAnnotationId == idA &&
+            file.activeSegmentId == first && file.display.psdFromSelection,
+        "Initial reconcile must keep the committed selection context");
+
+  bool reject = true;
+  int guardCalls = 0;
+  int notes = 0;
+  service.setWriteGuard([&](std::string& error) {
+    ++guardCalls;
+    if (reject) error = "detection commit";
+    return !reject;
+  });
+  service.setWroteNotifier([&] { ++notes; });
+  const auto frozen = persistedSelection(file);
+  const auto history = service.historySize(file);
+  const auto revisionsA = findAnnotation(file, idA)->revisions;
+  const std::vector<std::string> order{idA, idB, importedId, algorithmId};
+  auto unchanged = [&](const char* message) {
+    check(persistedSelection(file) == frozen, message);
+    check(service.historySize(file) == history, message);
+    check(findAnnotation(file, idA)->revisions == revisionsA, message);
+    check(notes == 0, message);
+  };
+  auto rejectWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls + 1, message);
+    unchanged(message);
+  };
+  auto leaveWrite = [&](const auto& operation, const char* message) {
+    const auto calls = guardCalls;
+    check(operation(), message);
+    check(guardCalls == calls, message);
+    unchanged(message);
+  };
+
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, idA, first);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must refuse an unchanged selection before reconcile");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idB}, idB);
+        return !denied.ok && denied.error == "detection commit" &&
+               file.activeMarkId == idA;
+      },
+      "Rejecting guard must block a selection change");
+  rejectWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, idB, AnnotationSelectionMode::Range, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block range selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, importedId, AnnotationSelectionMode::Toggle, order);
+        return !denied.ok && denied.error == "detection commit";
+      },
+      "Rejecting guard must block toggle selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {});
+        return !denied.ok && denied.error == "detection commit" &&
+               file.selectedMarkIds.size() == 1 && file.display.psdFromSelection;
+      },
+      "Rejecting guard must block clearing the selection");
+  rejectWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, idA, second);
+        return !denied.ok && denied.error == "detection commit" &&
+               findAnnotation(file, idA)->activeSegmentId == first &&
+               findAnnotation(file, idA)->revisions == revisionsA;
+      },
+      "Rejecting guard must block an active segment switch");
+  leaveWrite(
+      [&] {
+        const auto denied = service.select(file, {idA}, "missing-mark");
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Invalid selection must fail without the write guard");
+  leaveWrite(
+      [&] {
+        const auto denied = service.chooseSelection(
+            file, idB, AnnotationSelectionMode::Replace, {});
+        return !denied.ok && denied.error != "detection commit";
+      },
+      "Selection outside the initiating order must fail without the write guard");
+  const auto callsBeforeHover = guardCalls;
+  check(service.hover(file, idB), "Hover must update while the write guard rejects");
+  check(file.hoveredMarkId == idB && persistedSelection(file) == frozen &&
+            guardCalls == callsBeforeHover && notes == 0,
+        "Hover must not persist selection or consult the write guard");
+  leaveWrite(
+      [&] {
+        service.reconcileSelection(file);
+        return file.hoveredMarkId == idB && file.activeMarkId == idA;
+      },
+      "Clean reconcile must not consult the write guard");
+
+  file.metadata.sampleFormat.selectedChannel = 1;
+  const auto mismatched = persistedSelection(file);
+  const auto mismatchCalls = guardCalls;
+  const auto hovered = file.hoveredMarkId;
+  service.reconcileSelection(file);
+  check(persistedSelection(file) == mismatched && file.hoveredMarkId == hovered &&
+            guardCalls == mismatchCalls + 1 && notes == 0 &&
+            file.selectedMarkIds.size() == 1,
+        "Rejecting guard must block channel-mismatch selection cleanup");
+  file.metadata.sampleFormat.selectedChannel = 0;
+  check(persistedSelection(file) == frozen, "Restoring the sample channel must restore the fingerprint");
+  leaveWrite(
+      [&] {
+        service.reconcileSelection(file);
+        return file.activeMarkId == idA && file.hoveredMarkId == idB;
+      },
+      "Reconcile after restoring the channel must stay a no-op under the guard");
+
+  reject = false;
+  auto accepted = [&](const auto& operation, const char* message) {
+    const auto noted = notes;
+    const AnnotationResult result = operation();
+    check(result.ok && result.changed, message);
+    check(notes == noted + 1, message);
+  };
+  accepted([&] { return service.select(file, {idB}, idB); },
+           "Released guard must apply an ordinary selection and notify once");
+  const auto repeatNotes = notes;
+  const auto repeat = service.select(file, {idB}, idB);
+  check(repeat.ok && !repeat.changed && notes == repeatNotes,
+        "Repeating the current selection must not notify again");
+  accepted([&] {
+             return service.chooseSelection(file, idA, AnnotationSelectionMode::Range,
+                                            order);
+           },
+           "Released guard must apply range selection and notify once");
+  check(file.selectedMarkIds.size() == 2 && file.selectionAnchorId == idB,
+        "Range selection must keep the anchor and include the span");
+  accepted(
+      [&] {
+        return service.chooseSelection(file, algorithmId, AnnotationSelectionMode::Toggle,
+                                       order);
+      },
+      "Released guard must toggle an algorithm annotation into the selection");
+  check(std::find(file.selectedMarkIds.begin(), file.selectedMarkIds.end(),
+                  algorithmId) != file.selectedMarkIds.end() &&
+            !service.canEdit(file, algorithmId),
+        "A selected algorithm annotation must remain read-only");
+  const auto revisionId = findAnnotation(file, idA)->revisionId;
+  const auto segmentNotes = notes;
+  const auto switched = service.select(file, {idA}, idA, second);
+  check(switched.ok && switched.changed && notes == segmentNotes + 1 &&
+            findAnnotation(file, idA)->activeSegmentId == second &&
+            findAnnotation(file, idA)->revisionId == revisionId &&
+            findAnnotation(file, idA)->revisions == revisionsA &&
+            file.activeSegmentId == second &&
+            findAnnotation(file, idA)->range ==
+                findAnnotation(file, idA)->segments[1].range,
+        "Segment switch must notify once without a revision");
+  file.display.psdFromSelection = true;
+  accepted([&] { return service.select(file, {}); },
+           "Released guard must clear the selection and notify once");
+  check(file.selectedMarkIds.empty() && file.activeMarkId.empty() &&
+            !file.display.psdFromSelection,
+        "Clearing the selection must drop the PSD selection scope");
+
+  const auto createNotes = notes;
+  const auto createHistory = service.historySize(file);
+  const auto created = service.createManual(file, "Single notify", geometry(1200, 1400));
+  check(created.ok && notes == createNotes + 1 &&
+            service.historySize(file) == createHistory + 1 &&
+            file.activeMarkId == created.id,
+        "Creating a manual annotation must notify once for the command and its selection");
+  checkResult(service.undo(file), "Create undo failed");
+  check(notes == createNotes + 1,
+        "Undo must not emit another project-write notification");
+  check(!findAnnotation(file, created.id) && service.canRedo(file) &&
+            service.historySize(file) == createHistory + 1,
+        "Undo must remove the created annotation and retain its redo command");
+
+  const auto importedRevisions = findAnnotation(file, importedId)->revisions;
+  const auto importedHistory = service.historySize(file);
+  const auto importedNotes = notes;
+  checkResult(service.select(file, {importedId}, importedId),
+              "Imported annotation must remain selectable while unlocked");
+  check(notes == importedNotes + 1 && !service.canEdit(file, importedId),
+        "Selecting an imported annotation must notify once and stay non-editable");
+  const auto importedSegment = findAnnotation(file, importedId)->segments.front().id;
+  check(!service.commitGeometry(file, importedId, importedSegment, geometry(200, 400)) &&
+            !service.rename(file, importedId, "blocked", "blocked") &&
+            !service.deleteBatch(file, {importedId}) &&
+            service.historySize(file) == importedHistory &&
+            findAnnotation(file, importedId)->revisions == importedRevisions &&
+            notes == importedNotes + 1,
+        "Imported geometry, name, and deletion must stay refused");
+
+  const auto algorithmRevisions = findAnnotation(file, algorithmId)->revisions;
+  const auto algorithmHistory = service.historySize(file);
+  const auto algorithmNotes = notes;
+  checkResult(service.select(file, {algorithmId}, algorithmId),
+              "Algorithm annotation must remain selectable while unlocked");
+  check(notes == algorithmNotes + 1 && !service.canEdit(file, algorithmId),
+        "Selecting an algorithm annotation must notify once and stay non-editable");
+  const auto algorithmSegment =
+      findAnnotation(file, algorithmId)->segments.front().id;
+  check(!service.commitGeometry(file, algorithmId, algorithmSegment,
+                                geometry(220, 420)) &&
+            !service.rename(file, algorithmId, "blocked", "blocked") &&
+            !service.deleteBatch(file, {algorithmId}) &&
+            service.historySize(file) == algorithmHistory &&
+            findAnnotation(file, algorithmId)->revisions == algorithmRevisions &&
+            notes == algorithmNotes + 1,
+        "Algorithm geometry, name, and deletion must stay refused");
 }
 }  // namespace
 
@@ -1641,7 +2103,8 @@ int main() {
        testChannelSnapshotsAndSourceChanges},
       {"source idempotence and validation", testSourceIdempotenceAndValidation},
       {"budgets and independent histories",
-       testBudgetsAndIndependentHistories}};
+       testBudgetsAndIndependentHistories},
+      {"selection write guard", testSelectionWriteGuard}};
   int failures = 0;
   for (const auto& [name, test] : tests) {
     try {

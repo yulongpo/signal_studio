@@ -1,0 +1,1 @@
+Narrowband Release software passed 26 scenes; physical native acceptance: True. Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\UX-R3-FEEDBACK-01\native-final-narrowband-Release-software\diagnostics\native-20261025-151117-393-Release\narrowband-analysis-report.json

@@ -1,0 +1,4514 @@
+{
+  "schemaVersion": 1,
+  "auditKind": "implementer-independent-native-evidence-self-check-not-final-review",
+  "createdUtc": "2026-10-24T17:35:17.960745+00:00",
+  "workspaceHeadAtAudit": "bc22bd57458a9c3b0654aa38169dd9ef07c86ce2",
+  "sourceRoot": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes",
+  "pass": true,
+  "groups": [
+    {
+      "directory": "native-debug-gpu",
+      "checks": [
+        {
+          "check": "capture and wrapper fully completed",
+          "pass": true,
+          "actual": {
+            "process": {
+              "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+              "configuration": "Debug",
+              "systemOnlyPath": true,
+              "dpiOverridesCleared": true,
+              "exitCode": 0
+            },
+            "completionLog": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\logs\\native-debug-gpu.txt",
+            "completionLogBytes": 215,
+            "completionLogSha256": "325d980fb02e67f96d5a96d9521611be4b00235ed1bd9a49e8cf7fd41aace999",
+            "completionLinePresent": true
+          }
+        },
+        {
+          "check": "report success and native/fullscreen mode",
+          "pass": true
+        },
+        {
+          "check": "configuration and system-only deployment process",
+          "pass": true
+        },
+        {
+          "check": "exactly 26 unique expected scenes",
+          "pass": true,
+          "actual": {
+            "count": 26,
+            "unique": 26,
+            "missing": [],
+            "unexpected": []
+          }
+        },
+        {
+          "check": "all previous 18 retained",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-01-ddc",
+              "cf32-02-raw",
+              "cf32-03-manual-eye",
+              "cf32-04-recovered-constellation",
+              "cf32-05-recovered-eye",
+              "cf32-06-recognition-unavailable",
+              "cf32-07-demodulation-unavailable",
+              "cf32-08-reopened-eye",
+              "cf32-09-cancelled",
+              "ci16-01-ddc",
+              "ci16-02-raw",
+              "ci16-03-manual-eye",
+              "ci16-04-recovered-constellation",
+              "ci16-05-recovered-eye",
+              "ci16-06-recognition-unavailable",
+              "ci16-07-demodulation-unavailable",
+              "ci16-08-reopened-eye",
+              "ci16-09-cancelled"
+            ]
+          }
+        },
+        {
+          "check": "all eight new scene identities",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-10-decision-unknown",
+              "cf32-11-decision-reference",
+              "cf32-12-decision-iq-zoom",
+              "cf32-13-decision-reference-off",
+              "ci16-10-decision-unknown",
+              "ci16-11-decision-reference",
+              "ci16-12-decision-iq-zoom",
+              "ci16-13-decision-reference-off"
+            ]
+          }
+        },
+        {
+          "check": "both saved source journeys present",
+          "pass": true
+        },
+        {
+          "check": "designated real Redmi connection 1 DISPLAY6 4K/150",
+          "pass": true
+        },
+        {
+          "check": "selected physical monitor appears in captured screen inventory",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.0761573811257555,
+            "recomputedQ": -0.07851519478289964,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.07615738773854705,
+            "recomputedQ": -0.07851520160042158,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "source report stable after independent validation",
+          "pass": true,
+          "actual": {
+            "sourceBytes": 96603,
+            "sourceSha256": "f0a629e51247f20efd84d21eec57e424e9db8470e086f54163a6fd543aa62bc1"
+          }
+        }
+      ],
+      "scenes": [
+        {
+          "scene": "ci16-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-01-ddc.png",
+          "bytes": 280353,
+          "sha256": "aeb89ba46869644bd5f43f17ed0f705cd63d5e8ca475e612358f27c52a841b87",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 14,
+          "gpuVertexUploads": 4,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-02-raw.png",
+          "bytes": 311630,
+          "sha256": "eb866c0071514f803fd62071d265ce3dcdad51586a4cf156426d64aaa6fb170f",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 6,
+          "gpuVertexUploads": 1,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-10-decision-unknown.png",
+          "bytes": 312583,
+          "sha256": "153833e329c11ecfe5277db5adb0b731eeb8d7fc2bd4807e4e7d18b8e6c29d2b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 14,
+          "gpuVertexUploads": 3,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-03-manual-eye.png",
+          "bytes": 737847,
+          "sha256": "cb546e9d5e9d31cd57d36c2ac6e5d443c4aed308b4327441b15e8c88a4f1ecf7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 384,
+          "gpuVertexUploads": 1,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-04-recovered-constellation.png",
+          "bytes": 381610,
+          "sha256": "416d77aeb79dc06e0ea25e8bd224417054f96a7a9a4de5f73062fcbc3d367429",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 35,
+          "gpuVertexUploads": 9,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-11-decision-reference.png",
+          "bytes": 379551,
+          "sha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 43,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-12-decision-iq-zoom.png",
+          "bytes": 382787,
+          "sha256": "7cf44658cf25fa2a77e3f303d46af3b1bc1db044439de98e2ad30a9436c021e7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 46,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-13-decision-reference-off.png",
+          "bytes": 379068,
+          "sha256": "1a0539e4448099f7da0b36d8f28c4c387feb9c8ebbb579a403fab99e6b2157c3",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 48,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-05-recovered-eye.png",
+          "bytes": 714472,
+          "sha256": "a1e5e7dc7059af2cde2b475229263c5af3a34d9ee0dd9a7868493d4388cce008",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 896,
+          "gpuVertexUploads": 3,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-06-recognition-unavailable.png",
+          "bytes": 429609,
+          "sha256": "524451fcba2abae5cb99621952c406274ca84a81e9ef82f10858c92d7aab0e74",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 3,
+          "gpuVertexUploads": 0,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-07-demodulation-unavailable.png",
+          "bytes": 855105,
+          "sha256": "91ee9487843929f25f9e38a12719670a71ebf6cbf0a614caaad3c6f4ef12cecf",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 195,
+          "gpuVertexUploads": 2,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-08-reopened-eye.png",
+          "bytes": 712072,
+          "sha256": "4df7ce093fb2476251888c984b651f0015f9f6deefcec27ffed9f9dda83ddeb0",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2048,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-09-cancelled.png",
+          "bytes": 222045,
+          "sha256": "e8bac7fff26278611eb19d44c114137c58cef1973c89e563081630d77b88052b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2176,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-01-ddc.png",
+          "bytes": 280870,
+          "sha256": "ae402cd365d517ba4db9f3f73352511a350fd6289f191af4432654fe7aa74433",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 29,
+          "gpuVertexUploads": 8,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-02-raw.png",
+          "bytes": 313727,
+          "sha256": "c6c3b86ab725ef9edba96d51d68e750dc66164e462b06bc5e7c94a3df263b3f7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 58,
+          "gpuVertexUploads": 13,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-10-decision-unknown.png",
+          "bytes": 314655,
+          "sha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 66,
+          "gpuVertexUploads": 15,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-03-manual-eye.png",
+          "bytes": 739377,
+          "sha256": "95be0ba384cf515b7cb93136823a9e3e2670e433d12d1e3582cb93255b71840c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2560,
+          "gpuVertexUploads": 5,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-04-recovered-constellation.png",
+          "bytes": 402377,
+          "sha256": "f1a577f33b504678c2ec7f47a320f73d8e2b7a4cb08651184e8b0c6ceb0717fa",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 87,
+          "gpuVertexUploads": 21,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-11-decision-reference.png",
+          "bytes": 401231,
+          "sha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 95,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-12-decision-iq-zoom.png",
+          "bytes": 403639,
+          "sha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 98,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-13-decision-reference-off.png",
+          "bytes": 400170,
+          "sha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 100,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-05-recovered-eye.png",
+          "bytes": 734586,
+          "sha256": "d17761352e4b65e6b5248426596bb0823f6e0ad721f60027a5b6edb095afbd36",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 3328,
+          "gpuVertexUploads": 8,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-06-recognition-unavailable.png",
+          "bytes": 448831,
+          "sha256": "8ad2792629ad9a006229770ac2c8cf62ec1ab37be360ffda47729f0c66bc2ef4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 5,
+          "gpuVertexUploads": 0,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-07-demodulation-unavailable.png",
+          "bytes": 876222,
+          "sha256": "55363224cbd4f00687dcc2d9ff0cd697ebb5c499532443f8809abf5d0d9d098e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 390,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-08-reopened-eye.png",
+          "bytes": 731454,
+          "sha256": "a90ea5625482b5744daeb55f50bd4db19b38dfd6ec48ed9392afdfbc4978a0d4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 4480,
+          "gpuVertexUploads": 9,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-09-cancelled.png",
+          "bytes": 223974,
+          "sha256": "f40f689e67318de121378e1be33b28277a6edbdf228ddb6e06efc50cb9e4c563",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 4608,
+          "gpuVertexUploads": 9,
+          "textureUploads": 0
+        }
+      ],
+      "newBehaviorChecks": [
+        {
+          "scene": "ci16-10-decision-unknown",
+          "pass": true,
+          "generation": "1",
+          "baselineGeneration": "1"
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.0761573811257555,
+            "expectedQ": -0.07851519478289964,
+            "recordedI": -0.0761573811257555,
+            "recordedQ": -0.07851519478289964,
+            "spanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "pass": true,
+          "generation": "12",
+          "baselineGeneration": "12"
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.07615738773854705,
+            "expectedQ": -0.07851520160042158,
+            "recordedI": -0.07615738773854705,
+            "recordedQ": -0.07851520160042158,
+            "spanRatio": 0.8
+          }
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        }
+      ],
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": true
+      },
+      "pass": true,
+      "checkCount": 124,
+      "failedChecks": []
+    },
+    {
+      "directory": "native-debug-software",
+      "checks": [
+        {
+          "check": "capture and wrapper fully completed",
+          "pass": true,
+          "actual": {
+            "process": {
+              "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+              "configuration": "Debug",
+              "systemOnlyPath": true,
+              "dpiOverridesCleared": true,
+              "exitCode": 0
+            },
+            "completionLog": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\logs\\native-debug-software.txt",
+            "completionLogBytes": 225,
+            "completionLogSha256": "17c2979ad691cc550d281d89aeea18cc3e30fba57b7913cc8049c61b4ab15c1b",
+            "completionLinePresent": true
+          }
+        },
+        {
+          "check": "report success and native/fullscreen mode",
+          "pass": true
+        },
+        {
+          "check": "configuration and system-only deployment process",
+          "pass": true
+        },
+        {
+          "check": "exactly 26 unique expected scenes",
+          "pass": true,
+          "actual": {
+            "count": 26,
+            "unique": 26,
+            "missing": [],
+            "unexpected": []
+          }
+        },
+        {
+          "check": "all previous 18 retained",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-01-ddc",
+              "cf32-02-raw",
+              "cf32-03-manual-eye",
+              "cf32-04-recovered-constellation",
+              "cf32-05-recovered-eye",
+              "cf32-06-recognition-unavailable",
+              "cf32-07-demodulation-unavailable",
+              "cf32-08-reopened-eye",
+              "cf32-09-cancelled",
+              "ci16-01-ddc",
+              "ci16-02-raw",
+              "ci16-03-manual-eye",
+              "ci16-04-recovered-constellation",
+              "ci16-05-recovered-eye",
+              "ci16-06-recognition-unavailable",
+              "ci16-07-demodulation-unavailable",
+              "ci16-08-reopened-eye",
+              "ci16-09-cancelled"
+            ]
+          }
+        },
+        {
+          "check": "all eight new scene identities",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-10-decision-unknown",
+              "cf32-11-decision-reference",
+              "cf32-12-decision-iq-zoom",
+              "cf32-13-decision-reference-off",
+              "ci16-10-decision-unknown",
+              "ci16-11-decision-reference",
+              "ci16-12-decision-iq-zoom",
+              "ci16-13-decision-reference-off"
+            ]
+          }
+        },
+        {
+          "check": "both saved source journeys present",
+          "pass": true
+        },
+        {
+          "check": "designated real Redmi connection 1 DISPLAY6 4K/150",
+          "pass": true
+        },
+        {
+          "check": "selected physical monitor appears in captured screen inventory",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.0761573811257555,
+            "recomputedQ": -0.07851519478289964,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.07615738773854705,
+            "recomputedQ": -0.07851520160042158,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "source report stable after independent validation",
+          "pass": true,
+          "actual": {
+            "sourceBytes": 93769,
+            "sourceSha256": "69ea7210a80266121c591342c9cc11562a0f8bdd988168ccd3d5d2876bd0eedd"
+          }
+        }
+      ],
+      "scenes": [
+        {
+          "scene": "ci16-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-01-ddc.png",
+          "bytes": 374660,
+          "sha256": "95e71944ddad72a847b2b75d6ded22fcbf83b21c926711209af97eaf9820c357",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-02-raw.png",
+          "bytes": 646803,
+          "sha256": "e333cd6471ec470793b01828da4338e7c7569c366cd7055228f6045edf6cfc7a",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-10-decision-unknown.png",
+          "bytes": 647656,
+          "sha256": "0a16ce028b354e28f34ed99aeb1e669b5c8cfd913fc99196942009b8f218efa2",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-03-manual-eye.png",
+          "bytes": 2422462,
+          "sha256": "cdf2ec682035a0435cf678d35b5650c8887c1a427041c38f620371438ef06685",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-04-recovered-constellation.png",
+          "bytes": 366240,
+          "sha256": "4057f532efbb9d5c3029677368621eb2a1fc2ece9039c5feb10b7bf03a91fa0b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-11-decision-reference.png",
+          "bytes": 352464,
+          "sha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-12-decision-iq-zoom.png",
+          "bytes": 354253,
+          "sha256": "a0c35e02637ca3fa4d3c7fa496c2eb38ae56363658e2fd78d99b39ccd0d29e72",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-13-decision-reference-off.png",
+          "bytes": 351476,
+          "sha256": "8aa30793ee05eb02a2d3b25ea99a4577081f564aa0b0290df9363287e7031780",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-05-recovered-eye.png",
+          "bytes": 2148036,
+          "sha256": "8d60c8fddd9b2fcd2dadbd563e80c6df4fa208aa34868d13f7afee02673e606c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-06-recognition-unavailable.png",
+          "bytes": 390037,
+          "sha256": "dd9cd0d5024974c50fe79c02d4560f22a6851e2b4bcb2ed6cd89a604ef180c2f",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-07-demodulation-unavailable.png",
+          "bytes": 1750584,
+          "sha256": "8e8295d88c960d2dc31c8ce296807082d48ade75648ebbfa0b3596fb16bf77d4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-08-reopened-eye.png",
+          "bytes": 2147562,
+          "sha256": "89195bcf07d69c99ac1ded9dca6c9e7d43dc6c9b9348e93ab84632c754f2882a",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-09-cancelled.png",
+          "bytes": 220707,
+          "sha256": "4ae725bf75957e50dcfb061ed611c491d9e09285a105dc95bb42513cc2a3ba72",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-01-ddc.png",
+          "bytes": 353569,
+          "sha256": "232f7bc5b8a69e254a885535f86bf3aad5ff37293741f5ee4f46973606832a3a",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-02-raw.png",
+          "bytes": 648899,
+          "sha256": "664e518376575fba3ba3ee3982edf880f2a1186e0e6d14e41b6604aeeebf805c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-10-decision-unknown.png",
+          "bytes": 649678,
+          "sha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-03-manual-eye.png",
+          "bytes": 2425305,
+          "sha256": "a3dd4748e3180fd6985df30c7e102a4692ce0d250a4d9b295c22125438074829",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-04-recovered-constellation.png",
+          "bytes": 386520,
+          "sha256": "35974b1058b9b2d2416e0824da8aece686ca472bbbc00305332334203efed36b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-11-decision-reference.png",
+          "bytes": 373442,
+          "sha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-12-decision-iq-zoom.png",
+          "bytes": 375418,
+          "sha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-13-decision-reference-off.png",
+          "bytes": 371894,
+          "sha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-05-recovered-eye.png",
+          "bytes": 2169920,
+          "sha256": "b5855bd47732cc127e73798146e026ed1763516ebbdd2189983588c386a0a359",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-06-recognition-unavailable.png",
+          "bytes": 408461,
+          "sha256": "885828d7b75e880e2c8912c2441d0b88c5390410a89042947cdbb7a6e2157b72",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-07-demodulation-unavailable.png",
+          "bytes": 1772634,
+          "sha256": "c72552cb106a3d6e069a8858b914fdd3ec0172e11bc777dc9efe7f84dec788a4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-08-reopened-eye.png",
+          "bytes": 2166788,
+          "sha256": "e2579ef0c1a3eb65f18c19a27ab033a9fbcc48af2c07e915378cf61cf999eca1",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-09-cancelled.png",
+          "bytes": 222679,
+          "sha256": "6fd6034465da4c80993f4eff43d132e2202f652a6e11274d6c0d164075e1bb61",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        }
+      ],
+      "newBehaviorChecks": [
+        {
+          "scene": "ci16-10-decision-unknown",
+          "pass": true,
+          "generation": "1",
+          "baselineGeneration": "1"
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.0761573811257555,
+            "expectedQ": -0.07851519478289964,
+            "recordedI": -0.0761573811257555,
+            "recordedQ": -0.07851519478289964,
+            "spanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "pass": true,
+          "generation": "12",
+          "baselineGeneration": "12"
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.07615738773854705,
+            "expectedQ": -0.07851520160042158,
+            "recordedI": -0.07615738773854705,
+            "recordedQ": -0.07851520160042158,
+            "spanRatio": 0.8
+          }
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        }
+      ],
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": true
+      },
+      "pass": true,
+      "checkCount": 90,
+      "failedChecks": []
+    },
+    {
+      "directory": "native-release-gpu",
+      "checks": [
+        {
+          "check": "capture and wrapper fully completed",
+          "pass": true,
+          "actual": {
+            "process": {
+              "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+              "configuration": "Release",
+              "systemOnlyPath": true,
+              "dpiOverridesCleared": true,
+              "exitCode": 0
+            },
+            "completionLog": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\logs\\native-release-gpu.txt",
+            "completionLogBytes": 219,
+            "completionLogSha256": "b324174b3165b300c6c68faa984701c902e375fc013993d12f61be74e460f929",
+            "completionLinePresent": true
+          }
+        },
+        {
+          "check": "report success and native/fullscreen mode",
+          "pass": true
+        },
+        {
+          "check": "configuration and system-only deployment process",
+          "pass": true
+        },
+        {
+          "check": "exactly 26 unique expected scenes",
+          "pass": true,
+          "actual": {
+            "count": 26,
+            "unique": 26,
+            "missing": [],
+            "unexpected": []
+          }
+        },
+        {
+          "check": "all previous 18 retained",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-01-ddc",
+              "cf32-02-raw",
+              "cf32-03-manual-eye",
+              "cf32-04-recovered-constellation",
+              "cf32-05-recovered-eye",
+              "cf32-06-recognition-unavailable",
+              "cf32-07-demodulation-unavailable",
+              "cf32-08-reopened-eye",
+              "cf32-09-cancelled",
+              "ci16-01-ddc",
+              "ci16-02-raw",
+              "ci16-03-manual-eye",
+              "ci16-04-recovered-constellation",
+              "ci16-05-recovered-eye",
+              "ci16-06-recognition-unavailable",
+              "ci16-07-demodulation-unavailable",
+              "ci16-08-reopened-eye",
+              "ci16-09-cancelled"
+            ]
+          }
+        },
+        {
+          "check": "all eight new scene identities",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-10-decision-unknown",
+              "cf32-11-decision-reference",
+              "cf32-12-decision-iq-zoom",
+              "cf32-13-decision-reference-off",
+              "ci16-10-decision-unknown",
+              "ci16-11-decision-reference",
+              "ci16-12-decision-iq-zoom",
+              "ci16-13-decision-reference-off"
+            ]
+          }
+        },
+        {
+          "check": "both saved source journeys present",
+          "pass": true
+        },
+        {
+          "check": "designated real Redmi connection 1 DISPLAY6 4K/150",
+          "pass": true
+        },
+        {
+          "check": "selected physical monitor appears in captured screen inventory",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable visible spectral heatmap upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye scatter/eye vertex upload",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled hardware renderer and uploads",
+          "pass": true
+        },
+        {
+          "check": "ci16 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.0761573811257555,
+            "recomputedQ": -0.07851519478289964,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.07615738773854705,
+            "recomputedQ": -0.07851520160042158,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "source report stable after independent validation",
+          "pass": true,
+          "actual": {
+            "sourceBytes": 96669,
+            "sourceSha256": "952e3eb9a362577d6c618a12b1f456a1211b0713634d35d3159e0aa625da982e"
+          }
+        }
+      ],
+      "scenes": [
+        {
+          "scene": "ci16-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-01-ddc.png",
+          "bytes": 280353,
+          "sha256": "aeb89ba46869644bd5f43f17ed0f705cd63d5e8ca475e612358f27c52a841b87",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 13,
+          "gpuVertexUploads": 3,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-02-raw.png",
+          "bytes": 309901,
+          "sha256": "d7b0cd88efdf81cb55b711aca25e242d46c4801af247b579ac42b7a0dc5d4567",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 6,
+          "gpuVertexUploads": 1,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-10-decision-unknown.png",
+          "bytes": 310841,
+          "sha256": "da045486cf6f288581ec7d06c9bcc279cb74984507c1d4c286bbc984393b64f7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 14,
+          "gpuVertexUploads": 3,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-03-manual-eye.png",
+          "bytes": 737847,
+          "sha256": "cb546e9d5e9d31cd57d36c2ac6e5d443c4aed308b4327441b15e8c88a4f1ecf7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 384,
+          "gpuVertexUploads": 1,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-04-recovered-constellation.png",
+          "bytes": 381610,
+          "sha256": "416d77aeb79dc06e0ea25e8bd224417054f96a7a9a4de5f73062fcbc3d367429",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 35,
+          "gpuVertexUploads": 9,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-11-decision-reference.png",
+          "bytes": 379551,
+          "sha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 43,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-12-decision-iq-zoom.png",
+          "bytes": 382787,
+          "sha256": "7cf44658cf25fa2a77e3f303d46af3b1bc1db044439de98e2ad30a9436c021e7",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 46,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-13-decision-reference-off.png",
+          "bytes": 379068,
+          "sha256": "1a0539e4448099f7da0b36d8f28c4c387feb9c8ebbb579a403fab99e6b2157c3",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 48,
+          "gpuVertexUploads": 11,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-05-recovered-eye.png",
+          "bytes": 714472,
+          "sha256": "a1e5e7dc7059af2cde2b475229263c5af3a34d9ee0dd9a7868493d4388cce008",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 896,
+          "gpuVertexUploads": 3,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-06-recognition-unavailable.png",
+          "bytes": 429609,
+          "sha256": "524451fcba2abae5cb99621952c406274ca84a81e9ef82f10858c92d7aab0e74",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 3,
+          "gpuVertexUploads": 0,
+          "textureUploads": 1
+        },
+        {
+          "scene": "ci16-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-07-demodulation-unavailable.png",
+          "bytes": 855105,
+          "sha256": "91ee9487843929f25f9e38a12719670a71ebf6cbf0a614caaad3c6f4ef12cecf",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 195,
+          "gpuVertexUploads": 2,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-08-reopened-eye.png",
+          "bytes": 712072,
+          "sha256": "4df7ce093fb2476251888c984b651f0015f9f6deefcec27ffed9f9dda83ddeb0",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2048,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-09-cancelled.png",
+          "bytes": 220049,
+          "sha256": "fa442950cc9210f9762a095306728f8a23571faeaba7abeb21a3e08cf6b4f8c0",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2048,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-01-ddc.png",
+          "bytes": 280870,
+          "sha256": "ae402cd365d517ba4db9f3f73352511a350fd6289f191af4432654fe7aa74433",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 26,
+          "gpuVertexUploads": 6,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-02-raw.png",
+          "bytes": 311694,
+          "sha256": "07ae1a02005872a0a84302456a9dcf268688933a98aebebe6fe7af9443c8845b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 58,
+          "gpuVertexUploads": 13,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-10-decision-unknown.png",
+          "bytes": 314655,
+          "sha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 66,
+          "gpuVertexUploads": 15,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-03-manual-eye.png",
+          "bytes": 739377,
+          "sha256": "95be0ba384cf515b7cb93136823a9e3e2670e433d12d1e3582cb93255b71840c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 2432,
+          "gpuVertexUploads": 5,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-04-recovered-constellation.png",
+          "bytes": 402377,
+          "sha256": "f1a577f33b504678c2ec7f47a320f73d8e2b7a4cb08651184e8b0c6ceb0717fa",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 87,
+          "gpuVertexUploads": 21,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-11-decision-reference.png",
+          "bytes": 401231,
+          "sha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 95,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-12-decision-iq-zoom.png",
+          "bytes": 403639,
+          "sha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 98,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-13-decision-reference-off.png",
+          "bytes": 400170,
+          "sha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 100,
+          "gpuVertexUploads": 23,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-05-recovered-eye.png",
+          "bytes": 734586,
+          "sha256": "d17761352e4b65e6b5248426596bb0823f6e0ad721f60027a5b6edb095afbd36",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 3200,
+          "gpuVertexUploads": 8,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-06-recognition-unavailable.png",
+          "bytes": 448831,
+          "sha256": "8ad2792629ad9a006229770ac2c8cf62ec1ab37be360ffda47729f0c66bc2ef4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 5,
+          "gpuVertexUploads": 0,
+          "textureUploads": 2
+        },
+        {
+          "scene": "cf32-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-07-demodulation-unavailable.png",
+          "bytes": 876222,
+          "sha256": "55363224cbd4f00687dcc2d9ff0cd697ebb5c499532443f8809abf5d0d9d098e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 390,
+          "gpuVertexUploads": 4,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-08-reopened-eye.png",
+          "bytes": 731454,
+          "sha256": "a90ea5625482b5744daeb55f50bd4db19b38dfd6ec48ed9392afdfbc4978a0d4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 4352,
+          "gpuVertexUploads": 9,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-09-cancelled.png",
+          "bytes": 221209,
+          "sha256": "7ffc832711ab3f6ada4affd5a81f2f60be5e3b6df9bebc4d84be67b1a1fb11b0",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+          "gpuDataDrawCalls": 4352,
+          "gpuVertexUploads": 9,
+          "textureUploads": 0
+        }
+      ],
+      "newBehaviorChecks": [
+        {
+          "scene": "ci16-10-decision-unknown",
+          "pass": true,
+          "generation": "1",
+          "baselineGeneration": "1"
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.0761573811257555,
+            "expectedQ": -0.07851519478289964,
+            "recordedI": -0.0761573811257555,
+            "recordedQ": -0.07851519478289964,
+            "spanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "pass": true,
+          "generation": "12",
+          "baselineGeneration": "12"
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.07615738773854705,
+            "expectedQ": -0.07851520160042158,
+            "recordedI": -0.07615738773854705,
+            "recordedQ": -0.07851520160042158,
+            "spanRatio": 0.8
+          }
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        }
+      ],
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": true
+      },
+      "pass": true,
+      "checkCount": 124,
+      "failedChecks": []
+    },
+    {
+      "directory": "native-release-software",
+      "checks": [
+        {
+          "check": "capture and wrapper fully completed",
+          "pass": true,
+          "actual": {
+            "process": {
+              "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUiCapture.exe",
+              "configuration": "Release",
+              "systemOnlyPath": true,
+              "dpiOverridesCleared": true,
+              "exitCode": 0
+            },
+            "completionLog": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\logs\\native-release-software.txt",
+            "completionLogBytes": 229,
+            "completionLogSha256": "0c1c87e64775c57fdca32ae91050da07d76434e91a7abcfb6534c235e75b4a8d",
+            "completionLinePresent": true
+          }
+        },
+        {
+          "check": "report success and native/fullscreen mode",
+          "pass": true
+        },
+        {
+          "check": "configuration and system-only deployment process",
+          "pass": true
+        },
+        {
+          "check": "exactly 26 unique expected scenes",
+          "pass": true,
+          "actual": {
+            "count": 26,
+            "unique": 26,
+            "missing": [],
+            "unexpected": []
+          }
+        },
+        {
+          "check": "all previous 18 retained",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-01-ddc",
+              "cf32-02-raw",
+              "cf32-03-manual-eye",
+              "cf32-04-recovered-constellation",
+              "cf32-05-recovered-eye",
+              "cf32-06-recognition-unavailable",
+              "cf32-07-demodulation-unavailable",
+              "cf32-08-reopened-eye",
+              "cf32-09-cancelled",
+              "ci16-01-ddc",
+              "ci16-02-raw",
+              "ci16-03-manual-eye",
+              "ci16-04-recovered-constellation",
+              "ci16-05-recovered-eye",
+              "ci16-06-recognition-unavailable",
+              "ci16-07-demodulation-unavailable",
+              "ci16-08-reopened-eye",
+              "ci16-09-cancelled"
+            ]
+          }
+        },
+        {
+          "check": "all eight new scene identities",
+          "pass": true,
+          "actual": {
+            "retained": [
+              "cf32-10-decision-unknown",
+              "cf32-11-decision-reference",
+              "cf32-12-decision-iq-zoom",
+              "cf32-13-decision-reference-off",
+              "ci16-10-decision-unknown",
+              "ci16-11-decision-reference",
+              "ci16-12-decision-iq-zoom",
+              "ci16-13-decision-reference-off"
+            ]
+          }
+        },
+        {
+          "check": "both saved source journeys present",
+          "pass": true
+        },
+        {
+          "check": "designated real Redmi connection 1 DISPLAY6 4K/150",
+          "pass": true
+        },
+        {
+          "check": "selected physical monitor appears in captured screen inventory",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-01-ddc software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-02-raw software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-10-decision-unknown software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-03-manual-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-04-recovered-constellation software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-05-recovered-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-06-recognition-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-07-demodulation-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-08-reopened-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "ci16-09-cancelled software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-01-ddc software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-02-raw software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-10-decision-unknown software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-03-manual-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-04-recovered-constellation software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-05-recovered-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-06-recognition-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-07-demodulation-unavailable software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-08-reopened-eye software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled PNG/native scene dimensions",
+          "pass": true
+        },
+        {
+          "check": "cf32-09-cancelled software renderer counters",
+          "pass": true
+        },
+        {
+          "check": "ci16 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "ci16-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.0761573811257555,
+            "recomputedQ": -0.07851519478289964,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 8.267125363754369e-09
+          }
+        },
+        {
+          "check": "ci16-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "ci16-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32 unknown assumption retains IQ without fabricated decision/template/recompute",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-11-decision-reference numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-11-decision-reference reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "cf32-12-decision-iq-zoom actual equal-aspect plot inverse mapping and wheel zoom",
+          "pass": true,
+          "actual": {
+            "recomputedI": -0.07615738773854705,
+            "recomputedQ": -0.07851520160042158,
+            "iError": 0.0,
+            "qError": 0.0,
+            "zoomSpanRatio": 0.8
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off actual locked source, boundary labels, no DSP generation change",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off independently recomputed QPSK nearest decision",
+          "pass": true,
+          "actual": {
+            "nearestIndex": 1,
+            "recordedIndex": 1,
+            "decisionError": 6.086112696684698e-10
+          }
+        },
+        {
+          "check": "cf32-13-decision-reference-off numeric source/output sample provenance",
+          "pass": true
+        },
+        {
+          "check": "cf32-13-decision-reference-off reference vector overlay state",
+          "pass": true
+        },
+        {
+          "check": "source report stable after independent validation",
+          "pass": true,
+          "actual": {
+            "sourceBytes": 93835,
+            "sourceSha256": "13e8b9d6bef16156f4c7f491b53a795be8c63a0b410e382bcb69e375a676aa7c"
+          }
+        }
+      ],
+      "scenes": [
+        {
+          "scene": "ci16-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-01-ddc.png",
+          "bytes": 374660,
+          "sha256": "95e71944ddad72a847b2b75d6ded22fcbf83b21c926711209af97eaf9820c357",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-02-raw.png",
+          "bytes": 646803,
+          "sha256": "e333cd6471ec470793b01828da4338e7c7569c366cd7055228f6045edf6cfc7a",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-10-decision-unknown.png",
+          "bytes": 647656,
+          "sha256": "0a16ce028b354e28f34ed99aeb1e669b5c8cfd913fc99196942009b8f218efa2",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-03-manual-eye.png",
+          "bytes": 2422462,
+          "sha256": "cdf2ec682035a0435cf678d35b5650c8887c1a427041c38f620371438ef06685",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-04-recovered-constellation.png",
+          "bytes": 366240,
+          "sha256": "4057f532efbb9d5c3029677368621eb2a1fc2ece9039c5feb10b7bf03a91fa0b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-11-decision-reference.png",
+          "bytes": 352464,
+          "sha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-12-decision-iq-zoom.png",
+          "bytes": 354253,
+          "sha256": "a0c35e02637ca3fa4d3c7fa496c2eb38ae56363658e2fd78d99b39ccd0d29e72",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-13-decision-reference-off.png",
+          "bytes": 351476,
+          "sha256": "8aa30793ee05eb02a2d3b25ea99a4577081f564aa0b0290df9363287e7031780",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-05-recovered-eye.png",
+          "bytes": 2148036,
+          "sha256": "8d60c8fddd9b2fcd2dadbd563e80c6df4fa208aa34868d13f7afee02673e606c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-06-recognition-unavailable.png",
+          "bytes": 390037,
+          "sha256": "dd9cd0d5024974c50fe79c02d4560f22a6851e2b4bcb2ed6cd89a604ef180c2f",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-07-demodulation-unavailable.png",
+          "bytes": 1750584,
+          "sha256": "8e8295d88c960d2dc31c8ce296807082d48ade75648ebbfa0b3596fb16bf77d4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-08-reopened-eye.png",
+          "bytes": 2145582,
+          "sha256": "26ff4c32fc0cc816c4c015905c39e4bd9d9cc4d994b87d7abb41a077e22ccaca",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "ci16-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-09-cancelled.png",
+          "bytes": 218725,
+          "sha256": "5b0883a072aa991b8365cfc40b889f8a37df6894d43ae14410e303976eb52e4d",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-01-ddc",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-01-ddc.png",
+          "bytes": 351427,
+          "sha256": "7254c80dc90e81db5b7bd58ecf0925cf8535d044f0452819c25f3263c7b49e64",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-02-raw",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-02-raw.png",
+          "bytes": 648899,
+          "sha256": "664e518376575fba3ba3ee3982edf880f2a1186e0e6d14e41b6604aeeebf805c",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-10-decision-unknown.png",
+          "bytes": 649678,
+          "sha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-03-manual-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-03-manual-eye.png",
+          "bytes": 2425305,
+          "sha256": "a3dd4748e3180fd6985df30c7e102a4692ce0d250a4d9b295c22125438074829",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-04-recovered-constellation",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-04-recovered-constellation.png",
+          "bytes": 386520,
+          "sha256": "35974b1058b9b2d2416e0824da8aece686ca472bbbc00305332334203efed36b",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-11-decision-reference.png",
+          "bytes": 373442,
+          "sha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-12-decision-iq-zoom.png",
+          "bytes": 375418,
+          "sha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-13-decision-reference-off.png",
+          "bytes": 371894,
+          "sha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-05-recovered-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-05-recovered-eye.png",
+          "bytes": 2169920,
+          "sha256": "b5855bd47732cc127e73798146e026ed1763516ebbdd2189983588c386a0a359",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-06-recognition-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-06-recognition-unavailable.png",
+          "bytes": 408461,
+          "sha256": "885828d7b75e880e2c8912c2441d0b88c5390410a89042947cdbb7a6e2157b72",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-07-demodulation-unavailable",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-07-demodulation-unavailable.png",
+          "bytes": 1772634,
+          "sha256": "c72552cb106a3d6e069a8858b914fdd3ec0172e11bc777dc9efe7f84dec788a4",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-08-reopened-eye",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-08-reopened-eye.png",
+          "bytes": 2166788,
+          "sha256": "e2579ef0c1a3eb65f18c19a27ab033a9fbcc48af2c07e915378cf61cf999eca1",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        },
+        {
+          "scene": "cf32-09-cancelled",
+          "png": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-09-cancelled.png",
+          "bytes": 219921,
+          "sha256": "a562cf765e7c296547625d823dfca7205902e7dac33c9c11319a7aa547f5c00a",
+          "pngValidation": {
+            "width": 3840,
+            "height": 2160,
+            "signatureChunkCrcAndIendValid": true
+          },
+          "backend": "QPainter 软件绘制",
+          "gpuDataDrawCalls": 0,
+          "gpuVertexUploads": 0,
+          "textureUploads": 0
+        }
+      ],
+      "newBehaviorChecks": [
+        {
+          "scene": "ci16-10-decision-unknown",
+          "pass": true,
+          "generation": "1",
+          "baselineGeneration": "1"
+        },
+        {
+          "scene": "ci16-11-decision-reference",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "ci16-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.0761573811257555,
+            "expectedQ": -0.07851519478289964,
+            "recordedI": -0.0761573811257555,
+            "recordedQ": -0.07851519478289964,
+            "spanRatio": 0.8000000000000002
+          }
+        },
+        {
+          "scene": "ci16-13-decision-reference-off",
+          "pass": true,
+          "generation": "7",
+          "baselineGeneration": "7",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        },
+        {
+          "scene": "cf32-10-decision-unknown",
+          "pass": true,
+          "generation": "12",
+          "baselineGeneration": "12"
+        },
+        {
+          "scene": "cf32-11-decision-reference",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4
+        },
+        {
+          "scene": "cf32-12-decision-iq-zoom",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 4,
+          "inverseMapping": {
+            "expectedI": -0.07615738773854705,
+            "expectedQ": -0.07851520160042158,
+            "recordedI": -0.07615738773854705,
+            "recordedQ": -0.07851520160042158,
+            "spanRatio": 0.8
+          }
+        },
+        {
+          "scene": "cf32-13-decision-reference-off",
+          "pass": true,
+          "generation": "19",
+          "baselineGeneration": "19",
+          "nearestDecisionIndex": 1,
+          "referenceCellCount": 0
+        }
+      ],
+      "screen": {
+        "availableLogicalGeometry": {
+          "height": 1392,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+          "height": 1440,
+          "width": 2560,
+          "x": 0,
+          "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "preferredPixelSize": {
+          "height": 2160,
+          "width": 3840
+        },
+        "primary": true
+      },
+      "pass": true,
+      "checkCount": 90,
+      "failedChecks": []
+    }
+  ],
+  "copies": [
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-report-json",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\narrowband-analysis-report.json",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\evidence\\review-fixes\\native-debug-gpu.json",
+      "sourceBytes": 96603,
+      "sourceSha256": "f0a629e51247f20efd84d21eec57e424e9db8470e086f54163a6fd543aa62bc1",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 96603,
+      "targetSha256": "f0a629e51247f20efd84d21eec57e424e9db8470e086f54163a6fd543aa62bc1",
+      "sourceSha256AfterCopy": "f0a629e51247f20efd84d21eec57e424e9db8470e086f54163a6fd543aa62bc1",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-10-decision-unknown.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-gpu-cf32-10-decision-unknown.png",
+      "sourceBytes": 314655,
+      "sourceSha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 314655,
+      "targetSha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "sourceSha256AfterCopy": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-gpu-cf32-11-decision-reference.png",
+      "sourceBytes": 401231,
+      "sourceSha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 401231,
+      "targetSha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "sourceSha256AfterCopy": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-12-decision-iq-zoom.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-gpu-cf32-12-decision-iq-zoom.png",
+      "sourceBytes": 403639,
+      "sourceSha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 403639,
+      "targetSha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "sourceSha256AfterCopy": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\cf32-13-decision-reference-off.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-gpu-cf32-13-decision-reference-off.png",
+      "sourceBytes": 400170,
+      "sourceSha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 400170,
+      "targetSha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "sourceSha256AfterCopy": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-gpu\\ci16-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-gpu-ci16-11-decision-reference.png",
+      "sourceBytes": 379551,
+      "sourceSha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 379551,
+      "targetSha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "sourceSha256AfterCopy": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-report-json",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\narrowband-analysis-report.json",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\evidence\\review-fixes\\native-debug-software.json",
+      "sourceBytes": 93769,
+      "sourceSha256": "69ea7210a80266121c591342c9cc11562a0f8bdd988168ccd3d5d2876bd0eedd",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 93769,
+      "targetSha256": "69ea7210a80266121c591342c9cc11562a0f8bdd988168ccd3d5d2876bd0eedd",
+      "sourceSha256AfterCopy": "69ea7210a80266121c591342c9cc11562a0f8bdd988168ccd3d5d2876bd0eedd",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-10-decision-unknown.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-software-cf32-10-decision-unknown.png",
+      "sourceBytes": 649678,
+      "sourceSha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 649678,
+      "targetSha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "sourceSha256AfterCopy": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-software-cf32-11-decision-reference.png",
+      "sourceBytes": 373442,
+      "sourceSha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 373442,
+      "targetSha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "sourceSha256AfterCopy": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-12-decision-iq-zoom.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-software-cf32-12-decision-iq-zoom.png",
+      "sourceBytes": 375418,
+      "sourceSha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 375418,
+      "targetSha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "sourceSha256AfterCopy": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\cf32-13-decision-reference-off.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-software-cf32-13-decision-reference-off.png",
+      "sourceBytes": 371894,
+      "sourceSha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 371894,
+      "targetSha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "sourceSha256AfterCopy": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-debug-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-debug-software\\ci16-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-debug-software-ci16-11-decision-reference.png",
+      "sourceBytes": 352464,
+      "sourceSha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 352464,
+      "targetSha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "sourceSha256AfterCopy": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-report-json",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\narrowband-analysis-report.json",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\evidence\\review-fixes\\native-release-gpu.json",
+      "sourceBytes": 96669,
+      "sourceSha256": "952e3eb9a362577d6c618a12b1f456a1211b0713634d35d3159e0aa625da982e",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 96669,
+      "targetSha256": "952e3eb9a362577d6c618a12b1f456a1211b0713634d35d3159e0aa625da982e",
+      "sourceSha256AfterCopy": "952e3eb9a362577d6c618a12b1f456a1211b0713634d35d3159e0aa625da982e",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-10-decision-unknown.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-gpu-cf32-10-decision-unknown.png",
+      "sourceBytes": 314655,
+      "sourceSha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 314655,
+      "targetSha256": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "sourceSha256AfterCopy": "28ffa973052ff342c43ada3395e4bb8e4e273c31d132e650c568035b83790b1e",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-gpu-cf32-11-decision-reference.png",
+      "sourceBytes": 401231,
+      "sourceSha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 401231,
+      "targetSha256": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "sourceSha256AfterCopy": "b8565dac5d225170e9e6c1d4d3a8ffe99d925f742040113be3555f48a933eef1",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-12-decision-iq-zoom.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-gpu-cf32-12-decision-iq-zoom.png",
+      "sourceBytes": 403639,
+      "sourceSha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 403639,
+      "targetSha256": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "sourceSha256AfterCopy": "9a94552fd691f60fe8da1487a22ec77a9febd34df7291920a7bd2e9a995f9e6f",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\cf32-13-decision-reference-off.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-gpu-cf32-13-decision-reference-off.png",
+      "sourceBytes": 400170,
+      "sourceSha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 400170,
+      "targetSha256": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "sourceSha256AfterCopy": "fcd97fe6e568e17e017a5e2a0d8b99f307520756d7995bf3b9779537c2dc6d23",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-gpu",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-gpu\\ci16-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-gpu-ci16-11-decision-reference.png",
+      "sourceBytes": 379551,
+      "sourceSha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 379551,
+      "targetSha256": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "sourceSha256AfterCopy": "014a77803751b4d5114e7894ab76c0ac8a86aef341939f16668087783d8a2191",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-report-json",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\narrowband-analysis-report.json",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\evidence\\review-fixes\\native-release-software.json",
+      "sourceBytes": 93835,
+      "sourceSha256": "13e8b9d6bef16156f4c7f491b53a795be8c63a0b410e382bcb69e375a676aa7c",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 93835,
+      "targetSha256": "13e8b9d6bef16156f4c7f491b53a795be8c63a0b410e382bcb69e375a676aa7c",
+      "sourceSha256AfterCopy": "13e8b9d6bef16156f4c7f491b53a795be8c63a0b410e382bcb69e375a676aa7c",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-10-decision-unknown.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-software-cf32-10-decision-unknown.png",
+      "sourceBytes": 649678,
+      "sourceSha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 649678,
+      "targetSha256": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "sourceSha256AfterCopy": "3b538d4cd3c1fc832b81e60a121bb895bd950e48c947a3a12c9b625118e95e9e",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-software-cf32-11-decision-reference.png",
+      "sourceBytes": 373442,
+      "sourceSha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 373442,
+      "targetSha256": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "sourceSha256AfterCopy": "6bb630ee169f11c2afe149f40c897ba6cd203bbd23b8e3adab032c0df9f44445",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-12-decision-iq-zoom.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-software-cf32-12-decision-iq-zoom.png",
+      "sourceBytes": 375418,
+      "sourceSha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 375418,
+      "targetSha256": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "sourceSha256AfterCopy": "0bb6520fa9316d3ea4d383d84893e6323bb1bf57decc4d7f4cda0c4de4f8b117",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\cf32-13-decision-reference-off.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-software-cf32-13-decision-reference-off.png",
+      "sourceBytes": 371894,
+      "sourceSha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 371894,
+      "targetSha256": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "sourceSha256AfterCopy": "5db92bedb2d31fe0466e5c9c55f09888c01d632f412f6ec760dc3033ad45cc78",
+      "byteIdentical": true,
+      "sourceStable": true
+    },
+    {
+      "group": "native-release-software",
+      "kind": "native-screenshot-png",
+      "source": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\review-fixes\\native-release-software\\ci16-11-decision-reference.png",
+      "target": "D:\\project\\signal_studio_rebuild\\docs\\implementation\\ux-r3\\screenshots\\review-fixes\\native-release-software-ci16-11-decision-reference.png",
+      "sourceBytes": 352464,
+      "sourceSha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "copyAction": "byte-for-byte-copy",
+      "targetBytes": 352464,
+      "targetSha256": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "sourceSha256AfterCopy": "02889ce0a1ef960bbd687b891197c298413244f3cc6a184c196c5ddc4189b371",
+      "byteIdentical": true,
+      "sourceStable": true
+    }
+  ],
+  "copiedJsonCount": 4,
+  "copiedScreenshotCount": 20,
+  "failures": [],
+  "limits": [
+    "Read-only validation of completed captured reports and PNG structures; no new GUI, build, CTest, or live hardware probe was launched.",
+    "Reported rendering counters may be cumulative; vector reference overlays are explicitly not counted as GPU geometry.",
+    "PNG structure and dimensions checked, not a visual or RF accuracy certification.",
+    "No independent final-review approval is issued; Boyle must review the final exact HEAD."
+  ],
+  "archiveManifestModifiedByThisWorkflow": false
+}

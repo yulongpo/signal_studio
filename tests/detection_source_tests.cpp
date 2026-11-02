@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDir>
@@ -15,7 +16,10 @@
 #include <limits>
 #include <numbers>
 
+#include "domain/detection.h"
 #include "infrastructure/detection_source.h"
+#include "infrastructure/detection_store.h"
+#include "infrastructure/detection_task.h"
 #include "infrastructure/source_loader.h"
 #include "infrastructure/wav_metadata.h"
 
@@ -81,6 +85,122 @@ double integratedPower(const DetectionSpectrumFrame& frame) {
 class DetectionSourceTests : public QObject {
   Q_OBJECT
  private slots:
+  void optionalGpuGolden_data() {
+    QTest::addColumn<int>("bins"); QTest::addColumn<bool>("zero");
+    QTest::newRow("production-65536") << 65536 << false;
+    QTest::newRow("irregular-3001") << 3001 << false;
+    QTest::newRow("zero-floor-4096") << 4096 << true;
+  }
+  void optionalGpuGolden() {
+    QFETCH(int,bins); QFETCH(bool,zero);
+    QTemporaryDir directory;
+    auto metadata=source(directory,20000000,400000,[zero](std::uint64_t i) {
+      if(zero) return std::complex<float>{};
+      auto bits=i+0x9e3779b97f4a7c15ULL;
+      bits=(bits^(bits>>30))*0xbf58476d1ce4e5b9ULL;
+      bits=(bits^(bits>>27))*0x94d049bb133111ebULL;
+      bits^=bits>>31;
+      const double phase=2*std::numbers::pi*.137*double(i);
+      return std::complex<float>{float(.6*std::cos(phase)+double(bits&65535)/65535-.5),
+          float(.6*std::sin(phase)+double((bits>>16)&65535)/65535-.5)};
+    });
+    auto config=fixtureConfig(static_cast<std::uint32_t>(bins));
+    config.inputAdaptationVersion=2;config.hopSeconds=.00025;
+    config.useHostMkl=false;
+    FixedDetectionSource cpu,host;QString error;
+    QVERIFY2(cpu.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    config.useHostMkl=true;
+    const auto mkl = sourceRoot().filePath(
+        "out/toolchains/fft-libs/conda/Library/bin/mkl_rt.3.dll");
+    if (qEnvironmentVariableIsEmpty("SS_MKL_DLL") && QFileInfo::exists(mkl))
+      qputenv("SS_MKL_DLL", QFile::encodeName(mkl));
+    QVERIFY2(host.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    double dbError=0,tensorError=0;
+    for(const auto index:{std::uint64_t{0},cpu.plan().eligibleWindowCount-1}) {
+      DetectionModelWindow expected,actual;
+      QVERIFY2(cpu.readModelWindow(index,expected,error),qPrintable(error));
+      QVERIFY2(host.readModelWindow(index,actual,error),qPrintable(error));
+      if (host.gpuProfiling()["mklFrames"].toInteger() == 0) {
+        const auto reason=QJsonDocument(host.gpuProfiling()).toJson(QJsonDocument::Compact);
+        if(qEnvironmentVariableIntValue("SS_REQUIRE_MKL")) QFAIL(reason.constData());
+        QSKIP(reason.constData());
+      }
+      QCOMPARE(actual.densityDb.size(),expected.densityDb.size());
+      QCOMPARE(actual.frames.size(),expected.frames.size());
+      QCOMPARE(actual.epsilonGuardApplied,expected.epsilonGuardApplied);
+      for(std::size_t row=0;row<actual.frames.size();++row) {
+        QCOMPARE(actual.frames[row].inputHash,expected.frames[row].inputHash);
+        QCOMPARE(actual.frames[row].fftSupports,expected.frames[row].fftSupports);
+        QCOMPARE(actual.frames[row].powerFloorBins,expected.frames[row].powerFloorBins);
+        QCOMPARE(actual.frames[row].densityUnderflowGuardBins,expected.frames[row].densityUnderflowGuardBins);
+      }
+      for(std::size_t i=0;i<actual.densityDb.size();++i) {
+        dbError=std::max(dbError,std::abs(double(actual.densityDb[i])-expected.densityDb[i]));
+        tensorError=std::max(tensorError,std::abs(double(actual.normalizedTensor[i])-expected.normalizedTensor[i]));
+      }
+    }
+    qInfo() << "oneMKL versus handwritten CPU reference" << bins << dbError << tensorError
+            << QJsonDocument(host.gpuProfiling()).toJson(QJsonDocument::Compact);
+    QVERIFY(dbError<3.8e-5); QVERIFY(tensorError<5e-6);
+    const auto profile=host.gpuProfiling();
+    QVERIFY(profile["mklFrames"].toInteger()>0);
+    QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
+    QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
+    QCOMPARE(profile["stftRoute"].toString(), QString("host-onemkl"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("suppressed"));
+    QVERIFY(!profile.contains("gpu"));
+  }
+  void hostMklMissingStaysHandwritten() {
+    qputenv("SS_MKL_DLL", "off");
+    QTemporaryDir directory;
+    auto metadata=source(directory,20000000,80000,[](std::uint64_t i) {
+      const double phase=2*std::numbers::pi*.01*double(i);
+      return std::complex<float>{float(std::cos(phase)),float(std::sin(phase))};
+    });
+    auto config=fixtureConfig(4096);
+    config.inputAdaptationVersion=2;config.hopSeconds=.00025;
+    config.useHostMkl=true;config.preferGpu=true;
+    FixedDetectionSource provider;QString error;
+    QVERIFY2(provider.open(metadata,physicalRequest(metadata),config,error),qPrintable(error));
+    DetectionModelWindow window;
+    QVERIFY2(provider.readModelWindow(0,window,error),qPrintable(error));
+    const auto profile=provider.gpuProfiling();
+    QCOMPARE(profile["mklFrames"].toInteger(),qint64{0});
+    QCOMPARE(profile["gpuFrames"].toInteger(),qint64{0});
+    QVERIFY(profile["cpuFrames"].toInteger()>0);
+    QVERIFY(profile["mklDetail"].toString().contains("probe disabled"));
+    QCOMPARE(profile["stftRoute"].toString(), QString("handwritten-fft"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("probe disabled"));
+    QVERIFY(profile["stftSuppressedReason"].toString().contains("suppressed"));
+    QVERIFY(!profile.contains("gpu"));
+    QVERIFY(!window.densityDb.empty());
+  }
+  void deployedMklPinsOneThread() {
+    qunsetenv("SS_MKL_DLL");
+    if (!QFileInfo::exists(QCoreApplication::applicationDirPath() + "/mkl_rt.3.dll"))
+      QSKIP("oneMKL runtime is not staged beside the test executable");
+    QTemporaryDir directory;
+    auto metadata = source(directory, 20000000, 80000, [](std::uint64_t i) {
+      const double phase = 2 * std::numbers::pi * .01 * double(i);
+      return std::complex<float>{float(std::cos(phase)), float(std::sin(phase))};
+    });
+    auto config = fixtureConfig(4096);
+    config.inputAdaptationVersion = 2;
+    config.hopSeconds = .00025;
+    config.useHostMkl = true;
+    FixedDetectionSource provider;
+    QString error;
+    QVERIFY2(provider.open(metadata, physicalRequest(metadata), config, error), qPrintable(error));
+    DetectionModelWindow window;
+    QVERIFY2(provider.readModelWindow(0, window, error), qPrintable(error));
+    const auto profile = provider.gpuProfiling();
+    QVERIFY(profile["mklFrames"].toInteger() > 0);
+    QVERIFY(profile["mklDetail"].toString().contains("threads=1"));
+    QVERIFY(profile["mklDetail"].toString().contains("mkl_rt.3.dll"));
+    QCOMPARE(profile["stftRoute"].toString(), QString("host-onemkl"));
+    QVERIFY(!profile["stftSuppressedReason"].toString().isEmpty());
+    QVERIFY(!profile.contains("gpu"));
+  }
   void adaptiveShortRoiTailAndIrregularGrid() {
     QTemporaryDir directory;
     auto metadata = source(directory, 100000, 17, [](std::uint64_t) {
@@ -759,6 +879,68 @@ class DetectionSourceTests : public QObject {
                       << maxTensorError;
     QVERIFY(maxDbError < oracle["psdToleranceDb"].toDouble());
     QVERIFY(maxTensorError < oracle["normalizationTolerance"].toDouble());
+  }
+  void performanceTimingSeparatesTensorRtFromDsp() {
+    QJsonObject dsp{{"fftMs", 1.25}, {"mklFrames", 4}, {"stftRoute", "host-onemkl"}};
+    QJsonObject events{{"gpuStreamMs", 3.5},
+                       {"h2dMs", 0.25},
+                       {"cudaEventIntervals", true},
+                       {"qrhiMs", 8.0},
+                       {"gpuDsp", dsp}};
+    const auto written = bindDetectionPerformanceTimings(
+        QJsonObject{{"schema", "signal-studio-detection-profile-v1"},
+                    {"sourceStages", QJsonObject{{"gpuDsp", dsp}}}},
+        events);
+    QVERIFY(!written.contains("gpu"));
+    const auto inference = written["tensorRtInference"].toObject();
+    QCOMPARE(inference["gpuStreamMs"].toDouble(), 3.5);
+    QVERIFY(!inference.contains("qrhiMs"));
+    QVERIFY(!inference.contains("gpuDsp"));
+    QCOMPARE(written["sourceStages"].toObject()["gpuDsp"].toObject()["fftMs"].toDouble(),
+             1.25);
+    QCOMPARE(detectionTensorRtInferenceTimings(written)["h2dMs"].toDouble(), 0.25);
+    QVERIFY(!detectionTensorRtInferenceTimings(written).contains("fftMs"));
+
+    QTemporaryDir directory;
+    DetectionRun run;
+    run.request.runId = "legacy-gpu-alias";
+    run.request.profile = *findDetectionProfile("pipeline-fixture-v1");
+    auto& source = run.request.sourceIdentity;
+    source.projectGeneration = std::numeric_limits<std::uint64_t>::max();
+    source.fileId = "file-1";
+    source.path = directory.filePath("capture.iq").toStdString();
+    source.quickFingerprint = "16000000:2026-10-13T04:00:00Z";
+    source.sampleRateHz = 20e6;
+    source.centerFrequencyHz = 2.5e9;
+    source.effectiveFrequency = {2.49e9, 2.51e9};
+    source.physicalSamples = 400000;
+    source.availableSamples = 400000;
+    run.request.requestedRange = {{100, 300000}, {2.495e9, 2.505e9}};
+    run.request.contextRange = {{0, 400000}, source.effectiveFrequency};
+    run.request.rangeOrigin = "selection";
+    run.lifecycle = DetectionLifecycle::Running;
+    run.eligibleWindows = 3;
+    run.completedWindows = 1;
+    run.readFrames = 10;
+    run.coverage.push_back({DetectionCoverageKind::Completed,
+                            {{100, 100000}, {2.495e9, 2.505e9}},
+                            ""});
+    auto encoded = encodeDetectionRun(run);
+    encoded["performance"] = QJsonObject{
+        {"schema", "signal-studio-detection-profile-v1"},
+        {"gpu", QJsonObject{{"gpuStreamMs", 2.5}, {"cudaEventIntervals", true}}},
+        {"sourceStages", QJsonObject{{"gpuDsp", QJsonObject{{"fftMs", 9.0}}}}}};
+    DetectionRun restored;
+    QString error;
+    QVERIFY2(decodeDetectionRun(encoded, restored, error), qPrintable(error));
+    const auto legacy = QJsonDocument::fromJson(
+                            QByteArray::fromStdString(restored.performanceJson))
+                            .object();
+    QVERIFY(legacy.contains("gpu"));
+    QVERIFY(!legacy.contains("tensorRtInference"));
+    QCOMPARE(detectionTensorRtInferenceTimings(legacy)["gpuStreamMs"].toDouble(), 2.5);
+    QCOMPARE(legacy["sourceStages"].toObject()["gpuDsp"].toObject()["fftMs"].toDouble(),
+             9.0);
   }
 };
 QTEST_GUILESS_MAIN(DetectionSourceTests)

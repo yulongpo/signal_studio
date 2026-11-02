@@ -10,6 +10,7 @@
 #include <QSaveFile>
 #include <QSet>
 #include <stdexcept>
+#include <vector>
 
 #include "application/annotation_service.h"
 #include "infrastructure/annotation_json.h"
@@ -94,6 +95,12 @@ QJsonObject writeSourceSnapshot(const QDir& root, const QString& relative,
           {"sha256", hash},
           {"bytes", QString::number(bytes.size())}};
 }
+QByteArray compactDocument(const QJsonDocument& document) {
+  auto json = document.toJson(QJsonDocument::Compact);
+  while (!json.isEmpty() && (json.endsWith('\n') || json.endsWith('\r')))
+    json.chop(1);
+  return json;
+}
 QJsonObject readSourceSnapshot(const QDir& root, const QString& canonicalRoot,
                                const FileState& file, const QJsonObject& ref,
                                QSet<QString>& paths, qint64& bytesRead) {
@@ -145,19 +152,33 @@ bool writeAnnotationStore(const QString& projectPath, const FileState& file,
     require(inside(QFileInfo(root.filePath(relative)).canonicalFilePath(),
                    QFileInfo(root.absolutePath()).canonicalFilePath()),
             "标记目录越过工程范围");
-    QJsonArray refs, records, sources;
+    QJsonArray refs, sources;
+    std::vector<QByteArray> records;
     qsizetype estimated = 2;
     quint64 count = 0, segments = 0;
     qint64 written = 0;
     auto flush = [&] {
-      if (records.isEmpty()) return;
-      const auto bytes =
-          QJsonDocument(
-              QJsonObject{{"schema", "signal-studio-annotations"},
-                          {"version", 1},
-                          {"fileId", QString::fromStdString(file.metadata.id)},
-                          {"annotations", records}})
-              .toJson(QJsonDocument::Compact);
+      if (records.empty()) return;
+      // Qt writes the wrapper. The annotation objects spliced into it are the
+      // compact bytes already counted for the shard budget.
+      const auto wrapper = compactDocument(QJsonDocument(QJsonObject{
+          {"schema", "signal-studio-annotations"},
+          {"version", 1},
+          {"fileId", QString::fromStdString(file.metadata.id)},
+          {"annotations", QJsonArray{}}}));
+      const QByteArray placeholder("\"annotations\":[]");
+      const auto at = wrapper.indexOf(placeholder);
+      require(at >= 0, "标记分片封装失败");
+      QByteArray bytes;
+      bytes.reserve(wrapper.size() + estimated);
+      bytes += wrapper.left(at);
+      bytes += "\"annotations\":[";
+      for (std::size_t index = 0; index < records.size(); ++index) {
+        if (index) bytes += ',';
+        bytes += records[index];
+      }
+      bytes += ']';
+      bytes += wrapper.mid(at + placeholder.size());
       require(bytes.size() <= shardBytes, "单个标记分片超过8MiB");
       written += bytes.size();
       require(written <= totalBytes, "标记分片超过256MiB预算");
@@ -179,17 +200,17 @@ bool writeAnnotationStore(const QString& projectPath, const FileState& file,
                               {"sha256", hash},
                               {"bytes", QString::number(bytes.size())},
                               {"count", QString::number(records.size())}});
-      records = {};
+      records.clear();
       estimated = 2;
     };
     for (const auto& a : file.marks) {
-      const auto object = encodeAnnotation(a);
-      const auto size =
-          QJsonDocument(object).toJson(QJsonDocument::Compact).size() + 1;
+      const auto object = compactDocument(QJsonDocument(encodeAnnotation(a)));
+      const auto size = object.size() + 1;
       require(size + 512 < shardBytes, "单个标记超过分片预算");
-      if (records.size() >= shardRecords || estimated + size + 512 > shardBytes)
+      if (static_cast<qsizetype>(records.size()) >= shardRecords ||
+          estimated + size + 512 > shardBytes)
         flush();
-      records.append(object);
+      records.push_back(object);
       estimated += size;
       ++count;
       segments += a.segments.size();

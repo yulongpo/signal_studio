@@ -8,3 +8,9 @@
 *.log
 __pycache__/
 *.pyc
+Signal_Studio_Wideband_UX_Codex_Task_Package.zip
+.vscode/settings.json
+/resources/sigmf*
+/reference/*tasks
+/reference/*.md
+/tasks

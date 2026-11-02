@@ -4,17 +4,84 @@
 #include <QFileInfo>
 #include <QJsonObject>
 
+#include <chrono>
+
 #include "infrastructure/detection_store.h"
 
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#include <psapi.h>
+#endif
+
 namespace signalstudio {
+namespace {
+bool parentSteadyNanoseconds(std::uint64_t& nanoseconds) {
+  const auto count = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+  if (count < 0) return false;
+  nanoseconds = static_cast<std::uint64_t>(count);
+  return true;
+}
+}  // namespace
+
+void DetectionWorkerClient::stampParentClock(const char* name) {
+  if (name == nullptr || name[0] == '\0') return;
+  std::uint64_t nanoseconds = 0;
+  if (!parentSteadyNanoseconds(nanoseconds)) return;
+  parentClockStamps_.push_back(DetectionParentClockStamp{name, nanoseconds});
+}
 
 DetectionWorkerClient::~DetectionWorkerClient() { stop(); }
 
-void DetectionWorkerClient::stop() {
+void DetectionWorkerClient::stop(bool graceful) {
+  sampleResources();
   if (process_.state() != QProcess::NotRunning) {
-    process_.kill();
-    process_.waitForFinished(1000);
+    gracefulRequested_=graceful;
+    if(graceful) {
+      process_.closeWriteChannel();
+      process_.waitForFinished(250);
+    }
+    if(process_.state()!=QProcess::NotRunning) {
+      terminationRequested_=true;
+      process_.kill();
+      process_.waitForFinished(1000);
+    }
   }
+  stderrTail_=(stderrTail_+process_.readAllStandardError()).right(8192);
+}
+void DetectionWorkerClient::sampleResources() {
+#ifdef Q_OS_WIN
+  if(!processId_) return;
+  const auto handle=OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION|PROCESS_VM_READ,FALSE,DWORD(processId_));
+  if(!handle) return;
+  PROCESS_MEMORY_COUNTERS_EX memory{};memory.cb=sizeof(memory);
+  if(GetProcessMemoryInfo(handle,reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&memory),sizeof(memory)))
+    resource_={{"available",true},{"peakRssBytes",double(memory.PeakWorkingSetSize)},
+        {"rssBytes",double(memory.WorkingSetSize)},{"privateBytes",double(memory.PrivateUsage)}};
+  FILETIME created{},exited{},kernel{},user{};
+  if(GetProcessTimes(handle,&created,&exited,&kernel,&user)) {
+    const auto ticks=[](FILETIME time){return (quint64(time.dwHighDateTime)<<32)|time.dwLowDateTime;};
+    resource_["cpuMilliseconds"]=double(ticks(kernel)+ticks(user))/10000;
+  }
+  CloseHandle(handle);
+#endif
+}
+QJsonObject DetectionWorkerClient::diagnostics() const {
+  QJsonObject result{{"processId",double(processId_)},
+      {"state",int(process_.state())},{"exitObserved",processId_!=0 && process_.state()==QProcess::NotRunning},
+      {"stderrTail",QString::fromUtf8(stderrTail_)},{"bytesRead",QString::number(bytesRead_)},
+      {"bytesWritten",QString::number(bytesWritten_)},{"exchanges",QString::number(sequence_)},
+      {"terminationRequested",terminationRequested_},{"gracefulRequested",gracefulRequested_},
+      {"resource",resource_}};
+  if(processId_ && process_.state()==QProcess::NotRunning) {
+    result["exitCode"]=process_.exitCode();
+    result["exitStatus"]=process_.exitStatus()==QProcess::NormalExit ? "normal" : "crash";
+  }
+  return result;
 }
 
 bool DetectionWorkerClient::writePacket(const DetectionWorkerPacket& packet,
@@ -25,6 +92,7 @@ bool DetectionWorkerClient::writePacket(const DetectionWorkerPacket& packet,
     error = "Worker input pipe rejected the bounded packet";
     return false;
   }
+  bytesWritten_+=bytes.size();
   return true;
 }
 
@@ -42,17 +110,20 @@ bool DetectionWorkerClient::readPacket(DetectionWorkerPacket& packet,
     std::optional<DetectionWorkerPacket> available;
     if (!decoder_.take(available, error)) return false;
     if (available) {
+      sampleResources();
       packet = std::move(*available);
       return true;
     }
     process_.waitForReadyRead(20);
     const auto bytes = process_.readAllStandardOutput();
+    bytesRead_+=bytes.size();
     // Diagnostics are separate from the binary wire protocol and bounded.
-    const auto diagnostic = process_.readAllStandardError().left(4096);
+    stderrTail_=(stderrTail_+process_.readAllStandardError()).right(8192);
     if (!bytes.isEmpty() && !decoder_.append(bytes, error)) return false;
     if (process_.state() == QProcess::NotRunning && bytes.isEmpty()) {
-      error = "Worker exited before a complete response: " +
-              QString::fromUtf8(diagnostic);
+      error = QString("Worker exited before a complete response (code %1, %2): %3")
+          .arg(process_.exitCode()).arg(process_.exitStatus()==QProcess::NormalExit ? "normal" : "crash")
+          .arg(QString::fromUtf8(stderrTail_));
       return false;
     }
   }
@@ -65,7 +136,9 @@ bool DetectionWorkerClient::start(const QString& executable,
                                   const DetectionRequest& request,
                                   QString& error,
                                   const std::function<bool()>& cancelled,
-                                  std::uint32_t maximumExecutionBatch) {
+                                  std::uint32_t maximumExecutionBatch,
+                                  const std::function<bool(QString&)>& prepareWhileInitializing) {
+  parentClockStamps_.clear();
   if (!QFileInfo(executable).isFile()) {
     error = "Detection worker executable is missing";
     return false;
@@ -82,6 +155,8 @@ bool DetectionWorkerClient::start(const QString& executable,
     error = "Detection worker could not start: " + process_.errorString();
     return false;
   }
+  processId_=process_.processId();
+  stampParentClock("t_worker_spawn");
   DetectionWorkerPacket hello{
       workerEnvelope("hello", "handshake", 0, {{"client", "SignalStudio"}}),
       {}};
@@ -92,23 +167,42 @@ bool DetectionWorkerClient::start(const QString& executable,
     error = "Worker protocol handshake failed";
     return false;
   }
+  stampParentClock("t_worker_hello");
   DetectionWorkerPacket begin{
       workerEnvelope("begin", "begin", 0, encodeDetectionRequest(request),
                      QString::fromStdString(request.runId),
                      request.sourceIdentity.projectGeneration,
                      QString::fromStdString(request.sourceIdentity.fileId)),
       {}};
-  if (!exchange(std::move(begin), ready, error, cancelled)) return false;
+  if (!exchange(std::move(begin), ready, error, cancelled, prepareWhileInitializing)) return false;
   evidence_ = ready.envelope["payload"].toObject();
+  stampParentClock("t_engine_ready");
   return true;
 }
 
 bool DetectionWorkerClient::exchange(DetectionWorkerPacket packet,
                                      DetectionWorkerPacket& response,
                                      QString& error,
-                                     const std::function<bool()>& cancelled) {
+                                     const std::function<bool()>& cancelled,
+                                     const std::function<bool(QString&)>& afterRequestWritten) {
   packet.envelope["sequence"] = QString::number(++sequence_);
-  if (!writePacket(packet, error) || !readPacket(response, error, cancelled))
+  if (!writePacket(packet, error)) return false;
+  if (cancelled && cancelled()) { error = "Cancelled before worker response"; return false; }
+  if (afterRequestWritten) {
+    // Send the begin packet before CPU preparation occupies this thread.
+    QElapsedTimer flush;
+    flush.start();
+    while (process_.bytesToWrite() > 0) {
+      if (cancelled && cancelled()) { error = "Cancelled during worker initialization"; return false; }
+      process_.waitForBytesWritten(20);
+      if (flush.elapsed() > 3000 || process_.state() == QProcess::NotRunning) {
+        error = "Worker begin pipe did not drain: " + process_.errorString();
+        return false;
+      }
+    }
+    if (!afterRequestWritten(error)) return false;
+  }
+  if (!readPacket(response, error, cancelled))
     return false;
   const auto& envelope = response.envelope;
   if (envelope["requestId"] != packet.envelope["requestId"] ||

@@ -1,0 +1,1563 @@
+Start testing: Oct 24 23:55 �й���׼ʱ��
+----------------------------------------------------------
+1/40 Testing: signal_studio_parameter_input
+1/40 Test: signal_studio_parameter_input
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioParameterInputTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/parameter-input-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_parameter_input" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of ParameterInputTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : ParameterInputTests::initTestCase()
+QWARN  : ParameterInputTests::mouseSteps(native-style) This plugin does not support propagateSizeHints()
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(native-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+PASS   : ParameterInputTests::mouseSteps(native-style)
+QWARN  : ParameterInputTests::mouseSteps(application-style) This plugin does not support propagateSizeHints()
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x12) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(463,15 14x13) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x9) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarSubLine QRect(463,12 14x10) child QWidget(0x0)
+QINFO  : ParameterInputTests::mouseSteps(application-style) QStyle::SC_ScrollBarAddLine QRect(463,3 14x12) child QWidget(0x0)
+PASS   : ParameterInputTests::mouseSteps(application-style)
+QWARN  : ParameterInputTests::textDraftPolicy() This plugin does not support propagateSizeHints()
+PASS   : ParameterInputTests::textDraftPolicy()
+PASS   : ParameterInputTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 160ms
+********* Finished testing of ParameterInputTests *********
+
+<end of output>
+Test time =   0.41 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_parameter_input" end time: Oct 24 23:55 �й���׼ʱ��
+"signal_studio_parameter_input" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/40 Testing: signal_studio_detection_refined_fusion
+2/40 Test: signal_studio_detection_refined_fusion
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinedFusionTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_refined_fusion" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection refined fusion tests: 9 groups passed
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_refined_fusion" end time: Oct 24 23:55 �й���׼ʱ��
+"signal_studio_detection_refined_fusion" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/40 Testing: signal_studio_detection_time_pipeline
+3/40 Test: signal_studio_detection_time_pipeline
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionTimePipelineTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_time_pipeline" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Time pipeline checks passed
+<end of output>
+Test time =  29.37 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_time_pipeline" end time: Oct 24 23:55 �й���׼ʱ��
+"signal_studio_detection_time_pipeline" time elapsed: 00:00:29
+----------------------------------------------------------
+
+4/40 Testing: signal_studio_detection_refinement
+4/40 Test: signal_studio_detection_refinement
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionRefinementTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_refinement" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection refinement tests: 17 groups passed
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_refinement" end time: Oct 24 23:55 �й���׼ʱ��
+"signal_studio_detection_refinement" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/40 Testing: signal_studio_detection_sample_energy
+5/40 Test: signal_studio_detection_sample_energy
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionSampleEnergyTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_sample_energy" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Exact-length sample FFT/energy checks passed
+<end of output>
+Test time =   0.38 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_sample_energy" end time: Oct 24 23:55 �й���׼ʱ��
+"signal_studio_detection_sample_energy" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/40 Testing: signal_studio_detection_pipeline
+6/40 Test: signal_studio_detection_pipeline
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionPipelineTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_pipeline" start time: Oct 24 23:55 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection projection/pipeline checks passed
+<end of output>
+Test time =  21.43 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_pipeline" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_pipeline" time elapsed: 00:00:21
+----------------------------------------------------------
+
+7/40 Testing: signal_studio_detection_postprocess
+7/40 Test: signal_studio_detection_postprocess
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionPostprocessTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_postprocess" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection postprocess tests: 11 groups passed
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_postprocess" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_postprocess" time elapsed: 00:00:00
+----------------------------------------------------------
+
+8/40 Testing: signal_studio_detection_model_backend
+8/40 Test: signal_studio_detection_model_backend
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionModelBackendTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_model_backend" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection model backend checks passed
+<end of output>
+Test time =   0.44 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_model_backend" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_model_backend" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/40 Testing: signal_studio_detection_frequency_analysis
+9/40 Test: signal_studio_detection_frequency_analysis
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionFrequencyAnalysisTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_frequency_analysis" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+frequency analysis checks passed
+<end of output>
+Test time =   0.46 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_frequency_analysis" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_frequency_analysis" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/40 Testing: signal_studio_detection_store
+10/40 Test: signal_studio_detection_store
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionStoreTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_store" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection store boundary tests passed
+<end of output>
+Test time =   2.10 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_store" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_store" time elapsed: 00:00:02
+----------------------------------------------------------
+
+11/40 Testing: signal_studio_detection_protocol
+11/40 Test: signal_studio_detection_protocol
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionProtocolTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_protocol" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+Detection protocol boundary tests passed
+<end of output>
+Test time =   0.79 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_protocol" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_protocol" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/40 Testing: signal_studio_detection_task
+12/40 Test: signal_studio_detection_task
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionTaskTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_task" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS isolated native worker, bounded task lifecycle, provenance and persistence
+<end of output>
+Test time =  30.02 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_task" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_task" time elapsed: 00:00:30
+----------------------------------------------------------
+
+13/40 Testing: signal_studio_detection_source
+13/40 Test: signal_studio_detection_source
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDetectionSourceTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/detection-source-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_detection_source" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of DetectionSourceTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : DetectionSourceTests::initTestCase()
+PASS   : DetectionSourceTests::adaptiveShortRoiTailAndIrregularGrid()
+PASS   : DetectionSourceTests::frozenProfileDeclarationMatchesProviderConfig()
+PASS   : DetectionSourceTests::periodicHannDensityAndPowerAveraging()
+PASS   : DetectionSourceTests::remainderAndSlotPaddingMatchFrozenRules()
+PASS   : DetectionSourceTests::blockSizeRoiAndAbsoluteGridInvariant()
+PASS   : DetectionSourceTests::shortPartialFloorAndZeroGuard()
+PASS   : DetectionSourceTests::invalidBudgetCancellationAndSourceChanges()
+PASS   : DetectionSourceTests::numericalGuardsAndStreamingFailuresAreIndependent()
+QINFO  : DetectionSourceTests::frozen20mZeroInputHasExplicitFiniteNumericalGuard() 20M zero IQ: reference float32 density underflows; finite cpu-f64-fft-density-log-ddof1-v1 floor dB -496.213 power floor and std epsilon are distinct
+PASS   : DetectionSourceTests::frozen20mZeroInputHasExplicitFiniteNumericalGuard()
+PASS   : DetectionSourceTests::wavContainerOverridesAndRawReadBudgetAreRejected()
+PASS   : DetectionSourceTests::selectedIntegerChannelAndInvalidIqUseActualReader()
+PASS   : DetectionSourceTests::exactPlanningBeyondDoubleIntegerRange()
+QINFO  : DetectionSourceTests::actual20mTorchCpuGolden() 20M real WAV / independent Torch CPU oracle: sampled PSD max error dB 3.8147e-05 normalized tensor max error 5.00679e-06
+PASS   : DetectionSourceTests::actual20mTorchCpuGolden()
+PASS   : DetectionSourceTests::cleanupTestCase()
+Totals: 15 passed, 0 failed, 0 skipped, 0 blacklisted, 3134ms
+********* Finished testing of DetectionSourceTests *********
+
+<end of output>
+Test time =   3.62 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_detection_source" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_detection_source" time elapsed: 00:00:03
+----------------------------------------------------------
+
+14/40 Testing: signal_studio_annotations
+14/40 Test: signal_studio_annotations
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioAnnotationTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_annotations" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS legacy compatibility
+PASS three sources and immutable origin
+PASS direct edits preserve origin and metadata quality
+PASS unknown frequency and edit context
+PASS segment deletion snapshot and concurrent undo
+PASS restore origin preserves confirmed sibling
+PASS located channel requests and relations
+PASS legacy channel binding full frequency bounds
+PASS channel names use persistent Unicode limit
+PASS UserRange channels preserve unknown time
+PASS unknown-time observation
+PASS Pending single-segment confirmation
+PASS confirmation undo/redo and rejection
+PASS confirmation geometry invalidation
+PASS confirmation available and effective bounds
+PASS confirmation current source and revision
+PASS physical and available bounds
+PASS multi-segment editing and selection
+PASS unified selection, order, filter, and hover
+PASS atomic batch and concurrent undo
+PASS channel snapshots and source changes
+PASS source idempotence and validation
+PASS budgets and independent histories
+<end of output>
+Test time =   0.55 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_annotations" end time: Oct 24 23:56 �й���׼ʱ��
+"signal_studio_annotations" time elapsed: 00:00:00
+----------------------------------------------------------
+
+15/40 Testing: signal_studio_annotation_store
+15/40 Test: signal_studio_annotation_store
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioAnnotationStoreTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_annotation_store" start time: Oct 24 23:56 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS v6 bindings, failure atomicity, shard integrity, uint64/Partial
+<end of output>
+Test time =  50.73 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_annotation_store" end time: Oct 24 23:57 �й���׼ʱ��
+"signal_studio_annotation_store" time elapsed: 00:00:50
+----------------------------------------------------------
+
+16/40 Testing: signal_studio_label_import
+16/40 Test: signal_studio_label_import
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioLabelImportTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/label-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_label_import" start time: Oct 24 23:57 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of LabelImportTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : LabelImportTests::initTestCase()
+PASS   : LabelImportTests::manualTxtRequiresMappingAndPreviewIsBounded()
+PASS   : LabelImportTests::strictMatlabPairAndReverseLookup()
+PASS   : LabelImportTests::casingAndMultipleCandidatesAreExplicit()
+PASS   : LabelImportTests::discoveryAndParserBudgetsAndCancellation()
+PASS   : LabelImportTests::mappedIndicesUnitsAndSavedMapping()
+PASS   : LabelImportTests::mappedRoundingFramesAndPhysicalRejection()
+PASS   : LabelImportTests::unknownTimeObservationAndClassOnlyAreNotRectangles()
+PASS   : LabelImportTests::generatorDiscoveryAndSafePublication()
+PASS   : LabelImportTests::incompleteEvidenceConfirmationCancellationDeduplicationAndUndo()
+PASS   : LabelImportTests::mappedProfileUsesAnnotationServiceAndProfileChangesRequireReview()
+PASS   : LabelImportTests::sigmfEmptyIsValidAndSupplementalConflictsRemainErrors()
+PASS   : LabelImportTests::generatorFixtureAndPhysicalBinding()
+PASS   : LabelImportTests::generatorRoundingAndRejectWholeBatch()
+PASS   : LabelImportTests::torchSigFixtureAndOrderIndependentMatching()
+PASS   : LabelImportTests::torchSigConflictsAndUnsupported()
+PASS   : LabelImportTests::codecFullRoundtripAndExports()
+PASS   : LabelImportTests::largeSharedAndRecordEvidenceRemainLossless()
+PASS   : LabelImportTests::normalizedBatchBudgetRejectsAtomically()
+PASS   : LabelImportTests::largeGeneratorRecordUsesSourceLineReference()
+QINFO  : LabelImportTests::actualTwoSourceAssets() Actual generator annotations 10 segments 65 source SHA256 "dcef967000723aff575aa98eb413f0aad3a14575f92c55a3cc6199484f793b83"
+QINFO  : LabelImportTests::actualTwoSourceAssets() Actual TorchSig annotations 4 source SHA256 "5efd03dae0f53002c8400ddc2ba65e367d7dde315b232a24cd77a2b1bd982a29"
+PASS   : LabelImportTests::actualTwoSourceAssets()
+PASS   : LabelImportTests::cleanupTestCase()
+Totals: 22 passed, 0 failed, 0 skipped, 0 blacklisted, 38163ms
+********* Finished testing of LabelImportTests *********
+
+<end of output>
+Test time =  38.66 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_label_import" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_label_import" time elapsed: 00:00:38
+----------------------------------------------------------
+
+17/40 Testing: signal_studio_wav
+17/40 Test: signal_studio_wav
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioWavTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/wav-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_wav" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of WavInputTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : WavInputTests::initTestCase()
+PASS   : WavInputTests::noncanonicalLayoutAndReader()
+PASS   : WavInputTests::metadataAuthorityAndRawUnchanged()
+PASS   : WavInputTests::malformedAndUnsupported()
+PASS   : WavInputTests::boundedHeaderRead()
+QINFO  : WavInputTests::actualGeneratorGolden() Generator WAV golden: D:/coding/FFSCN_train2/broadband_signal_generation/test_sig2/data/20260728-025821-162_bw_20000000_sampleTime_0.8_rollOff_0.35.wav SHA256 88f96c6deab9e435db8f111463092fdae9b800aeb3cbccd82d7426551d52d9cd complex frames byte-compared 3072 metadata bytes read 44
+PASS   : WavInputTests::actualGeneratorGolden()
+PASS   : WavInputTests::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 779ms
+********* Finished testing of WavInputTests *********
+
+<end of output>
+Test time =   1.15 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_wav" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_wav" time elapsed: 00:00:01
+----------------------------------------------------------
+
+18/40 Testing: signal_studio_import
+18/40 Test: signal_studio_import
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioImportTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_import" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.88 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_import" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_import" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/40 Testing: signal_studio_sample_format
+19/40 Test: signal_studio_sample_format
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioSampleFormatTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_sample_format" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS 72 DDC format/layout/channel cases, actual prefix and cache equivalence; all encoding extrema and known tones
+PASS 432 format/reader/project matrix cases; counts, overflow, nonfinite, cancellation, CI16 equality, real PSD, v1/v2/v3 migration, non4 frame prefix
+<end of output>
+Test time =   6.41 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_sample_format" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_sample_format" time elapsed: 00:00:06
+----------------------------------------------------------
+
+20/40 Testing: signal_studio_core
+20/40 Test: signal_studio_core
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioCoreTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_core" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS boundary clamping and uint64 precision
+PASS shared wideband and narrowband chart interaction math
+PASS independent file state and 40-entry view history
+PASS selection, focus, linked deletion and fixed demo channels
+PASS independent auxiliary modes, combined snapshot history and PSD scope
+PASS strict atomic native JSON and full-state uint64 roundtrip
+PASS full numerical power fit, global PSD coupling and extreme-range roundtrip
+PASS int16 IQ metadata, mapped reads, waveform, Welch PSD and STFT
+<end of output>
+Test time =   1.34 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_core" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_core" time elapsed: 00:00:01
+----------------------------------------------------------
+
+21/40 Testing: signal_studio_project_file
+21/40 Test: signal_studio_project_file
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioProjectFileTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_project_file" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS direct-create-stable-id
+PASS annotation-channel-detection-roundtrip
+PASS move-project-assets-and-raw
+PASS save-as-copy
+PASS save-as-reference-original-bytes
+PASS raw-relocation-and-same-length-rejection
+PASS missing-source-save-and-recovery
+PASS wrong-raw-at-stored-path
+PASS corrupt-annotation-asset
+PASS missing-annotation-asset
+PASS corrupt-detection-asset
+PASS missing-detection-asset
+PASS invalid-json-and-missing-assets
+PASS container-magic
+PASS container-version
+PASS container-project-id
+PASS container-state
+PASS missing-source-reference
+PASS duplicate-source-reference
+PASS reference-physical-mismatch
+PASS manifest-path-traversal
+PASS legacy-v6-explicit-readonly-conversion
+PASS cancel-legacy-conversion
+PASS reject-legacy-v1-through-v5
+PASS legacy-corrupt-shards
+PASS protect-existing-nonproject-target
+PASS protect-existing-other-project
+PASS invalid-save-preserves-target
+PASS absolute-only-and-cross-drive-source-reference
+PASS no-write-directory
+PASS cancel-load-entry
+PASS cancel-load-late
+PASS cancel-save-entry
+PASS cancel-save-near-publication
+PASS cancel-save-last-checkpoint
+35/35 project file behavior cases passed
+<end of output>
+Test time =   8.93 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_project_file" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_project_file" time elapsed: 00:00:08
+----------------------------------------------------------
+
+22/40 Testing: signal_studio_ux_r3_axes
+22/40 Test: signal_studio_ux_r3_axes
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3AxisTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-axes-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_r3_axes" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxR3AxisTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxR3AxisTests::initTestCase()
+PASS   : UxR3AxisTests::measuredInkAndIndependentBands()
+PASS   : UxR3AxisTests::largerFontsAndScientificTicksGrowBudget()
+PASS   : UxR3AxisTests::sharedGeometryAndModeSwitches()
+PASS   : UxR3AxisTests::physicalAxesAndSourceUnits()
+PASS   : UxR3AxisTests::coordinateAndHitZones(0-0)
+PASS   : UxR3AxisTests::coordinateAndHitZones(0-1)
+PASS   : UxR3AxisTests::coordinateAndHitZones(1-0)
+PASS   : UxR3AxisTests::coordinateAndHitZones(1-1)
+PASS   : UxR3AxisTests::coordinateAndHitZones(2-0)
+PASS   : UxR3AxisTests::coordinateAndHitZones(2-1)
+PASS   : UxR3AxisTests::auxiliaryWheelAndEscape()
+PASS   : UxR3AxisTests::cleanupTestCase()
+Totals: 13 passed, 0 failed, 0 skipped, 0 blacklisted, 584ms
+********* Finished testing of UxR3AxisTests *********
+
+<end of output>
+Test time =   0.87 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_r3_axes" end time: Oct 24 23:58 �й���׼ʱ��
+"signal_studio_ux_r3_axes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/40 Testing: signal_studio_ux_r3_workflows
+23/40 Test: signal_studio_ux_r3_workflows
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxR3WorkflowTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-r3-workflows-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_r3_workflows" start time: Oct 24 23:58 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxR3WorkflowTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxR3WorkflowTests::initTestCase()
+PASS   : UxR3WorkflowTests::arbitraryDirectoryCreateAndDuplicateFailure()
+PASS   : UxR3WorkflowTests::titleDirtyTracksCommitButNotDraftOrRefresh()
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-current-obstructed)
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(save-as-foreign-target)
+QWARN  : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(open-corrupt-container)
+PASS   : UxR3WorkflowTests::failedIoRetainsCommittedSession(legacy-conversion-rejected)
+PASS   : UxR3WorkflowTests::saveAsReopenKeepsOriginalAndMovesSaveDestination()
+PASS   : UxR3WorkflowTests::relocateMissingSourceRejectsSameLengthWrongContent()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-mapping)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(cancel-preflight-preview)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-time-is-observation)
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+QWARN  : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence) This plugin does not support propagateSizeHints()
+PASS   : UxR3WorkflowTests::mappingUnknownAndCancel(unknown-frequency-is-original-evidence)
+QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+QWARN  : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation() This plugin does not support grabbing the mouse
+PASS   : UxR3WorkflowTests::noLabelsStillAllowsManualPlotCreation()
+PASS   : UxR3WorkflowTests::cleanupTestCase()
+Totals: 15 passed, 0 failed, 0 skipped, 0 blacklisted, 80665ms
+********* Finished testing of UxR3WorkflowTests *********
+
+<end of output>
+Test time =  81.04 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_r3_workflows" end time: Oct 24 23:59 �й���׼ʱ��
+"signal_studio_ux_r3_workflows" time elapsed: 00:01:21
+----------------------------------------------------------
+
+24/40 Testing: signal_studio_narrowband_modulation
+24/40 Test: signal_studio_narrowband_modulation
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioNarrowbandModulationTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_narrowband_modulation" start time: Oct 24 23:59 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS tiny APSK relative radii normalize finitely and preserve geometry/v6
+psk2-ideal pass=1 carrier=1 CFO/Rs=3.25229e-09 EVM=0.00842609 timing=0.00560442 conditional=0.00842616 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk2-awgn20 pass=1 carrier=1 CFO/Rs=2.91986e-06 EVM=0.0196212 timing=0.00566509 conditional=0.0196221 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk4-ideal pass=1 carrier=1 CFO/Rs=1.58536e-07 EVM=0.0107195 timing=0.00754574 conditional=0.0107197 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk4-awgn20 pass=1 carrier=1 CFO/Rs=3.0199e-06 EVM=0.0209404 timing=0.00771363 conditional=0.0209415 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk8-ideal pass=1 carrier=1 CFO/Rs=9.64603e-07 EVM=0.00935556 timing=0.00643016 conditional=0.00935566 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk8-awgn20 pass=1 carrier=1 CFO/Rs=4.00296e-06 EVM=0.0199331 timing=0.00623873 conditional=0.0199341 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk16-ideal pass=1 carrier=1 CFO/Rs=5.38657e-07 EVM=0.00976344 timing=0.00651596 conditional=0.00976356 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk16-awgn20 pass=1 carrier=1 CFO/Rs=4.93564e-06 EVM=0.0201506 timing=0.0063347 conditional=0.0201516 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk32-ideal pass=1 carrier=1 CFO/Rs=4.96716e-06 EVM=0.0101767 timing=0.00702572 conditional=0.0101769 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk32-awgn30 pass=1 carrier=1 CFO/Rs=6.29763e-06 EVM=0.0116842 timing=0.00706601 conditional=0.0116844 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk64-ideal pass=1 carrier=1 CFO/Rs=5.99268e-06 EVM=0.0122061 timing=0.00853643 conditional=0.0121831 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk64-awgn40 pass=1 carrier=1 CFO/Rs=5.73447e-06 EVM=0.0123596 timing=0.00854035 conditional=0.0123241 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk128-ideal pass=1 carrier=1 CFO/Rs=1.25149e-06 EVM=0.00780623 timing=0.00524517 conditional=0.00778417 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk128-awgn40 pass=1 carrier=1 CFO/Rs=1.06411e-06 EVM=0.00801411 timing=0.00525999 conditional=0.00798727 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk256-ideal pass=1 carrier=1 CFO/Rs=6.79703e-07 EVM=0.0102194 timing=0.0069411 conditional=0.00884813 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+psk256-awgn40 pass=1 carrier=1 CFO/Rs=4.77476e-07 EVM=0.0103906 timing=0.00694427 conditional=0.00900251 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4-ideal pass=1 carrier=1 CFO/Rs=1.76615e-06 EVM=0.00993585 timing=0.00687535 conditional=0.00993598 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4-awgn20 pass=1 carrier=1 CFO/Rs=7.67742e-06 EVM=0.0202364 timing=0.0067993 conditional=0.0202374 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam8-ideal pass=1 carrier=1 CFO/Rs=8.11023e-06 EVM=0.024953 timing=0.0179394 conditional=0.0249701 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam8-awgn20 pass=1 carrier=1 CFO/Rs=2.85779e-06 EVM=0.0307447 timing=0.0179695 conditional=0.0307638 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam16-ideal pass=1 carrier=1 CFO/Rs=6.5938e-06 EVM=0.0155152 timing=0.0109554 conditional=0.0160062 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam16-awgn20 pass=1 carrier=1 CFO/Rs=9.34438e-06 EVM=0.0235252 timing=0.0108377 conditional=0.0238267 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam32-ideal pass=1 carrier=1 CFO/Rs=1.6847e-07 EVM=0.0147727 timing=0.0106814 conditional=0.0147761 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam32-awgn20 pass=1 carrier=1 CFO/Rs=2.3964e-06 EVM=0.0233867 timing=0.0110146 conditional=0.0233916 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam64-ideal pass=1 carrier=1 CFO/Rs=1.47965e-06 EVM=0.0166282 timing=0.0120686 conditional=0.0170269 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam64-awgn20 pass=1 carrier=1 CFO/Rs=8.13579e-08 EVM=0.0244143 timing=0.0122216 conditional=0.0246643 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam128-ideal pass=1 carrier=1 CFO/Rs=3.81017e-06 EVM=0.016141 timing=0.0115025 conditional=0.0161592 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam128-awgn20 pass=1 carrier=1 CFO/Rs=6.95168e-06 EVM=0.0238611 timing=0.0114164 conditional=0.02386 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam256-ideal pass=1 carrier=1 CFO/Rs=8.65602e-07 EVM=0.0144927 timing=0.0103307 conditional=0.0145997 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam256-awgn20 pass=1 carrier=1 CFO/Rs=4.77171e-06 EVM=0.0229882 timing=0.0103971 conditional=0.0230685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam512-ideal pass=1 carrier=1 CFO/Rs=1.50892e-06 EVM=0.00438868 timing=0.00279837 conditional=0.00477683 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam512-awgn40 pass=1 carrier=1 CFO/Rs=1.69826e-06 EVM=0.00471853 timing=0.002777 conditional=0.00508099 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam1024-ideal pass=1 carrier=1 CFO/Rs=1.55456e-06 EVM=0.0072678 timing=0.00508517 conditional=0.00727779 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam1024-awgn40 pass=1 carrier=1 CFO/Rs=1.29457e-06 EVM=0.00752186 timing=0.00511392 conditional=0.00753141 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam2048-ideal pass=1 carrier=1 CFO/Rs=9.24916e-07 EVM=0.00673512 timing=0.00468091 conditional=0.00674738 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam2048-awgn40 pass=1 carrier=1 CFO/Rs=1.15946e-06 EVM=0.00698293 timing=0.00469114 conditional=0.00699465 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4096-ideal pass=1 carrier=1 CFO/Rs=1.39411e-06 EVM=0.00548695 timing=0.00363784 conditional=0.01056 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qam4096-awgn40 pass=1 carrier=1 CFO/Rs=1.2689e-06 EVM=0.00573658 timing=0.00363568 conditional=0.010685 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk8-ideal pass=1 carrier=1 CFO/Rs=3.08631e-06 EVM=0.0113355 timing=0.00786918 conditional=0.0121511 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk8-awgn20 pass=1 carrier=1 CFO/Rs=4.0164e-06 EVM=0.0210253 timing=0.00777177 conditional=0.0215085 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk16-ideal pass=1 carrier=1 CFO/Rs=1.07572e-06 EVM=0.0121005 timing=0.00859257 conditional=0.0121324 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk16-awgn20 pass=1 carrier=1 CFO/Rs=3.29502e-06 EVM=0.0218267 timing=0.00883574 conditional=0.0218385 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk32-ideal pass=1 carrier=1 CFO/Rs=6.50755e-06 EVM=0.0155605 timing=0.0110155 conditional=0.0173832 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk32-awgn20 pass=1 carrier=1 CFO/Rs=5.69769e-06 EVM=0.0233644 timing=0.0108638 conditional=0.0246641 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk64-ideal pass=1 carrier=1 CFO/Rs=3.58738e-06 EVM=0.0176611 timing=0.0124914 conditional=0.0176614 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk64-awgn20 pass=1 carrier=1 CFO/Rs=7.77714e-06 EVM=0.0254265 timing=0.0126392 conditional=0.0254266 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk128-ideal pass=1 carrier=1 CFO/Rs=3.42126e-06 EVM=0.0138533 timing=0.0101035 conditional=0.0148399 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk128-awgn20 pass=1 carrier=1 CFO/Rs=3.2911e-06 EVM=0.0225779 timing=0.0102169 conditional=0.0232334 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk256-ideal pass=1 carrier=1 CFO/Rs=2.04118e-07 EVM=0.0127556 timing=0.00890721 conditional=0.0131641 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+apsk256-awgn20 pass=1 carrier=1 CFO/Rs=1.03956e-06 EVM=0.0220087 timing=0.00894123 conditional=0.0222723 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+PASS six noise hypotheses and strict family/order/ring persistence
+<end of output>
+Test time =  42.63 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_narrowband_modulation" end time: Oct 25 00:00 �й���׼ʱ��
+"signal_studio_narrowband_modulation" time elapsed: 00:00:42
+----------------------------------------------------------
+
+25/40 Testing: signal_studio_narrowband_recovery
+25/40 Test: signal_studio_narrowband_recovery
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioNarrowbandRecoveryTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_narrowband_recovery" start time: Oct 25 00:00 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+bpsk-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=-0.000649978 CFO/Rs error=1.03997e-09 timing/UI=0.00490307 EVM=0.00736443 TED jitter=0.00315684 conditional=0.00736448 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+bpsk-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15625.2 CFO/Rs error=3.18534e-07 timing/UI=0.00496743 EVM=0.0192806 TED jitter=0.00326806 conditional=0.0192815 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=-0.00983853 CFO/Rs error=1.57416e-08 timing/UI=0.00962689 EVM=0.0136381 TED jitter=0.00626352 conditional=0.0136385 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15626.3 CFO/Rs error=2.03848e-06 timing/UI=0.00955112 EVM=0.0223415 TED jitter=0.00621329 conditional=0.0223429 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+16qam-a35-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=1.44007 CFO/Rs error=2.30412e-06 timing/UI=0.0121759 EVM=0.0170459 TED jitter=0.00842755 conditional=0.0174434 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+16qam-a35-awgn20 Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15626.3 CFO/Rs error=2.12617e-06 timing/UI=0.0120239 EVM=0.0245624 TED jitter=0.00819964 conditional=0.024817 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a35-awgn20 Fs=1.5e+06 timingLock=1 carrierLock=1 N=7645 CFO=15626.8 CFO/Rs error=2.84272e-06 timing/UI=0.00958348 EVM=0.0222811 TED jitter=0.00627749 conditional=0.0222825 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a35-awgn20 Fs=4e+06 timingLock=1 carrierLock=1 N=7654 CFO=15625.4 CFO/Rs error=7.04363e-07 timing/UI=0.00956116 EVM=0.0225081 TED jitter=0.00623907 conditional=0.0225095 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a20-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=4.67353 CFO/Rs error=7.47765e-06 timing/UI=0.0190812 EVM=0.0299376 TED jitter=0.0156456 conditional=0.0299409 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+16qam-a20-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=5.57891 CFO/Rs error=8.92626e-06 timing/UI=0.0293794 EVM=0.0464409 TED jitter=0.0109111 conditional=0.0465234 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-a50-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=0.0423554 CFO/Rs error=6.77687e-08 timing/UI=0.00274449 EVM=0.00460338 TED jitter=0.00216278 conditional=0.0046034 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+16qam-a50-ideal Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=0.732293 CFO/Rs error=1.17167e-06 timing/UI=0.00410676 EVM=0.00590813 TED jitter=0.00348171 conditional=0.00704123 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+qpsk-clock100ppm Fs=2e+06 timingLock=1 carrierLock=1 N=7648 CFO=15625.5 CFO/Rs error=7.23809e-07 timing/UI=0.0120407 EVM=0.0167684 TED jitter=0.00680672 conditional=0.0167689 : 定时与载波已锁定（单载波假设）；窗口独立捕获，绝对相位未知。
+PASS stale-Rs rejection, independent manual CFO and signed recovered-eye offsets
+PASS single-carrier recovery against independent source symbols, CFO and timing truth
+<end of output>
+Test time =  14.68 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_narrowband_recovery" end time: Oct 25 00:00 �й���׼ʱ��
+"signal_studio_narrowband_recovery" time elapsed: 00:00:14
+----------------------------------------------------------
+
+26/40 Testing: signal_studio_narrowband_analysis
+26/40 Test: signal_studio_narrowband_analysis
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioNarrowbandAnalysisTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_narrowband_analysis" start time: Oct 25 00:00 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+source: direct/cache maximum error=1.33183e-14, valid=[34,39967)
+eye: fractional SPS=3.2, analytic NRMSE=0.000169596
+Rs bpsk-a20-ideal: PASS reliable=1 [625000,0.88281,18.2421dB] [397189,0.458163,11.8724dB] [227821,0.414368,11.2155dB] [307400,0.410498,11.1575dB] [317625,0.407284,11.1093dB]
+Rs bpsk-a20-awgn20: PASS reliable=1 [624999,0.881804,18.2271dB] [397185,0.457568,11.8635dB] [307394,0.410369,11.1555dB] [317623,0.408627,11.1294dB] [227825,0.407614,11.1142dB]
+Rs bpsk-a35-ideal: PASS reliable=1 [625000,1,23.7596dB] [397188,0.438007,11.5701dB] [335113,0.416074,11.2411dB] [391435,0.410734,11.161dB] [307382,0.386651,10.7998dB]
+Rs bpsk-a35-awgn20: PASS reliable=1 [625000,1,23.7304dB] [397182,0.433439,11.5016dB] [335114,0.413882,11.2082dB] [391442,0.402882,11.0432dB] [307382,0.384835,10.7725dB]
+Rs bpsk-a50-ideal: PASS reliable=1 [625000,1,27.7664dB] [397126,0.388359,11.0879dB] [335118,0.35373,10.3059dB] [391421,0.348257,10.69dB] [404071,0.30519,10.8559dB]
+Rs bpsk-a50-awgn20: PASS reliable=1 [625000,1,27.7195dB] [397110,0.370559,10.858dB] [335108,0.344853,10.1728dB] [391425,0.328571,10.4848dB] [404071,0.325449,10.878dB]
+Rs qpsk-a20-ideal: PASS reliable=1 [625000,0.934624,19.0194dB] [260039,0.296558,9.79797dB] [293475,0.24966,8.92322dB] [233500,0.235164,9.4426dB] [328096,0.232249,9.54101dB]
+Rs qpsk-a20-awgn20: PASS reliable=1 [625000,0.930571,18.9586dB] [260039,0.287037,9.77435dB] [255770,0.239625,8.66205dB] [293477,0.236953,8.76701dB] [233498,0.232549,9.32691dB]
+Rs qpsk-a35-ideal: PASS reliable=1 [625000,1,25.1079dB] [260034,0.303927,9.71897dB] [392629,0.238155,8.57233dB] [293479,0.233731,8.88959dB] [424807,0.224775,9.77378dB]
+Rs qpsk-a35-awgn20: PASS reliable=1 [625000,1,25.0902dB] [260038,0.310666,9.76569dB] [392620,0.243739,8.65608dB] [424807,0.228448,9.81777dB] [293474,0.225522,8.66532dB]
+Rs qpsk-a50-ideal: PASS reliable=1 [625000,1,29.5405dB] [424820,0.238704,9.5804dB] [530508,0.228446,9.02984dB] [392620,0.217391,8.26086dB] [469035,0.211711,8.59879dB]
+Rs qpsk-a50-awgn20: PASS reliable=1 [625000,1,29.4365dB] [424818,0.229029,9.41082dB] [469014,0.225019,8.63986dB] [392590,0.207323,8.10984dB] [530505,0.205293,8.83383dB]
+Rs 16qam-a20-ideal: PASS reliable=1 [625001,0.822975,17.3446dB] [239978,0.323605,9.94588dB] [254164,0.310511,9.65766dB] [142643,0.268072,9.07213dB] [229122,0.248952,9.24891dB]
+Rs 16qam-a20-awgn20: PASS reliable=1 [625001,0.815135,17.227dB] [239979,0.320711,9.85922dB] [254151,0.300771,9.51157dB] [142640,0.271529,9.07293dB] [229104,0.251262,9.21176dB]
+Rs 16qam-a35-ideal: PASS reliable=1 [625001,1,22.4489dB] [239993,0.288593,9.6674dB] [254161,0.256021,8.84031dB] [41242.9,0.200052,8.33068dB] [159726,0.196108,8.36635dB]
+Rs 16qam-a35-awgn20: PASS reliable=1 [625001,1,22.4604dB] [239995,0.292018,9.70347dB] [254203,0.260609,8.90914dB] [159723,0.209054,8.45418dB] [41241.4,0.202487,8.3601dB]
+Rs 16qam-a50-ideal: PASS reliable=1 [625000,1,25.6991dB] [240028,0.226722,9.04094dB] [254046,0.191539,8.20501dB] [38821.4,0.179399,8.38284dB] [41230,0.178477,8.17887dB]
+Rs 16qam-a50-awgn20: PASS reliable=1 [625000,1,25.7036dB] [240028,0.226073,9.04925dB] [254040,0.187393,8.13686dB] [38822.2,0.186105,8.44458dB] [41225.9,0.178676,8.1524dB]
+Variable Rs 250000: PASS
+Variable Rs 250000: PASS
+Variable Rs 250000: PASS
+Variable Rs 1e+06: PASS
+Variable Rs 1e+06: PASS
+Variable Rs 1e+06: PASS
+PASS continuous source, real constellation/eye, blind rate candidates and provenance
+<end of output>
+Test time =  25.64 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_narrowband_analysis" end time: Oct 25 00:01 �й���׼ʱ��
+"signal_studio_narrowband_analysis" time elapsed: 00:00:25
+----------------------------------------------------------
+
+27/40 Testing: signal_studio_channel_rate
+27/40 Test: signal_studio_channel_rate
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioChannelRateTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_channel_rate" start time: Oct 25 00:01 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS actual bandwidth-rate planning, CI16 numerical output, manual refusal, odd source rate and v6 compatibility
+<end of output>
+Test time =   0.78 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_channel_rate" end time: Oct 25 00:01 �й���׼ʱ��
+"signal_studio_channel_rate" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/40 Testing: signal_studio_channel_processor
+28/40 Test: signal_studio_channel_processor
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioChannelProcessorTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_channel_processor" start time: Oct 25 00:01 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS DDC/FIR/resampling, source mapping, chunk invariance, PSD and STFT
+<end of output>
+Test time =   1.16 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_channel_processor" end time: Oct 25 00:01 �й���׼ʱ��
+"signal_studio_channel_processor" time elapsed: 00:00:01
+----------------------------------------------------------
+
+29/40 Testing: signal_studio_spectral_analysis
+29/40 Test: signal_studio_spectral_analysis
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioSpectralAnalysisTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_spectral_analysis" start time: Oct 25 00:01 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS zoom CZT, actual resolution, visible bounds, cancellation, integer mapping and exact linked frames
+<end of output>
+Test time =   1.28 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_spectral_analysis" end time: Oct 25 00:01 �й���׼ʱ��
+"signal_studio_spectral_analysis" time elapsed: 00:00:01
+----------------------------------------------------------
+
+30/40 Testing: signal_studio_display_sampling
+30/40 Test: signal_studio_display_sampling
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioDisplaySamplingTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_display_sampling" start time: Oct 25 00:01 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS million-sample bipolar spikes and bounded trace size
+PASS one-bin PSD line and unchanged peak amplitude
+PASS trace endpoints, source order and nonfinite filtering
+PASS single-pixel ridges, pulses and uneven frame boundaries
+PASS invalid dimensions, nonfinite blocks and enlargement rejection
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_display_sampling" end time: Oct 25 00:01 �й���׼ʱ��
+"signal_studio_display_sampling" time elapsed: 00:00:00
+----------------------------------------------------------
+
+31/40 Testing: signal_studio_narrowband_analysis_ui
+31/40 Test: signal_studio_narrowband_analysis_ui
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioNarrowbandAnalysisUiTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/nb-analysis-ui-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_narrowband_analysis_ui" start time: Oct 25 00:01 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of NarrowbandAnalysisUiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+PASS   : NarrowbandAnalysisUiTests::initTestCase()
+PASS   : NarrowbandAnalysisUiTests::independentPagesShareAnalysisAndKeepDisplayState()
+PASS   : NarrowbandAnalysisUiTests::pagePersistenceAndLegacyNames()
+QWARN  : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation() This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::samplingTransactionAndActualCreation()
+QWARN  : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft() This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::legacyEditKeepsRateAndDraft()
+PASS   : NarrowbandAnalysisUiTests::realRawPointsAndCancellation()
+PASS   : NarrowbandAnalysisUiTests::realEyeSymbolRateAndControls()
+PASS   : NarrowbandAnalysisUiTests::estimatedCandidatesAndManualTakeover()
+PASS   : NarrowbandAnalysisUiTests::realSynchronizationStagesAndManualCfo()
+PASS   : NarrowbandAnalysisUiTests::externalSourceChangeInvalidatesIdleAndPending()
+QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW) This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CI16-RAW)
+QWARN  : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF) This plugin does not support propagateSizeHints()
+PASS   : NarrowbandAnalysisUiTests::importToAnalysisSaveReopen(CF32-SigMF)
+PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+Totals: 13 passed, 0 failed, 0 skipped, 0 blacklisted, 120534ms
+********* Finished testing of NarrowbandAnalysisUiTests *********
+
+<end of output>
+Test time = 121.30 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_narrowband_analysis_ui" end time: Oct 25 00:03 �й���׼ʱ��
+"signal_studio_narrowband_analysis_ui" time elapsed: 00:02:01
+----------------------------------------------------------
+
+32/40 Testing: signal_studio_project_tree
+32/40 Test: signal_studio_project_tree
+Command: "D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioProjectTreeTests.exe"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_project_tree" start time: Oct 25 00:03 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+PASS: data presentation
+PASS: active file and channel
+PASS: mark data and lazy group counts
+Combined mark cue pixels: current=92, hover=770, focus=251, selection=16
+PASS: independent mark painting states
+PASS: refresh preserves view state
+PASS: repeat refresh and old sync
+PASS: anomalies and boundary data
+PASS: clipped painting and readable rows
+Totals: 8 passed, 0 failed
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Pass Reason:
+Required regular expression found. Regex=[Totals: 8 passed, 0 failed]
+"signal_studio_project_tree" end time: Oct 25 00:03 �й���׼ʱ��
+"signal_studio_project_tree" time elapsed: 00:00:00
+----------------------------------------------------------
+
+33/40 Testing: signal_studio_ux_detection
+33/40 Test: signal_studio_ux_detection
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-detection-test-results-debug.txt" "-DSS_UI_CASES=uxD01_historicalDerivation;uxD02_viewSourceKeepsDraft;uxD01_topDerivationDiscardsCrossFileDraft;uxD03_crossFileCancellation;uxD03_activeTaskCancellationAndFrozenDisplay;uxD04_modelSpectrumMapping;uxD05_foldedParametersAndFirstScreen;uxD06_visibleRangeEntry;uxD08_preflightDetails" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_detection" start time: Oct 25 00:03 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+PASS   : UxTests::uxD01_historicalDerivation()
+PASS   : UxTests::uxD02_viewSourceKeepsDraft()
+PASS   : UxTests::uxD01_topDerivationDiscardsCrossFileDraft()
+PASS   : UxTests::uxD03_crossFileCancellation()
+QWARN  : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxD03_activeTaskCancellationAndFrozenDisplay()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxD04_modelSpectrumMapping() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxD04_modelSpectrumMapping()
+PASS   : UxTests::uxD05_foldedParametersAndFirstScreen()
+PASS   : UxTests::uxD06_visibleRangeEntry()
+PASS   : UxTests::uxD08_preflightDetails()
+PASS   : UxTests::cleanupTestCase()
+Totals: 11 passed, 0 failed, 0 skipped, 0 blacklisted, 45526ms
+********* Finished testing of UxTests *********
+
+<end of output>
+Test time =  46.28 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_detection" end time: Oct 25 00:04 �й���׼ʱ��
+"signal_studio_ux_detection" time elapsed: 00:00:46
+----------------------------------------------------------
+
+34/40 Testing: signal_studio_ux_spectral
+34/40 Test: signal_studio_ux_spectral
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-spectral-test-results-debug.txt" "-DSS_UI_CASES=uxS01_methodHistory;uxS02_conditionalRows;uxS03_spectralIndependence;uxS03_framePsdPreservesSettings;uxS06_invalidDraftRecovery" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_spectral" start time: Oct 25 00:04 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS01_methodHistory() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxS01_methodHistory()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS02_conditionalRows() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxS02_conditionalRows()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxS03_spectralIndependence() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxS03_spectralIndependence()
+PASS   : UxTests::uxS03_framePsdPreservesSettings()
+PASS   : UxTests::uxS06_invalidDraftRecovery()
+PASS   : UxTests::cleanupTestCase()
+Totals: 7 passed, 0 failed, 0 skipped, 0 blacklisted, 2336ms
+********* Finished testing of UxTests *********
+
+<end of output>
+Test time =   2.65 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_spectral" end time: Oct 25 00:04 �й���׼ʱ��
+"signal_studio_ux_spectral" time elapsed: 00:00:02
+----------------------------------------------------------
+
+35/40 Testing: signal_studio_ux_charts
+35/40 Test: signal_studio_ux_charts
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-charts-test-results-debug.txt" "-DSS_UI_CASES=uxR02_chartSettingsStayStable;uxA01_roiConfirmationAndEscape;roundTwoNarrowbandPsdAndPages" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_charts" start time: Oct 25 00:04 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+PASS   : UxTests::uxR02_chartSettingsStayStable()
+QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxA01_roiConfirmationAndEscape() This plugin does not support grabbing the mouse
+PASS   : UxTests::uxA01_roiConfirmationAndEscape()
+QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+QWARN  : UxTests::roundTwoNarrowbandPsdAndPages() This plugin does not support grabbing the mouse
+PASS   : UxTests::roundTwoNarrowbandPsdAndPages()
+PASS   : UxTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 22233ms
+********* Finished testing of UxTests *********
+
+<end of output>
+Test time =  22.59 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_charts" end time: Oct 25 00:04 �й���׼ʱ��
+"signal_studio_ux_charts" time elapsed: 00:00:22
+----------------------------------------------------------
+
+36/40 Testing: signal_studio_ux_layout
+36/40 Test: signal_studio_ux_layout
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-layout-test-results-debug.txt" "-DSS_UI_CASES=uxR01_chartToolbarLayout;uxR02_inspectorRouting;uxR02_fileProperties;uxR02_paletteWorkspaceOwnership;uxR03_taskKeyboardAndDetails;uxR03_taskRowActions;uxR01_lateRunFilterPopupAndRefresh;roundTwoFlatResponsiveControls" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_layout" start time: Oct 25 00:04 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+PASS   : UxTests::uxR01_chartToolbarLayout()
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+QWARN  : UxTests::uxR02_inspectorRouting() This plugin does not support grabbing the mouse
+PASS   : UxTests::uxR02_inspectorRouting()
+PASS   : UxTests::uxR02_fileProperties()
+PASS   : UxTests::uxR02_paletteWorkspaceOwnership()
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR03_taskKeyboardAndDetails() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxR03_taskKeyboardAndDetails()
+QWARN  : UxTests::uxR03_taskRowActions() This plugin does not support propagateSizeHints()
+PASS   : UxTests::uxR03_taskRowActions()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support raise()
+QWARN  : UxTests::uxR01_lateRunFilterPopupAndRefresh() This plugin does not support grabbing the keyboard
+PASS   : UxTests::uxR01_lateRunFilterPopupAndRefresh()
+PASS   : UxTests::roundTwoFlatResponsiveControls()
+PASS   : UxTests::cleanupTestCase()
+Totals: 10 passed, 0 failed, 0 skipped, 0 blacklisted, 39767ms
+********* Finished testing of UxTests *********
+
+<end of output>
+Test time =  40.17 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_layout" end time: Oct 25 00:05 �й���׼ʱ��
+"signal_studio_ux_layout" time elapsed: 00:00:40
+----------------------------------------------------------
+
+37/40 Testing: signal_studio_ux_popovers
+37/40 Test: signal_studio_ux_popovers
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUxTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ux-popovers-test-results-debug.txt" "-DSS_UI_CASES=uxP01_popupDismissal;uxP02_popupChildrenAndGeometry;uxS06_popoverDraftPolicy" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ux_popovers" start time: Oct 25 00:05 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+PASS   : UxTests::uxP01_popupDismissal()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support raise()
+QWARN  : UxTests::uxP02_popupChildrenAndGeometry() This plugin does not support grabbing the keyboard
+PASS   : UxTests::uxP02_popupChildrenAndGeometry()
+PASS   : UxTests::uxS06_popoverDraftPolicy()
+PASS   : UxTests::cleanupTestCase()
+Totals: 5 passed, 0 failed, 0 skipped, 0 blacklisted, 626ms
+********* Finished testing of UxTests *********
+
+<end of output>
+Test time =   0.93 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ux_popovers" end time: Oct 25 00:05 �й���׼ʱ��
+"signal_studio_ux_popovers" time elapsed: 00:00:00
+----------------------------------------------------------
+
+38/40 Testing: signal_studio_ui
+38/40 Test: signal_studio_ui
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=workspaceLayout;globalDisplaySettingsApplyAcrossFiles;mainModeCoordinateDirection;continuousMarkCreation;escapeCancelsCreation;selectedMarkMovePreservesSpan;escapeRollsBackMarkMove;singleClickSelectsWithoutChangingView;boxZoomAndHistoryActions;emptyProjectAndFileActions;treeSelectionPreservesNodesAndShiftAnchor;displayChangeSurvivesPendingWheelCommit;largeSampleCoordinatePrecision;auxiliaryYAxisIsolationAndEscape;selectedMarkCornerAndEdgeResize;responsiveWorkspace;propertyFieldsFitSidebar;prototypeDisplayDefaultsAndOptions;paletteControlsStaySynchronized;narrowbandPaletteSelectionUpdatesStftCharts;widebandAuxiliaryRenderingAndGestures;narrowbandAuxiliaryRenderingAndGestures;widebandLinkedCursorsAndFrameSpectrum;narrowbandLinkedCursorsAndFrameSpectrum" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-geometry-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ui" start time: Oct 25 00:05 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+PASS   : UiTests::workspaceLayout()
+PASS   : UiTests::globalDisplaySettingsApplyAcrossFiles()
+PASS   : UiTests::mainModeCoordinateDirection()
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::continuousMarkCreation()
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsCreation()
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkMovePreservesSpan()
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeRollsBackMarkMove()
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+PASS   : UiTests::singleClickSelectsWithoutChangingView()
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+PASS   : UiTests::boxZoomAndHistoryActions()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+PASS   : UiTests::emptyProjectAndFileActions()
+PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+PASS   : UiTests::responsiveWorkspace(4k-150-percent)
+PASS   : UiTests::propertyFieldsFitSidebar()
+PASS   : UiTests::prototypeDisplayDefaultsAndOptions()
+QWARN  : UiTests::paletteControlsStaySynchronized() This plugin does not support propagateSizeHints()
+PASS   : UiTests::paletteControlsStaySynchronized()
+PASS   : UiTests::narrowbandPaletteSelectionUpdatesStftCharts()
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandAuxiliaryRenderingAndGestures()
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandLinkedCursorsAndFrameSpectrum()
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+PASS   : UiTests::narrowbandLinkedCursorsAndFrameSpectrum()
+PASS   : UiTests::cleanupTestCase()
+Totals: 31 passed, 0 failed, 0 skipped, 0 blacklisted, 174875ms
+********* Finished testing of UiTests *********
+
+<end of output>
+Test time = 175.72 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ui" end time: Oct 25 00:08 �й���׼ʱ��
+"signal_studio_ui" time elapsed: 00:02:55
+----------------------------------------------------------
+
+39/40 Testing: signal_studio_ui_parameters
+39/40 Test: signal_studio_ui_parameters
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=powerInputsCommitAndFitReusesData;parameterDraftsRequireExplicitCommit;parameterInputsIgnoreWheel;pinnedAxisLabelsSurviveLeave;sharedInteractionFeedback;customWindowControls;initialFileViewShowsFirstFivePercentOrTenMilliseconds;panelRailsAndBottomTabs;sectionContextAndManualExpansion;panelMaximizeAndRestore;mainAxisWheelIsolationAndHistory;navigationClickPreservesSpanAndCancelsDrag;independentSpectralSettingsAndCustomRows;loadedPrefixStopAndRoundtrip;fileSwitchCancelsUnfinishedEdit;allResizeHandlesStayBounded;nativeProjectRoundtripAndInvalidImport;contextMenuActionsAndCoveredMarkSelection;unselectedMarkClickAndSubthresholdGesture;clippedMarkBorderMovesWithoutInventingHandle;captureLossAndDeactivationRollback;resetRestoresCompleteViewSnapshot;displayOnlyChangesPreserveBusinessViewAndPowerCache;renameUsesPlainTextAndEightyCharacterLimit;splitterKeyboardResetAndEscapeRollback;treeToPlotShiftSelectionPreservesAnchor;changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY;creationModeSurvivesMaximize;escapeCancelsGestureBeforeLeavingMaximize;addIqFileDialogCancelsAndImportsRealInt16Iq;importFormatAndAdaptiveDraft;importFloatingUnitsAndFailureRecovery;importTemplatesBatchAndSigmf;brandResourcesAndAbout;importRealFilesAndCancelPrefix;narrowbandDemoResourceAndFourPages;waveformBandwidthAndVisiblePaneStftSettings;uiStatePersistenceAndRecentProjects" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-parameters-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ui_parameters" start time: Oct 25 00:08 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+PASS   : UiTests::powerInputsCommitAndFitReusesData()
+QWARN  : UiTests::parameterDraftsRequireExplicitCommit() This plugin does not support propagateSizeHints()
+PASS   : UiTests::parameterDraftsRequireExplicitCommit()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support raise()
+QWARN  : UiTests::parameterInputsIgnoreWheel() This plugin does not support grabbing the keyboard
+QINFO  : UiTests::parameterInputsIgnoreWheel() Wheel protection checked 45 combos and 13 spin boxes, including dialogs and editors
+PASS   : UiTests::parameterInputsIgnoreWheel()
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+QWARN  : UiTests::pinnedAxisLabelsSurviveLeave() This plugin does not support grabbing the mouse
+PASS   : UiTests::pinnedAxisLabelsSurviveLeave()
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::sharedInteractionFeedback() This plugin does not support grabbing the mouse
+PASS   : UiTests::sharedInteractionFeedback()
+PASS   : UiTests::customWindowControls()
+PASS   : UiTests::initialFileViewShowsFirstFivePercentOrTenMilliseconds()
+PASS   : UiTests::panelRailsAndBottomTabs()
+QWARN  : UiTests::sectionContextAndManualExpansion() This plugin does not support propagateSizeHints()
+PASS   : UiTests::sectionContextAndManualExpansion()
+QINFO  : UiTests::panelMaximizeAndRestore() navPanel original QSize(1872, 82) restored QSize(1872, 82) graph sizes QList(82, 205, 969)
+QINFO  : UiTests::panelMaximizeAndRestore() auxPanel original QSize(1872, 205) restored QSize(1872, 205) graph sizes QList(82, 205, 969)
+QINFO  : UiTests::panelMaximizeAndRestore() specPanel original QSize(1872, 969) restored QSize(1872, 969) graph sizes QList(82, 205, 969)
+PASS   : UiTests::panelMaximizeAndRestore()
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-time-x)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(tf-frequency-y)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-frequency-x)
+PASS   : UiTests::mainAxisWheelIsolationAndHistory(waterfall-time-y)
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+QWARN  : UiTests::navigationClickPreservesSpanAndCancelsDrag() This plugin does not support grabbing the mouse
+PASS   : UiTests::navigationClickPreservesSpanAndCancelsDrag()
+PASS   : UiTests::independentSpectralSettingsAndCustomRows()
+PASS   : UiTests::loadedPrefixStopAndRoundtrip()
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+QWARN  : UiTests::fileSwitchCancelsUnfinishedEdit() This plugin does not support grabbing the mouse
+PASS   : UiTests::fileSwitchCancelsUnfinishedEdit()
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(tf-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(tf-nw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-n) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-n)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-ne) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-ne)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-e) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-e)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-se) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-se)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-s) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-s)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-sw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-sw)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-w) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-w)
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+QWARN  : UiTests::allResizeHandlesStayBounded(waterfall-nw) This plugin does not support grabbing the mouse
+PASS   : UiTests::allResizeHandlesStayBounded(waterfall-nw)
+QWARN  : UiTests::nativeProjectRoundtripAndInvalidImport() This plugin does not support propagateSizeHints()
+PASS   : UiTests::nativeProjectRoundtripAndInvalidImport()
+QWARN  : UiTests::contextMenuActionsAndCoveredMarkSelection() This plugin does not support propagateSizeHints()
+PASS   : UiTests::contextMenuActionsAndCoveredMarkSelection()
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+QWARN  : UiTests::unselectedMarkClickAndSubthresholdGesture() This plugin does not support grabbing the mouse
+PASS   : UiTests::unselectedMarkClickAndSubthresholdGesture()
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+QWARN  : UiTests::clippedMarkBorderMovesWithoutInventingHandle() This plugin does not support grabbing the mouse
+PASS   : UiTests::clippedMarkBorderMovesWithoutInventingHandle()
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+QWARN  : UiTests::captureLossAndDeactivationRollback() This plugin does not support grabbing the mouse
+PASS   : UiTests::captureLossAndDeactivationRollback()
+PASS   : UiTests::resetRestoresCompleteViewSnapshot()
+PASS   : UiTests::displayOnlyChangesPreserveBusinessViewAndPowerCache()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::renameUsesPlainTextAndEightyCharacterLimit() This plugin does not support propagateSizeHints()
+PASS   : UiTests::renameUsesPlainTextAndEightyCharacterLimit()
+PASS   : UiTests::splitterKeyboardResetAndEscapeRollback()
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+QWARN  : UiTests::treeToPlotShiftSelectionPreservesAnchor() This plugin does not support grabbing the mouse
+PASS   : UiTests::treeToPlotShiftSelectionPreservesAnchor()
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+QWARN  : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY() This plugin does not support grabbing the mouse
+PASS   : UiTests::changingPaletteCancelsAuxiliaryGestureWithoutOverwritingY()
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::creationModeSurvivesMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::creationModeSurvivesMaximize()
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+QWARN  : UiTests::escapeCancelsGestureBeforeLeavingMaximize() This plugin does not support grabbing the mouse
+PASS   : UiTests::escapeCancelsGestureBeforeLeavingMaximize()
+PASS   : UiTests::addIqFileDialogCancelsAndImportsRealInt16Iq()
+PASS   : UiTests::importFormatAndAdaptiveDraft()
+PASS   : UiTests::importFloatingUnitsAndFailureRecovery()
+PASS   : UiTests::importTemplatesBatchAndSigmf()
+QWARN  : UiTests::brandResourcesAndAbout() This plugin does not support propagateSizeHints()
+PASS   : UiTests::brandResourcesAndAbout()
+PASS   : UiTests::importRealFilesAndCancelPrefix()
+PASS   : UiTests::narrowbandDemoResourceAndFourPages()
+PASS   : UiTests::waveformBandwidthAndVisiblePaneStftSettings()
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support grabbing the mouse
+QWARN  : UiTests::uiStatePersistenceAndRecentProjects() This plugin does not support propagateSizeHints()
+PASS   : UiTests::uiStatePersistenceAndRecentProjects()
+PASS   : UiTests::cleanupTestCase()
+Totals: 58 passed, 0 failed, 0 skipped, 0 blacklisted, 425699ms
+********* Finished testing of UiTests *********
+
+<end of output>
+Test time = 426.05 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ui_parameters" end time: Oct 25 00:15 �й���׼ʱ��
+"signal_studio_ui_parameters" time elapsed: 00:07:06
+----------------------------------------------------------
+
+40/40 Testing: signal_studio_ui_annotations
+40/40 Test: signal_studio_ui_annotations
+Command: "D:/softwares/cmake/bin/cmake.exe" "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=unifiedAnnotationDraftsAndSegmentSwitch;torchSigLabelsNativeRoundtrip;annotationTableBoundsAndIndependentSelection;widebandFixtureTaskNativeRoundtrip;widebandConfigurationCommittedDrafts;widebandRoiPreservesManualTool;widebandAnnotationSelectionAndOverlap;annotationSelectionAcrossPagesAndViews;annotationHoverProjectionAndNoCalculation;annotationCurrentSegmentGeometryAndHandles;annotationSelectionContextAndPublication;annotationTreeDemandLoadingAndViewOrder;annotationModifiedPlotClicksPreserveAnchorAndCurrent;annotationCheckboxShiftExtendsSelection;annotationHoverTargetsOnlyOneSegment;annotationTreeStructuralNavigationAndLocate;annotationTreeSourceColorsSurviveInteractionStates;annotationDirectTableDraftsAndPublication;annotationAtomicRangeAndUnknownFrequency;annotationDeletePreviewPreservesDraftAndChannels;annotationFileMenuCancelsWithoutSubmittingDrafts" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-debug/ui-annotations-test-results-debug.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+"signal_studio_ui_annotations" start time: Oct 25 00:15 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+PASS   : UiTests::unifiedAnnotationDraftsAndSegmentSwitch()
+PASS   : UiTests::torchSigLabelsNativeRoundtrip()
+PASS   : UiTests::annotationTableBoundsAndIndependentSelection()
+PASS   : UiTests::widebandFixtureTaskNativeRoundtrip()
+PASS   : UiTests::widebandConfigurationCommittedDrafts()
+QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandRoiPreservesManualTool() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandRoiPreservesManualTool()
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support raise()
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the keyboard
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+PASS   : UiTests::widebandAnnotationSelectionAndOverlap()
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+PASS   : UiTests::annotationSelectionAcrossPagesAndViews()
+PASS   : UiTests::annotationHoverProjectionAndNoCalculation()
+PASS   : UiTests::annotationCurrentSegmentGeometryAndHandles()
+PASS   : UiTests::annotationSelectionContextAndPublication()
+PASS   : UiTests::annotationTreeDemandLoadingAndViewOrder()
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+PASS   : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent()
+PASS   : UiTests::annotationCheckboxShiftExtendsSelection()
+PASS   : UiTests::annotationHoverTargetsOnlyOneSegment()
+PASS   : UiTests::annotationTreeStructuralNavigationAndLocate()
+PASS   : UiTests::annotationTreeSourceColorsSurviveInteractionStates()
+QWARN  : UiTests::annotationDirectTableDraftsAndPublication() QWidget::mapFrom(): parent must be in parent hierarchy
+PASS   : UiTests::annotationDirectTableDraftsAndPublication()
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+PASS   : UiTests::annotationAtomicRangeAndUnknownFrequency()
+QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+PASS   : UiTests::annotationDeletePreviewPreservesDraftAndChannels()
+QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support raise()
+QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support grabbing the keyboard
+QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support propagateSizeHints()
+PASS   : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts()
+PASS   : UiTests::cleanupTestCase()
+Totals: 23 passed, 0 failed, 0 skipped, 0 blacklisted, 197898ms
+********* Finished testing of UiTests *********
+
+<end of output>
+Test time = 198.27 sec
+----------------------------------------------------------
+Test Passed.
+"signal_studio_ui_annotations" end time: Oct 25 00:18 �й���׼ʱ��
+"signal_studio_ui_annotations" time elapsed: 00:03:18
+----------------------------------------------------------
+
+End testing: Oct 25 00:18 �й���׼ʱ��
+
+annotations = 198.27 sec*proc
+
+charts =  22.59 sec*proc
+
+detection =  46.28 sec*proc
+
+geometry = 175.72 sec*proc
+
+layout =  40.17 sec*proc
+
+parameters = 426.05 sec*proc
+
+popovers =   0.93 sec*proc
+
+spectral =   2.65 sec*proc
+
+ui = 800.04 sec*proc
+
+wideband-ux = 112.62 sec*proc
+

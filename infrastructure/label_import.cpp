@@ -4,6 +4,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegularExpression>
@@ -32,18 +33,74 @@ QString q(const std::string& s) {
 void need(bool condition, const QString& text) {
   if (!condition) bad(text);
 }
-QByteArray readText(const QString& path, qint64& remaining) {
+struct ImportAbort : std::runtime_error {
+  LabelImportState state;
+  ImportAbort(LabelImportState s, const char* message)
+      : std::runtime_error(message), state(s) {}
+};
+struct ImportBudget {
+  const LabelImportOptions& options;
+  QElapsedTimer timer;
+  explicit ImportBudget(const LabelImportOptions& o) : options(o) {
+    need(o.maximumBytes > 0 && o.maximumBytes <= metadataBudget &&
+             o.maximumRecords > 0 && o.maximumRecords <= annotationSegmentBudget &&
+             o.maximumLines > 0 && o.maximumLines <= 1000000 &&
+             o.maximumJsonDepth > 0 && o.maximumJsonDepth <= 128 && o.timeoutMs > 0,
+         "标签解析限额无效");
+    timer.start();
+    check();
+  }
+  void check() const {
+    if (options.cancelled && options.cancelled())
+      throw ImportAbort(LabelImportState::Cancelled, "标签导入已取消");
+    limit(timer.elapsed() <= options.timeoutMs, "标签解析超时");
+  }
+  static void limit(bool ok, const char* message) {
+    if (!ok) throw ImportAbort(LabelImportState::LimitExceeded, message);
+  }
+};
+QByteArray readText(const QString& path, qint64& remaining, ImportBudget& budget) {
+  budget.check();
   QFile file(path);
   need(file.open(QIODevice::ReadOnly), "标签文件不可读取：" + path);
-  need(file.size() >= 0 && file.size() <= remaining,
-       "标签元数据总量超过 32 MiB 预算");
-  const auto raw = file.read(remaining + 1);
+  ImportBudget::limit(file.size() >= 0 && file.size() <= remaining,
+                      "标签元数据总量超过读取预算");
+  QByteArray raw;
+  while (!file.atEnd()) {
+    budget.check();
+    const auto block = file.read(std::min<qint64>(65536, remaining + 1 - raw.size()));
+    need(!block.isEmpty(), "标签文件读取失败或已变化");
+    raw += block;
+    ImportBudget::limit(raw.size() <= remaining, "标签文件超过读取预算");
+  }
   need(raw.size() == file.size() && raw.size() <= remaining,
        "标签文件截断或超过预算");
   remaining -= raw.size();
-  QStringDecoder decoder(QStringDecoder::Utf8);
-  decoder(raw);
+  QStringDecoder decoder(QStringDecoder::Utf8, QStringConverter::Flag::Stateless);
+  const QString decoded = decoder(raw);
+  Q_UNUSED(decoded);
   need(!decoder.hasError(), "标签不是有效 UTF-8 文本");
+  // Check nesting before Qt's JSON parser allocates nested objects. Strings
+  // (including escaped quotes) do not contribute to structural depth.
+  if (path.endsWith(".json", Qt::CaseInsensitive) ||
+      path.endsWith(".sigmf-meta", Qt::CaseInsensitive)) {
+    int depth = 0;
+    bool quoted = false, escaped = false;
+    for (qsizetype i = 0; i < raw.size(); ++i) {
+      if (i % 65536 == 0) budget.check();
+      const char c = raw[i];
+      if (quoted) {
+        if (escaped) escaped = false;
+        else if (c == '\\') escaped = true;
+        else if (c == '"') quoted = false;
+      } else if (c == '"') quoted = true;
+      else if (c == '{' || c == '[') {
+        ImportBudget::limit(++depth <= budget.options.maximumJsonDepth,
+                            "标签 JSON 嵌套超过深度预算");
+      } else if (c == '}' || c == ']') --depth;
+    }
+  }
+  budget.check();
   return raw;
 }
 QString digest(const QByteArray& bytes) {
@@ -102,7 +159,7 @@ QString canonicalPath(const QString& path) {
                                             : info.canonicalFilePath();
 }
 bool samePath(const QString& a, const QString& b) {
-  return canonicalPath(a).compare(canonicalPath(b), Qt::CaseInsensitive) == 0;
+  return canonicalPath(a) == canonicalPath(b);
 }
 void validateTarget(const FileMetadata& target) {
   need(!target.id.empty() && target.sampleCount > 0 &&
@@ -267,6 +324,9 @@ void addPartialDiagnostic(LabelImportResult& result,
 }
 LabelImportResult failure(LabelImportResult result, const std::exception& e) {
   result.annotations.clear();
+  result.state = LabelImportState::Error;
+  if (const auto* abort = dynamic_cast<const ImportAbort*>(&e))
+    result.state = abort->state;
   result.error = QString::fromUtf8(e.what());
   if (result.error.isEmpty()) result.error = "标签校验失败";
   result.diagnostics.push_back({DiagnosticSeverity::Error,
@@ -703,14 +763,16 @@ Annotation parseTorchSigRecord(const QJsonObject& record, qsizetype index,
 
 LabelImportResult importGeneratorLabels(const QString& path,
                                         const FileMetadata& target,
-                                        std::uint64_t generation) {
+                                        std::uint64_t generation,
+                                        const LabelImportOptions& options) {
   LabelImportResult result;
   try {
+    ImportBudget control(options);
     validateTarget(target);
     need(path.endsWith(".txt", Qt::CaseInsensitive),
          "仅支持指定生成器带键 TXT");
-    qint64 budget = metadataBudget;
-    const auto raw = readText(path, budget);
+    qint64 budget = options.maximumBytes;
+    const auto raw = readText(path, budget, control);
     const auto document = QString::fromUtf8(raw);
     result.sourceSet =
         source(path, raw, {}, target, generation, "generator-txt-v1",
@@ -723,11 +785,13 @@ LabelImportResult importGeneratorLabels(const QString& path,
     std::size_t segmentCount = 0;
     qsizetype position = 0, lineNumber = 0;
     while (position < document.size()) {
+      control.check();
       auto end = document.indexOf('\n', position);
       if (end < 0) end = document.size();
       const auto rawLine = document.mid(position, end - position);
       position = end + 1;
-      need(++lineNumber <= 1000000, "TXT 行数超过 1000000 行预算");
+      ImportBudget::limit(++lineNumber <= static_cast<qsizetype>(options.maximumLines),
+                          "TXT 行数超过预算");
       const auto line = rawLine.trimmed();
       if (line.isEmpty()) continue;
       try {
@@ -742,6 +806,10 @@ LabelImportResult importGeneratorLabels(const QString& path,
             parseGeneratorRecord(rawLine, lineNumber, fields, result.sourceSet,
                                  target, records, segmentCount),
             normalizedRemaining);
+        ImportBudget::limit(segmentCount <= options.maximumRecords,
+                            "TXT 活动段超过预算");
+      } catch (const ImportAbort&) {
+        throw;
       } catch (const std::exception& e) {
         const auto message = QString("TXT 第 %1 行：%2")
                                  .arg(lineNumber)
@@ -771,6 +839,7 @@ LabelImportResult importGeneratorLabels(const QString& path,
     addPartialDiagnostic(result, target);
     validateNormalizedBatch(result,
                             metadataBudget - sourceBytes - normalizedRemaining);
+    control.check();
     return result;
   } catch (const std::exception& e) {
     return failure(std::move(result), e);
@@ -780,9 +849,11 @@ LabelImportResult importGeneratorLabels(const QString& path,
 LabelImportResult importTorchSigLabels(const QString& path,
                                        const FileMetadata& target,
                                        std::uint64_t generation,
-                                       bool ignoreSupplemental) {
+                                       bool ignoreSupplemental,
+                                       const LabelImportOptions& options) {
   LabelImportResult result;
   try {
+    ImportBudget control(options);
     validateTarget(target);
     QString base;
     if (path.endsWith(".sigmf-meta", Qt::CaseInsensitive) ||
@@ -796,10 +867,10 @@ LabelImportResult importTorchSigLabels(const QString& path,
                   dataPath = base + ".sigmf-data", jsonPath = base + ".json";
     need(samePath(dataPath, q(target.path)),
          "SigMF 配对数据必须与目标数据源为同一物理文件");
-    qint64 budget = metadataBudget;
-    const auto raw = readText(metaPath, budget);
+    qint64 budget = options.maximumBytes;
+    const auto raw = readText(metaPath, budget, control);
     QByteArray supplemental;
-    if (QFileInfo::exists(jsonPath)) supplemental = readText(jsonPath, budget);
+    if (QFileInfo::exists(jsonPath)) supplemental = readText(jsonPath, budget, control);
     const auto meta = jsonObject(raw, "SigMF");
     need(meta["global"].isObject() && meta["captures"].isArray() &&
              meta["annotations"].isArray(),
@@ -808,9 +879,8 @@ LabelImportResult importTorchSigLabels(const QString& path,
     validateTorchSigGlobal(global, dataPath, target);
     validateTorchSigCapture(meta, global, target);
     const auto records = meta["annotations"].toArray();
-    need(!records.isEmpty() &&
-             records.size() <= static_cast<qsizetype>(annotationSegmentBudget),
-         "SigMF annotations 为空或超过 100000 段预算");
+    ImportBudget::limit(records.size() <= static_cast<qsizetype>(options.maximumRecords),
+                        "SigMF annotations 超过段预算");
     const bool useExtra = !supplemental.isEmpty() && !ignoreSupplemental;
     QJsonObject extraHeader;
     std::optional<SupplementalMatcher> matcher;
@@ -841,6 +911,7 @@ LabelImportResult importTorchSigLabels(const QString& path,
            {},
            0});
     for (qsizetype i = 0; i < records.size(); ++i) {
+      control.check();
       need(records[i].isObject(), "SigMF annotation 必须为对象");
       appendImportedAnnotation(
           result,
@@ -852,6 +923,8 @@ LabelImportResult importTorchSigLabels(const QString& path,
     addPartialDiagnostic(result, target);
     validateNormalizedBatch(result,
                             metadataBudget - sourceBytes - normalizedRemaining);
+    if (records.isEmpty()) result.state = LabelImportState::Empty;
+    control.check();
     return result;
   } catch (const std::exception& e) {
     return failure(std::move(result), e);
@@ -861,16 +934,361 @@ LabelImportResult importTorchSigLabels(const QString& path,
 LabelImportResult importLabelSource(const QString& path,
                                     const FileMetadata& target,
                                     std::uint64_t generation,
-                                    bool ignoreSupplemental) {
-  if (path.endsWith(".txt", Qt::CaseInsensitive))
-    return importGeneratorLabels(path, target, generation);
+                                    bool ignoreSupplemental,
+                                    const LabelImportOptions& options) {
+  if (path.endsWith(".txt", Qt::CaseInsensitive)) {
+    LabelImportResult result;
+    QString preview;
+    if (!previewLabelSource(path, preview, result.error, options, 16384, &result.state)) return result;
+    if (hasGeneratorLabelHeader(preview))
+      return importGeneratorLabels(path, target, generation, options);
+    result.state = LabelImportState::NeedsMapping;
+    result.error = "TXT 未识别为已知生成器格式；请明确配置字段映射，未导入任何标记";
+    return result;
+  }
   if (path.endsWith(".sigmf-meta", Qt::CaseInsensitive) ||
       path.endsWith(".sigmf-data", Qt::CaseInsensitive) ||
       path.endsWith(".json", Qt::CaseInsensitive))
-    return importTorchSigLabels(path, target, generation, ignoreSupplemental);
+    return importTorchSigLabels(path, target, generation, ignoreSupplemental, options);
   LabelImportResult result;
   result.error =
       "仅支持指定生成器 TXT 与 TorchSig SigMF/rfbench 配对，不提供通用标签导入";
+  result.state = LabelImportState::Error;
   return result;
+}
+
+bool hasGeneratorLabelHeader(const QString& preview) {
+  const auto lines = preview.left(65536).split('\n');
+  for (const auto& line : lines) {
+    const auto text = line.trimmed();
+    if (text.isEmpty()) continue;
+    return QRegularExpression("^[0-9]+\\s*:").match(text).hasMatch() &&
+           QRegularExpression("\\btime_start\\s*:", QRegularExpression::CaseInsensitiveOption).match(text).hasMatch() &&
+           QRegularExpression("\\btime_end\\s*:", QRegularExpression::CaseInsensitiveOption).match(text).hasMatch() &&
+           QRegularExpression("\\bsig_len\\s*:", QRegularExpression::CaseInsensitiveOption).match(text).hasMatch();
+  }
+  return false;
+}
+
+bool previewLabelSource(const QString& path, QString& preview, QString& error,
+                         const LabelImportOptions& options, qint64 maximumPreviewBytes,
+                         LabelImportState* failureState) {
+  preview.clear();
+  error.clear();
+  if (failureState) *failureState = LabelImportState::Valid;
+  try {
+    ImportBudget control(options);
+    need(maximumPreviewBytes > 0 && maximumPreviewBytes <= 65536, "标签预览预算必须为 1–65536 字节");
+    QFile file(path);
+    need(QFileInfo(path).isFile() && file.open(QIODevice::ReadOnly), "标签预览文件不可读取：" + path);
+    ImportBudget::limit(file.size() >= 0 && file.size() <= options.maximumBytes,
+                        "标签文件超过读取预算");
+    const auto raw = file.read(maximumPreviewBytes);
+    need(file.error() == QFileDevice::NoError, "标签预览读取失败：" + path);
+    QStringConverter::Flags flags;
+    if (file.size() <= raw.size()) flags |= QStringConverter::Flag::Stateless;
+    QStringDecoder decoder(QStringDecoder::Utf8, flags);
+    const QString text = decoder(raw);
+    need(!decoder.hasError(), "标签预览不是有效 UTF-8 文本");
+    control.check();
+    preview = text;
+    return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what());
+    if (failureState) {
+      const auto* abort = dynamic_cast<const ImportAbort*>(&e);
+      *failureState = abort ? abort->state : LabelImportState::Error;
+    }
+    return false;
+  }
+}
+QJsonObject encodeLabelFieldMapping(const LabelFieldMapping& m) {
+  return {{"schemaVersion", m.schemaVersion}, {"delimiter", static_cast<int>(m.delimiter)},
+          {"skipLines", m.skipLines}, {"commentPrefix", m.commentPrefix},
+          {"classColumn", m.classColumn}, {"startColumn", m.startColumn},
+          {"endColumn", m.endColumn}, {"lowerColumn", m.lowerColumn},
+          {"upperColumn", m.upperColumn}, {"timeUnit", static_cast<int>(m.timeUnit)},
+          {"interval", static_cast<int>(m.interval)}, {"indexOrigin", m.indexOrigin},
+          {"frameHopSamples", QString::number(m.frameHopSamples)},
+          {"frameLengthSamples", QString::number(m.frameLengthSamples)},
+          {"allowTimeRounding", m.allowTimeRounding},
+          {"timeQuantizationSeconds", m.timeQuantizationSeconds},
+          {"frequencyLayout", static_cast<int>(m.frequencyLayout)},
+          {"frequencyUnit", static_cast<int>(m.frequencyUnit)},
+          {"frequencyReference", static_cast<int>(m.frequencyReference)}};
+}
+
+bool decodeLabelFieldMapping(const QJsonObject& object, LabelFieldMapping& output,
+                             QString& error) {
+  try {
+    const auto integer = [&](const char* key, int low, int high) {
+      const auto v = object[key];
+      need(v.isDouble() && std::floor(v.toDouble()) == v.toDouble() &&
+               v.toDouble() >= low && v.toDouble() <= high,
+           QString("映射字段无效：") + key);
+      return v.toInt();
+    };
+    LabelFieldMapping m;
+    m.schemaVersion = integer("schemaVersion", 1, 1);
+    m.delimiter = static_cast<LabelDelimiter>(integer("delimiter", 0, 4));
+    m.skipLines = integer("skipLines", 0, 1000000);
+    need(object["commentPrefix"].isString() &&
+             object["commentPrefix"].toString().size() <= 32,
+         "映射注释前缀无效");
+    m.commentPrefix = object["commentPrefix"].toString();
+    m.classColumn = integer("classColumn", -1, 255);
+    m.startColumn = integer("startColumn", -1, 255);
+    m.endColumn = integer("endColumn", -1, 255);
+    m.lowerColumn = integer("lowerColumn", -1, 255);
+    m.upperColumn = integer("upperColumn", -1, 255);
+    m.timeUnit = static_cast<LabelTimeUnit>(integer("timeUnit", 0, 4));
+    m.interval = static_cast<LabelInterval>(integer("interval", 0, 3));
+    m.indexOrigin = integer("indexOrigin", -1, 1);
+    need(object["frameHopSamples"].isString() && object["frameLengthSamples"].isString(),
+         "帧步长和长度必须为 uint64 字符串");
+    m.frameHopSamples = unsignedText(object["frameHopSamples"].toString(), "frameHopSamples");
+    m.frameLengthSamples = unsignedText(object["frameLengthSamples"].toString(), "frameLengthSamples");
+    need(object["allowTimeRounding"].isBool(), "时间舍入选项缺失");
+    m.allowTimeRounding = object["allowTimeRounding"].toBool();
+    m.timeQuantizationSeconds = jsonReal(object["timeQuantizationSeconds"], "timeQuantizationSeconds");
+    need(m.timeQuantizationSeconds >= 0 && m.timeQuantizationSeconds <= 1e6,
+         "时间量化精度无效");
+    m.frequencyLayout = static_cast<LabelFrequencyLayout>(integer("frequencyLayout", 0, 3));
+    m.frequencyUnit = static_cast<LabelFrequencyUnit>(integer("frequencyUnit", 0, 4));
+    m.frequencyReference = static_cast<LabelFrequencyReference>(integer("frequencyReference", 0, 2));
+    output = m;
+    error.clear();
+    return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what());
+    return false;
+  }
+}
+
+bool restoreLabelFieldMapping(const AnnotationSourceSet& sourceSet,
+                              LabelFieldMapping& mapping, QString& error) {
+  if (sourceSet.formatId != "mapped-txt-v1" ||
+      sourceSet.profileId != "user-confirmed-delimited-txt" ||
+      sourceSet.coordinateInterpretation.size() > 65536) {
+    error = "来源不是受支持的已确认 TXT 映射 profile";
+    return false;
+  }
+  QJsonParseError parse;
+  const auto document = QJsonDocument::fromJson(
+      QByteArray::fromStdString(sourceSet.coordinateInterpretation), &parse);
+  if (parse.error != QJsonParseError::NoError || !document.isObject()) {
+    error = "已保存映射 JSON 损坏";
+    return false;
+  }
+  return decodeLabelFieldMapping(document.object(), mapping, error);
+}
+
+LabelImportResult importMappedTextLabels(const QString& path,
+                                         const FileMetadata& target,
+                                         const LabelFieldMapping& requested,
+                                         std::uint64_t generation,
+                                         const LabelImportOptions& options) {
+  LabelImportResult result;
+  try {
+    ImportBudget control(options);
+    validateTarget(target);
+    LabelFieldMapping m;
+    QString mappingError;
+    const bool decoded = decodeLabelFieldMapping(encodeLabelFieldMapping(requested), m, mappingError);
+    need(decoded, mappingError);
+    need(m.delimiter != LabelDelimiter::Unspecified && m.classColumn >= 0 &&
+             m.timeUnit != LabelTimeUnit::Unspecified &&
+             m.frequencyLayout != LabelFrequencyLayout::Unspecified,
+         "请明确分隔符、类别列、时间和频率解释；不能推断字段");
+    const bool unknown = m.frequencyLayout == LabelFrequencyLayout::Unknown;
+    if (m.timeUnit != LabelTimeUnit::Unknown) {
+      need(m.startColumn >= 0 && m.endColumn >= 0 &&
+               m.interval != LabelInterval::Unspecified,
+           "时间列和区间规则必须明确");
+      if (m.timeUnit == LabelTimeUnit::Seconds)
+        need(m.interval != LabelInterval::InclusiveEnd && m.indexOrigin == 0,
+             "秒坐标从 0 起，不支持无采样依据的闭合秒区间");
+      else
+        need(m.indexOrigin == 0 || m.indexOrigin == 1, "必须确认样本/帧索引从 0 或 1 起");
+      if (m.timeUnit == LabelTimeUnit::Frames)
+        need(m.frameHopSamples > 0 && m.frameLengthSamples > 0,
+             "帧映射必须给出实际帧长和步长（样本）");
+    }
+    if (m.frequencyLayout != LabelFrequencyLayout::Unknown)
+      need(m.lowerColumn >= 0 && m.upperColumn >= 0 &&
+               m.frequencyUnit != LabelFrequencyUnit::Unspecified &&
+               m.frequencyReference != LabelFrequencyReference::Unspecified,
+           "频率列、单位及绝对 RF/基带偏移必须明确");
+    std::unordered_set<int> columns;
+    for (const auto c : {m.classColumn,
+                        m.timeUnit == LabelTimeUnit::Unknown ? -1 : m.startColumn,
+                        m.timeUnit == LabelTimeUnit::Unknown ? -1 : m.endColumn,
+                        m.frequencyLayout == LabelFrequencyLayout::Unknown ? -1 : m.lowerColumn,
+                        m.frequencyLayout == LabelFrequencyLayout::Unknown ? -1 : m.upperColumn})
+      need(c < 0 || columns.insert(c).second, "不同物理字段不能映射到同一列");
+    qint64 budget = options.maximumBytes;
+    const auto raw = readText(path, budget, control);
+    const auto mapping = encodeLabelFieldMapping(m);
+    const auto coordinates = QString::fromUtf8(QJsonDocument(mapping).toJson(QJsonDocument::Compact));
+    result.sourceSet = source(path, raw, {}, target, generation, "mapped-txt-v1", coordinates);
+    result.sourceSet.profileId = "user-confirmed-delimited-txt";
+    const auto sourceBytes = normalizedSourceBytes(result.sourceSet);
+    qint64 remaining = metadataBudget - sourceBytes;
+    const auto text = QString::fromUtf8(raw);
+    qsizetype position = 0;
+    std::size_t lineNumber = 0, recordCount = 0;
+    const auto add = [](std::uint64_t a, std::uint64_t b) {
+      need(a <= std::numeric_limits<std::uint64_t>::max() - b, "时间整数加法溢出");
+      return a + b;
+    };
+    const auto multiply = [](std::uint64_t a, std::uint64_t b) {
+      need(b == 0 || a <= std::numeric_limits<std::uint64_t>::max() / b,
+           "帧索引乘法溢出");
+      return a * b;
+    };
+    while (position < text.size()) {
+      control.check();
+      ImportBudget::limit(++lineNumber <= options.maximumLines, "TXT 行数超过预算");
+      auto end = text.indexOf('\n', position);
+      if (end < 0) end = text.size();
+      auto originalLine = text.mid(position, end - position);
+      if (originalLine.endsWith('\r')) originalLine.chop(1);
+      const auto line = originalLine.trimmed();
+      position = end + 1;
+      if (lineNumber <= static_cast<std::size_t>(m.skipLines) || line.isEmpty() ||
+          (!m.commentPrefix.isEmpty() && line.startsWith(m.commentPrefix))) continue;
+      ImportBudget::limit(++recordCount <= options.maximumRecords, "TXT 记录数超过预算");
+      need(!line.contains('"'), "带引号/转义的 TXT 需要专用 profile，不能按简单分隔解析");
+      QStringList fields;
+      if (m.delimiter == LabelDelimiter::Whitespace) {
+        auto tokens = QRegularExpression("\\S+").globalMatch(line);
+        int count = 0;
+        while (tokens.hasNext()) {
+          tokens.next();
+          need(++count <= 256, "TXT 列数超过 256");
+        }
+        fields = line.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+      } else {
+        const auto separator = m.delimiter == LabelDelimiter::Tab ? '\t' :
+                               m.delimiter == LabelDelimiter::Comma ? ',' : ';';
+        need(originalLine.count(separator) < 256, "TXT 列数超过 256");
+        fields = originalLine.split(separator, Qt::KeepEmptyParts);
+        for (auto& field : fields) field = field.trimmed();
+      }
+      need(fields.size() <= 256, "TXT 列数超过 256");
+      const auto field = [&](int column) {
+        need(column >= 0 && column < fields.size() && !fields[column].isEmpty(),
+             QString("TXT 第 %1 行缺少映射列 %2").arg(lineNumber).arg(column + 1));
+        return fields[column];
+      };
+      const auto label = className(field(m.classColumn), "class");
+      if (unknown) {
+        ++result.incompleteRecords;
+        continue;
+      }
+      TimeRange time{0, target.sampleCount};
+      TimeQuality quality = TimeQuality::SampleLabel;
+      SampleIndex uncertainty = 0;
+      QJsonObject conversion;
+      if (m.timeUnit == LabelTimeUnit::Unknown) {
+        quality = TimeQuality::Unknown;
+      } else if (m.timeUnit == LabelTimeUnit::Seconds) {
+        const double first = realText(field(m.startColumn), "start seconds");
+        const double second = realText(field(m.endColumn), "end/count seconds");
+        const double last = m.interval == LabelInterval::StartCount ? first + second : second;
+        need(first >= 0 && second >= 0 && std::isfinite(last) && first < last &&
+                 static_cast<long double>(last) * target.sampleRateHz <= target.sampleCount,
+             "时间超出物理文件或为空");
+        const long double startSamples = static_cast<long double>(first) * target.sampleRateHz;
+        const long double endSamples = static_cast<long double>(last) * target.sampleRateHz;
+        time = {rounded(first, target.sampleRateHz), rounded(last, target.sampleRateHz)};
+        const bool fractional = std::abs(startSamples - time.begin) > 1e-7L ||
+                                std::abs(endSamples - time.end) > 1e-7L;
+        need(!fractional || m.allowTimeRounding, "秒坐标不落在样本边界，须明确允许最近样本舍入");
+        if (fractional || m.timeQuantizationSeconds > 0) {
+          quality = TimeQuality::RoundedLabel;
+          const long double u = std::ceil(static_cast<long double>(target.sampleRateHz) *
+                                           m.timeQuantizationSeconds / 2 + .5L);
+          need(u < 18446744073709551616.0L, "量化不确定度溢出");
+          uncertainty = static_cast<SampleIndex>(u);
+        }
+        conversion = {{"startRoundingSamples", static_cast<double>(time.begin - startSamples)},
+                      {"endRoundingSamples", static_cast<double>(time.end - endSamples)}};
+      } else {
+        auto first = unsignedText(field(m.startColumn), "start index");
+        auto last = unsignedText(field(m.endColumn), "end/count index");
+        const auto origin = static_cast<std::uint64_t>(m.indexOrigin);
+        need(first >= origin, "开始索引小于指定起点");
+        first -= origin;
+        if (m.interval == LabelInterval::StartCount) last = add(first, last);
+        else {
+          need(last >= origin, "结束索引小于指定起点");
+          last -= origin;
+          if (m.interval == LabelInterval::InclusiveEnd) last = add(last, 1);
+        }
+        need(first < last, "索引区间为空或倒置");
+        time = m.timeUnit == LabelTimeUnit::Frames
+                   ? TimeRange{multiply(first, m.frameHopSamples),
+                               add(multiply(last - 1, m.frameHopSamples), m.frameLengthSamples)}
+                   : TimeRange{first, last};
+      }
+      const double scale = m.frequencyUnit == LabelFrequencyUnit::Hz ? 1 :
+                           m.frequencyUnit == LabelFrequencyUnit::KHz ? 1e3 :
+                           m.frequencyUnit == LabelFrequencyUnit::MHz ? 1e6 : 1e9;
+      const double f1 = realText(field(m.lowerColumn), "frequency first") * scale;
+      const double f2 = realText(field(m.upperColumn), "frequency second") * scale;
+      FrequencyRange band{f1, f2};
+      if (m.frequencyLayout == LabelFrequencyLayout::CenterBandwidth) {
+        need(f2 > 0, "带宽必须大于 0");
+        band = {f1 - f2 / 2, f1 + f2 / 2};
+      }
+      if (m.frequencyReference == LabelFrequencyReference::Baseband) {
+        band.lowerHz += target.centerFrequencyHz;
+        band.upperHz += target.centerFrequencyHz;
+      }
+      auto a = annotation(result.sourceSet, QString::number(lineNumber), label);
+      Segment segment{a.id + ":s0", {time, band},
+                      quality == TimeQuality::Unknown ? TimeQuality::SampleLabel : quality,
+                      FrequencyQuality::NominalLabel, false, uncertainty, FrequencyFrame::RF};
+      const auto valid = validateSegment(segment, annotationBounds(target), false);
+      need(valid.ok, q(valid.error));
+      if (quality == TimeQuality::Unknown) {
+        // This is file observation support, never an emission interval.
+        a.observation = ViewRange{time, band};
+        a.observationTimeQuality = TimeQuality::Unknown;
+        a.observationFrequencyFrame = FrequencyFrame::RF;
+      } else a.segments.push_back(segment);
+      auto evidence = std::make_shared<OriginEvidence>();
+      evidence->formatId = result.sourceSet.formatId;
+      evidence->originRef = result.sourceSet.originalPath + "#" + a.originRecordId;
+      QJsonArray originalFields;
+      for (const auto& value : fields) originalFields.append(value);
+      evidence->originalFieldsJson = QJsonDocument(QJsonObject{
+          {"line", QString::number(lineNumber)}, {"fields", originalFields},
+          {"mapping", mapping}, {"conversion", conversion}}).toJson(QJsonDocument::Compact).toStdString();
+      evidence->coordinateInterpretation = result.sourceSet.coordinateInterpretation;
+      evidence->originalSegments = a.segments;
+      evidence->originalObservation = a.observation;
+      a.originEvidence = std::move(evidence);
+      refreshAnnotationProjection(a);
+      appendImportedAnnotation(result, std::move(a), remaining);
+    }
+    if (result.incompleteRecords) {
+      result.annotations.clear();
+      result.state = LabelImportState::Incomplete;
+      result.error = "频率未知；原文和类别保留，未生成二维标记；请补全字段映射";
+      result.diagnostics.push_back({DiagnosticSeverity::Warning, "unknown-label-geometry",
+                                    result.error.toStdString(), {}, 0});
+      result.sourceSet.diagnostics = result.diagnostics;
+    } else {
+      if (recordCount == 0) result.state = LabelImportState::Empty;
+      addPartialDiagnostic(result, target);
+      validateNormalizedBatch(result, metadataBudget - sourceBytes - remaining);
+    }
+    control.check();
+    return result;
+  } catch (const std::exception& e) {
+    return failure(std::move(result), e);
+  }
 }
 }  // namespace signalstudio

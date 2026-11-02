@@ -331,9 +331,9 @@ void interactionEditingScenes(Capture& capture, QScreen* screen) {
           "Undo removed later background publication or changed a channel");
   editingScene(capture, "09-undo-keeps-later-background-results", screen);
 
-  const auto projectPath = capture.output.filePath("u2-edited-project.json");
+  const auto projectPath = capture.output.filePath("u2-edited-project.ssproj");
   require(window.saveProject(projectPath) && window.openProject(projectPath),
-          "The edited v5 project did not save and reopen");
+          "The edited .ssproj project did not save and reopen");
   require(widebandDisplayReady(window),
           "Reopened actual IQ display did not settle");
   for (const auto& [id, origin] : origins)

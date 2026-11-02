@@ -1,0 +1,59 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-debug --output-on-failure -R ^signal_studio_ux_(annotation|layout|charts|popovers)$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-debug
+    Start 35: signal_studio_ux_charts
+1/4 Test #35: signal_studio_ux_charts ..........   Passed   26.07 sec
+    Start 36: signal_studio_ux_annotation
+2/4 Test #36: signal_studio_ux_annotation ......***Failed   12.94 sec
+********* Start testing of UxTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : UxTests::initTestCase()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support raise()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_evidenceDisclosureAndFullCopy() This plugin does not support raise()
+PASS   : UxTests::uxR4_evidenceDisclosureAndFullCopy()
+PASS   : UxTests::uxR4_currentObjectAndActionStates()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_supplementalSourceAndPagedCopy() This plugin does not support raise()
+FAIL!  : UxTests::uxR4_supplementalSourceAndPagedCopy() 'raw->toPlainText().contains("PAGE_TAIL")' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\ux_tests.cpp(262) : failure location
+QWARN  : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext() This plugin does not support propagateSizeHints()
+QWARN  : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext() This plugin does not support raise()
+PASS   : UxTests::uxR4_auxiliaryDetailsCloseWithHiddenContext()
+PASS   : UxTests::cleanupTestCase()
+Totals: 5 passed, 1 failed, 0 skipped, 0 blacklisted, 12155ms
+********* Finished testing of UxTests *********
+
+CMake Error at D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake:20 (message):
+  Qt UI raw log contains a failure or no successful totals
+
+
+
+    Start 37: signal_studio_ux_layout
+3/4 Test #37: signal_studio_ux_layout ..........   Passed   50.03 sec
+    Start 38: signal_studio_ux_popovers
+4/4 Test #38: signal_studio_ux_popovers ........   Passed    1.27 sec
+
+75% tests passed, 1 tests failed out of 4
+
+Label Time Summary:
+annotation     =  12.94 sec*proc (1 test)
+charts         =  26.07 sec*proc (1 test)
+layout         =  50.03 sec*proc (1 test)
+popovers       =   1.27 sec*proc (1 test)
+wideband-ux    =  90.31 sec*proc (4 tests)
+
+Total Test time (real) =  90.34 sec
+
+The following tests FAILED:
+	 36 - signal_studio_ux_annotation (Failed)              annotation wideband-ux
+Errors while running CTest

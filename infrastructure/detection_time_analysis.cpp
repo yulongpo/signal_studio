@@ -3,12 +3,16 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QDir>
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <limits>
 
 #include "domain/detection_refinement.h"
 #include "infrastructure/detection_sample_energy.h"
+#include "infrastructure/detection_sample_stream.h"
+#include "infrastructure/detection_resource_diagnostics.h"
 #include "infrastructure/int16_iq_file.h"
 #include "infrastructure/source_metadata.h"
 
@@ -16,9 +20,35 @@ namespace signalstudio {
 namespace {
 constexpr std::uint64_t kReadSamples = 131072;
 constexpr std::size_t kTracePoints = 512;
-bool resourceFallback(const QString& error) {
-  return error.contains("working budget") ||
-         error.contains("working memory budget");
+// Controlled 20 MS/s .1s measurements favor FIR above this short-context range;
+// uncertainty still retries complete Legacy within its original working grant.
+constexpr SampleIndex kAutoExactSamples=1U<<20;
+// Independent process-wide disk leases. The producer's candidate-local quota
+// and the actual filesystem free-space checks remain additional constraints.
+std::atomic<std::uint64_t> scratchLeasedBytes{0};
+constexpr std::uint64_t kProcessScratchCap=32ULL*1024*1024*1024;
+class ScratchGrant {
+ public:
+  ~ScratchGrant(){if(held_) scratchLeasedBytes.fetch_sub(held_);}
+  bool reserve(std::uint64_t bytes,QString& error) {
+    auto used=scratchLeasedBytes.load();
+    do {
+      if(bytes>kProcessScratchCap || used>kProcessScratchCap-bytes) {
+        error="Process-wide Sample temporary storage lease is exhausted";return false;
+      }
+    } while(!scratchLeasedBytes.compare_exchange_weak(used,used+bytes));
+    held_+=bytes;return true;
+  }
+  void release(std::uint64_t bytes) {
+    if(bytes>held_){invalid_=true;return;}
+    held_-=bytes;scratchLeasedBytes.fetch_sub(bytes);
+  }
+  bool returned() const {return !held_ && !invalid_;}
+ private:
+  std::uint64_t held_=0;bool invalid_=false;
+};
+bool resourceFallback(DetectionFailureCode code) {
+  return code == DetectionFailureCode::ResourceLimit;
 }
 
 bool stopped(const DetectionSourceCancel& cancel, QString& error) {
@@ -103,10 +133,12 @@ QJsonObject energyTrace(const DetectionEnergySeries& series,
           {"points", points}};
 }
 
-bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
+bool readSpectrumBody(FixedDetectionSource& source, const FrequencyTrack& track,
                   DetectionSpectrumRoi& spectrum, std::uint64_t budget,
-                  std::uint64_t& consumedCells, QString& error,
-                  const DetectionSourceCancel& cancel) {
+                  std::uint64_t& consumedCells, std::size_t& cellBudget,QString& error,
+                  const DetectionSourceCancel& cancel,
+                  DetectionFailureCode& code) {
+  code = DetectionFailureCode::HardFailure;
   const auto& plan = source.plan();
   const auto index = [&](double hz) {
     return static_cast<std::size_t>(std::clamp(
@@ -122,10 +154,33 @@ bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
       std::min(plan.realFrameCount,
                track.nominalSupport.end / plan.hopSamples +
                    (track.nominalSupport.end % plan.hopSamples != 0));
-  if (first >= end || static_cast<long double>(end - first) * width * 4 +
-                              width * sizeof(double) + 1048576 >
-                          budget) {
-    error = "Physical STFT ROI exceeds the time-refinement working budget";
+  // Spectrum consumers retain the float32 matrix, bounded ROI resize or
+  // Coarse row/profile work, and source FFT scratch. Sample's three full
+  // vectors are not live here and must not define this matrix's cell limit.
+  const long double auxiliary=plan.estimatedPeakBytes+static_cast<long double>(width+1)*16+
+      static_cast<long double>(end-first)*52+4*1048576;
+  cellBudget=auxiliary>=budget ? 0 : static_cast<std::size_t>(std::min<long double>(
+      256ULL*1024*1024,(budget-auxiliary)/sizeof(float)));
+  const auto times = end > first ? end - first : 0;
+  const auto edgeCount = width + 1;
+  const double firstHz = plan.frequencyFirstBinHz +
+                         (static_cast<double>(firstBin) - .5) * plan.frequencyStepHz;
+  const double lastHz = plan.frequencyFirstBinHz +
+                        (static_cast<double>(lastBin + 1) - .5) * plan.frequencyStepHz;
+  const auto requiredCells = static_cast<long double>(times) * width;
+  if (first >= end) {
+    error = "Physical STFT ROI has no real frames";
+    return false;
+  }
+  if (requiredCells > cellBudget) {
+    code = DetectionFailureCode::WorkingCellLimit;
+    error = QString("Spectrum capacity rejected: times=%1 frequencyEdges=%2 requiredCells=%3 allowedCells=%4 frequencyEdgeHz=%5..%6")
+                .arg(qulonglong(times))
+                .arg(qulonglong(edgeCount))
+                .arg(QString::number(requiredCells, 'f', 0))
+                .arg(qulonglong(cellBudget))
+                .arg(firstHz, 0, 'g', 12)
+                .arg(lastHz, 0, 'g', 12);
     return false;
   }
   const auto cells = (end - first) * width;
@@ -140,7 +195,39 @@ bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
     spectrum.frequencyEdgesHz.push_back(plan.frequencyFirstBinHz +
                                         (static_cast<double>(bin) - .5) *
                                             plan.frequencyStepHz);
+  // One densityDb record per real frame. Do not treat a model-window tensor
+  // as a single-frame spectrum. A short file read falls back to readFrame.
+  bool useSpool = source.frequencySpoolCovers(first, end);
+  if (useSpool) {
+    for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
+      if (stopped(cancel, error)) return false;
+      std::vector<float> density;
+      TimeRange slot;
+      bool ioFailure = false;
+      const bool read = source.replayFrequencyFrame(
+          frameIndex, density, slot, ioFailure, error, cancel);
+      const bool usable =
+          read && density.size() == plan.config.fftSize &&
+          std::all_of(density.begin(), density.end(),
+                      [](float value) { return std::isfinite(value); });
+      if (!usable) {
+        if (!read && !ioFailure) return false;
+        spectrum.timeSlots.clear();
+        spectrum.powerDb.clear();
+        error.clear();
+        code = DetectionFailureCode::HardFailure;
+        useSpool = false;
+        break;
+      }
+      spectrum.timeSlots.push_back(slot);
+      spectrum.powerDb.insert(spectrum.powerDb.end(),
+                              density.begin() + firstBin,
+                              density.begin() + lastBin + 1);
+    }
+    if (useSpool) return true;
+  }
   for (auto frameIndex = first; frameIndex < end; ++frameIndex) {
+    if (stopped(cancel, error)) return false;
     DetectionSpectrumFrame frame;
     if (!source.readFrame(frameIndex, frame, error, cancel)) return false;
     spectrum.timeSlots.push_back(frame.mapping.slotSamples);
@@ -148,13 +235,16 @@ bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
                             frame.densityDb.begin() + firstBin,
                             frame.densityDb.begin() + lastBin + 1);
   }
+  code = DetectionFailureCode::None;
   return true;
 }
 
 bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
                 const DetectionRequest& request, DetectionEnergySeries& series,
                 std::uint64_t budget, std::uint64_t& consumedCells,
-                QString& error, const DetectionSourceCancel& cancel) {
+                QString& error, const DetectionSourceCancel& cancel,
+                DetectionFailureCode& code) {
+  code = DetectionFailureCode::HardFailure;
   const auto margin =
       static_cast<SampleIndex>(std::floor(.008 * metadata.sampleRateHz));
   const auto begin = track.nominalSupport.begin > margin
@@ -168,8 +258,16 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
   const auto count = end - begin;
   // During filtering IQ and float32 power coexist; during domain refinement
   // energy, smoothed energy and a quantile copy coexist. Reserve the larger.
-  if (begin >= end || static_cast<long double>(count) * 12 + 2097152 > budget) {
-    error = "Exact sample search context exceeds the working budget";
+  const auto requiredBytes = static_cast<long double>(count) * 12 + 2097152;
+  if (begin >= end) {
+    error = "Exact sample search context is empty";
+    return false;
+  }
+  if (requiredBytes > budget) {
+    code = DetectionFailureCode::ResourceLimit;
+    error = QString("Energy working-set exceeded: requiredBytes=%1 allowedBytes=%2")
+                .arg(QString::number(requiredBytes, 'f', 0))
+                .arg(qulonglong(budget));
     return false;
   }
   if (count > (std::uint64_t{1} << 34) - consumedCells) {
@@ -179,10 +277,11 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
   consumedCells += count;
   RawSampleReader reader;
   if (!reader.open(QString::fromStdString(metadata.path), metadata.sampleFormat,
-                   error))
+                   error,RawSampleReader::Access::Sequential))
     return false;
   std::vector<std::complex<float>> samples(static_cast<std::size_t>(count));
   for (auto sample = begin; sample < end;) {
+    if (stopped(cancel, error)) return false;
     std::vector<std::complex<float>> block;
     const auto after = sample + std::min(kReadSamples, end - sample);
     if (!reader.read({sample, after}, block, cancel, &error)) return false;
@@ -194,23 +293,188 @@ bool readEnergy(const FileMetadata& metadata, const FrequencyTrack& track,
   series.stepSamples = 1;
   series.filterSupportSamples = count;
   series.energyMethod = "cpu-exact-length-complex64-raised-cosine-fft-v1";
-  return detectionBandEnergy(
+  DetectionFailureCode bandCode = DetectionFailureCode::HardFailure;
+  const auto measured = detectionBandEnergy(
       std::move(samples), metadata.sampleRateHz,
       (track.frequency.lowerHz + track.frequency.upperHz) / 2 -
           metadata.centerFrequencyHz,
       track.frequency.upperHz - track.frequency.lowerHz, series.power, budget,
-      error, cancel);
+      error, cancel, {}, &bandCode);
+  code = measured ? DetectionFailureCode::None
+                  : bandCode == DetectionFailureCode::None
+                        ? DetectionFailureCode::HardFailure
+                        : bandCode;
+  return measured;
+}
+
+bool boundedSample(FixedDetectionSource& source,const FileMetadata& metadata,const FrequencyTrack& track,
+    const DetectionRequest& request,const DetectionRefinementInput& input,
+    const DetectionRefinementOptions& options,std::uint64_t working,std::uint64_t& cells,
+    const QString& scratchRoot,sample_stream::Result& output,QJsonObject& report,
+    QString& error) {
+  namespace stream=sample_stream;
+  RawSampleReader reader;
+  if(!reader.open(QString::fromStdString(metadata.path),metadata.sampleFormat,error,
+      RawSampleReader::Access::Sequential)) return false;
+  if(reader.sampleCount()!=request.sourceIdentity.physicalSamples) {
+    error="Physical source length changed before Sample stream";return false;
+  }
+  const auto margin=static_cast<SampleIndex>(std::floor(.008*metadata.sampleRateHz));
+  const auto available=request.sourceIdentity.availableSamples;
+  stream::Context context;
+  context.input=input;context.parameters=request.parameters;context.options=options;
+  context.availableSamples=available;
+  context.searchSamples={track.nominalSupport.begin>margin?track.nominalSupport.begin-margin:0,
+      track.nominalSupport.end>available-std::min(available,margin)?available:track.nominalSupport.end+margin};
+  context.relativeCenterHz=(track.frequency.lowerHz+track.frequency.upperHz)/2-metadata.centerFrequencyHz;
+  context.bandwidthHz=track.frequency.upperHz-track.frequency.lowerHz;
+  stream::Config config;
+  // Both application modes retain complete precision fallback. StreamingFir
+  // requests a FIR attempt first; it never authorizes publishing an uncertain
+  // diagnostic instead of an eligible LegacyExact result.
+  config.mode=stream::Mode::Auto;
+  config.scratchBudgetBytes=request.sampleScratchBudgetBytes;
+  config.scratchFreeFloorBytes=0;
+  stream::Runtime runtime;
+  // FIR K/C/radius remain fixed and bounded. Precision fallback may use the
+  // SAME full working grant previously available to LegacyExact, after FIR
+  // workspace and scratch have been released, to avoid unnecessary degradation.
+  // Grants above 1 GiB are legal. Exact residency is capped separately in makePlan.
+  const auto memorySnapshot = captureRuntimeResourceSnapshot(metadata.path, nullptr);
+  if (memorySnapshot.ram.status != ResourceProbeStatus::Probed) {
+    error = "resource.ram-unavailable: cannot plan bounded Sample residency";
+    return false;
+  }
+  runtime.memoryGrantBytes=std::min(working, memorySnapshot.ram.availableBytes);
+  runtime.resultByteGrant=std::min<std::uint64_t>(runtime.memoryGrantBytes/4,16ULL*1024*1024);
+  const auto encodedReadBudget=std::min<std::uint64_t>(16ULL*1024*1024,runtime.memoryGrantBytes/8);
+  runtime.readerResidentReserveBytes=encodedReadBudget+kReadSamples*sizeof(std::complex<float>)+65536;
+  const auto stride=metadata.sampleFormat.channelLayout==ChannelLayout::TimeInterleaved
+      ? metadata.sampleFormat.channels:1;
+  const auto encodedPerSample=2ULL*bytesPerComponent(metadata.sampleFormat)*stride;
+  runtime.sourceReadBlockSamples=static_cast<std::uint32_t>(std::min<std::uint64_t>(
+      kReadSamples,encodedReadBudget/std::max<std::uint64_t>(1,encodedPerSample)));
+  runtime.privateScratchRoot=scratchRoot.isEmpty()
+      ? QDir::temp().filePath("SignalStudio/detection-sample"):scratchRoot;
+  runtime.work.consumedCells=&cells;
+  runtime.verifySource=[&](QString& why) {
+    if(iqSourceFingerprint(QString::fromStdString(metadata.path)).toStdString()!=request.sourceIdentity.quickFingerprint) {
+      why="Frozen source identity changed during bounded Sample refinement";return false;
+    }
+    return true;
+  };
+  runtime.read=[&](TimeRange range,std::span<std::complex<float>> destination,QString& why) {
+    if(range.end-range.begin!=destination.size() || destination.size()>runtime.sourceReadBlockSamples) {
+      why="Bounded Sample reader request exceeds its format-aware block plan";return false;
+    }
+    std::vector<std::complex<float>> decoded;
+    if(!reader.read(range,decoded,options.cancelled,&why)) return false;
+    if(decoded.size()!=destination.size()){why="Short Sample IQ block";return false;}
+    std::copy(decoded.begin(),decoded.end(),destination.begin());return true;
+  };
+  ScratchGrant grant;
+  std::string scratchProfile;
+  runtime.reserveScratch=[&](std::uint64_t bytes,QString& why) {
+    const auto snapshot = captureRuntimeResourceSnapshot(
+        runtime.privateScratchRoot.toStdString(), nullptr);
+    DetectionDiskUsage usage;
+    usage.durableVolumeKey = snapshot.volume.volumeKey;
+    usage.scratchVolumeKey = snapshot.volume.volumeKey;
+    usage.scratchBytes = bytes;
+    if (!assessDetectionResourceStage("refine", usage, kDiskFactScratch,
+                                      snapshot, scratchProfile, why)) return false;
+    return grant.reserve(bytes,why);
+  };
+  runtime.releaseScratch=[&](std::uint64_t bytes){grant.release(bytes);};
+  stream::Failure failure;
+  stream::Plan legacyPlan;
+  auto exactConfig=config;exactConfig.mode=stream::Mode::LegacyExact;
+  // Small contexts retain the existing exact arithmetic without first paying
+  // for a diagnostic FIR pass. Long contexts use the bounded numerical route.
+  if(request.sampleEnergyMode==DetectionSampleEnergyMode::Auto &&
+      !source.gpuProfiling()["ready"].toBool() &&
+      context.searchSamples.end-context.searchSamples.begin<=kAutoExactSamples &&
+      stream::makePlan(context,exactConfig,runtime,legacyPlan,failure) && legacyPlan.legacyEligible)
+    config.mode=stream::Mode::LegacyExact;
+  QString gpuFallback;
+  const auto okay=source.withGpu(options.cancelled,[&](gpu_dsp::Session* gpu) {
+    runtime.gpu=gpu;
+    if(stream::run(context,config,runtime,output,failure)) return true;
+    if(!gpu || failure.code!=stream::ErrorCode::Integration || !failure.stage.startsWith("gpu-") ||
+        !failure.cleanupFailure.isEmpty() || (options.cancelled && options.cancelled())) return false;
+    // The partial spool is closed before retry. Charge both attempts to the
+    // existing work ledger, and never concatenate CPU/GPU candidate energies.
+    gpuFallback=failure.stage+": "+failure.detail;
+    runtime.gpu=nullptr;
+    return stream::run(context,config,runtime,output,failure);
+  });
+  report={{"requestedMode",static_cast<int>(request.sampleEnergyMode)},
+      {"authorizedRamBytes",QString::number(working)},
+      {"availableRamBytes",QString::number(memorySnapshot.ram.availableBytes)},
+      {"effectiveRamBytes",QString::number(runtime.memoryGrantBytes)},
+      {"scratchResources",QJsonDocument::fromJson(QByteArray::fromStdString(scratchProfile)).object().value("resources")},
+      {"gpuFirBlocks",QString::number(output.statistics.gpuFirBlocks)},
+      {"gpuFallback",gpuFallback.left(1024)},
+      {"autoExactSampleCutoff",QString::number(kAutoExactSamples)},
+      {"selectedRoute",static_cast<int>(output.route)},
+      {"publicationEligible",output.publicationEligible},
+      {"nativeEnvelopeEstablished",output.nativeEnvelopeEstablished},
+      {"precisionPolicy",output.precisionPolicy},
+      {"precisionGuardEvaluated",output.precisionGuardEvaluated},
+      {"precisionGuardPassed",output.precisionGuardPassed},
+      {"precisionReason",output.precisionReason},
+      {"uncertainComparisonCells",QString::number(output.statistics.uncertainComparisonCells)},
+      {"empiricalSmoothAllowance",output.statistics.empiricalSmoothAllowance},
+      {"routeReason",output.autoReason},{"contextSamples",QString::number(context.searchSamples.end-context.searchSamples.begin)},
+      {"methodVersion",QString::fromStdString(output.refinement.evidence.energyMethod)},
+      {"firRadius",int(output.statistics.plan.radius)},{"fftSamples",int(output.statistics.plan.fftSamples)},
+      {"blockSamples",int(output.statistics.plan.outputBlockSamples)},
+      {"firTailBound",output.statistics.plan.tailBound},
+      {"estimatedResidentBytes",QString::number(output.statistics.plan.estimatedResidentBytes)},
+      {"legacyResidentEstimateBytes",QString::number(output.statistics.plan.legacyResidentEstimateBytes)},
+      {"sourceSamplesRead",QString::number(output.statistics.sourceSamplesRead)},
+      {"scratchBytesRead",QString::number(output.statistics.scratchBytesRead)},
+      {"scratchBytesWritten",QString::number(output.statistics.scratchBytesWritten)},
+      {"scratchPeakBytes",QString::number(output.statistics.scratchPeakBytes)},
+      {"scope","versioned FIR is approximate; native numerical comparisons and sensitivity guards required; no universal equivalence theorem"}};
+  if(!okay) {
+    error=failure.stage+": "+failure.detail;
+    report["failureCode"]=static_cast<int>(failure.code);
+    report["cleanupFailure"]=failure.cleanupFailure;
+    report["resourceFallback"]=failure.code==stream::ErrorCode::ResourceLimit && failure.cleanupFailure.isEmpty();
+    return false;
+  }
+  if(!grant.returned()){error="Sample temporary storage lease was not returned correctly";return false;}
+  return true;
 }
 }  // namespace
+
+bool readSpectrum(FixedDetectionSource& source, const FrequencyTrack& track,
+                  DetectionSpectrumRoi& spectrum, std::uint64_t budget,
+                  std::uint64_t& consumedCells, std::size_t& cellBudget,
+                  QString& error, const DetectionSourceCancel& cancel,
+                  DetectionFailureCode* failure) {
+  DetectionFailureCode code = DetectionFailureCode::HardFailure;
+  const auto ok = readSpectrumBody(source, track, spectrum, budget, consumedCells,
+                                   cellBudget, error, cancel, code);
+  if (failure) *failure = ok ? DetectionFailureCode::None : code;
+  return ok;
+}
 
 bool applyDetectionTimeAnalysis(
     FixedDetectionSource& source, const FileMetadata& metadata,
     const DetectionRequest& request, const std::vector<FrequencyTrack>& tracks,
     DetectionPublication& publication, QString& error,
     const DetectionSourceCancel& cancel,
-    const std::function<void(std::size_t, std::size_t)>& progress) {
+    const std::function<void(std::size_t, std::size_t)>& progress,
+    const QString& privateScratchRoot) {
   auto refined = publication;
-  const auto working = request.workingSetBudgetBytes * 3 / 4;
+  std::uint64_t tripled = 0;
+  if (!checkedMulU64(request.workingSetBudgetBytes, 3, tripled)) {
+    error = "resource.arithmetic-overflow phase=time-refine requested=0 available=0";
+    return false;
+  }
+  const auto working = tripled / 4;
   std::uint64_t totalCells = 0;
   std::size_t completed = 0;
   if (progress) progress(0, refined.annotations.size());
@@ -232,16 +496,54 @@ bool applyDetectionTimeAnalysis(
     input.observation = {track->nominalSupport, track->frequency};
     input.publishBounds = request.requestedRange;
     DetectionRefinementOptions options;
-    options.workingCellBudget = static_cast<std::size_t>(working / 12);
+    // Cell count, not bytes. An 8 GiB working set (6 GiB working) must not pass 512 Mi cells.
+    const auto rawCells = working / 12;
+    if (rawCells > kSampleWorkUnitCellCeiling && working) {
+      const auto probed = rawCells > std::numeric_limits<std::size_t>::max()
+          ? std::numeric_limits<std::size_t>::max() : static_cast<std::size_t>(rawCells);
+      const auto decision = decideSamplePhaseBudget(working, 0, probed);
+      // granted is bytes. The ceiling rejection publishes the cell cap in available.
+      options.workingCellBudget = decision.kind == ResourceDecisionKind::Rejected &&
+              decision.errorCode == "sample.work-unit-ceiling"
+          ? static_cast<std::size_t>(decision.available)
+          : static_cast<std::size_t>(std::min<std::uint64_t>(rawCells, kSampleWorkUnitCellCeiling));
+    } else {
+      options.workingCellBudget = static_cast<std::size_t>(rawCells);
+    }
     options.cancelled = cancel;
     QJsonObject trace;
+    QJsonObject streamEvidence;
+    std::optional<DetectionRefinementResult> sampleResult;
+    std::size_t spectrumCellBudget=options.workingCellBudget;
     QString fallbackError;
-    if (request.parameters.timeStrategy == DetectionTimeStrategy::Sample) {
+    if (request.parameters.timeStrategy==DetectionTimeStrategy::Sample &&
+        request.sampleEnergyMode!=DetectionSampleEnergyMode::LegacyExact) {
+      sample_stream::Result streamed;
+      if(!boundedSample(source,metadata,*track,request,input,options,working,totalCells,privateScratchRoot,
+          streamed,streamEvidence,fallbackError)) {
+        if(stopped(cancel,error)) return false;
+        if(!streamEvidence["resourceFallback"].toBool()){error=fallbackError;return false;}
+      } else {
+        sampleResult=std::move(streamed.refinement);
+        if(!streamed.publicationEligible && sampleResult->status==RefineStatus::Applied) {
+          sampleResult->activity.clear();sampleResult->status=RefineStatus::Fallback;
+          sampleResult->fallbackReason="Sample FIR precision not eligible for publication; "+streamed.autoReason.toStdString();
+        }
+        QJsonArray points;
+        for(const auto& point:streamed.statistics.trace)
+          points.append(QJsonArray{QString::number(point.sample),point.mean});
+        trace={{"kind","measured-causal-mean-power-v1"},{"points",points},
+            {"sourceOriginSample",QString::number(sampleResult->evidence.sourceOriginSample)},
+            {"sourceSupportEndSample",QString::number(sampleResult->evidence.sourceSupportEndSample)},
+            {"aggregation","consecutive-cell mean; at most 512 plotted points"}};
+      }
+    } else if (request.parameters.timeStrategy == DetectionTimeStrategy::Sample) {
       input.energy.emplace();
+      DetectionFailureCode energyCode = DetectionFailureCode::HardFailure;
       if (!readEnergy(metadata, *track, request, *input.energy, working,
-                      totalCells, fallbackError, cancel)) {
+                      totalCells, fallbackError, cancel, energyCode)) {
         if (stopped(cancel, error)) return false;
-        if (!resourceFallback(fallbackError)) {
+        if (!resourceFallback(energyCode)) {
           error = fallbackError;
           return false;
         }
@@ -254,15 +556,16 @@ bool applyDetectionTimeAnalysis(
                request.parameters.timeStrategy ==
                    DetectionTimeStrategy::Coarse) {
       input.spectrum.emplace();
-      if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,
-                        fallbackError, cancel)) {
+      DetectionFailureCode spectrumCode = DetectionFailureCode::HardFailure;
+      if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,spectrumCellBudget,
+                        fallbackError, cancel, &spectrumCode)) {
         if (stopped(cancel, error)) return false;
-        if (!resourceFallback(fallbackError)) {
+        if (!resourceFallback(spectrumCode)) {
           error = fallbackError;
           return false;
         }
         input.spectrum.reset();
-      }
+      } else options.workingCellBudget=spectrumCellBudget;
     }
     if (totalCells > (std::uint64_t{1} << 34)) {
       error = "Time-refinement cumulative cell work limit exceeded";
@@ -272,7 +575,7 @@ bool applyDetectionTimeAnalysis(
     if (effectiveParameters.timeStrategy == DetectionTimeStrategy::Coarse)
       effectiveParameters.bandwidthMarginDb =
           DetectionParameters{}.bandwidthMarginDb;
-    auto result = refineDetection(input, effectiveParameters, options);
+    auto result = sampleResult ? std::move(*sampleResult) : refineDetection(input, effectiveParameters, options);
     QJsonObject fallbackCoarseEvidence;
     if (!result.ok) {
       error = QString::fromStdString(result.error);
@@ -284,19 +587,21 @@ bool applyDetectionTimeAnalysis(
          strategy == DetectionTimeStrategy::Roi)) {
       // Only a separately measured coarse result can supply fallback activity.
       // Nominal model support alone remains an unknown-time observation.
+      input.energy.reset(); // fine result/trace is frozen; Coarse does not use E
       if (!input.spectrum) {
         input.spectrum.emplace();
         QString spectrumError;
-        if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,
-                          spectrumError, cancel)) {
+        DetectionFailureCode spectrumCode = DetectionFailureCode::HardFailure;
+        if (!readSpectrum(source, *track, *input.spectrum, working, totalCells,spectrumCellBudget,
+                          spectrumError, cancel, &spectrumCode)) {
           if (stopped(cancel, error)) return false;
-          if (!resourceFallback(spectrumError)) {
+          if (!resourceFallback(spectrumCode)) {
             error = spectrumError;
             return false;
           }
           input.spectrum.reset();
           result.fallbackReason += "; " + spectrumError.toStdString();
-        }
+        } else options.workingCellBudget=spectrumCellBudget;
       }
       if (input.spectrum) {
         const auto coarseParameters =
@@ -331,6 +636,11 @@ bool applyDetectionTimeAnalysis(
                       QByteArray::fromStdString(origin->originalFieldsJson))
                       .object();
     auto time = evidenceJson(result.evidence);
+    if(input.spectrum) {
+      time["stftWorkingCellBudget"]=QString::number(spectrumCellBudget);
+      time["stftInputCells"]=QString::number(input.spectrum->powerDb.size());
+    }
+    if(!streamEvidence.isEmpty()) time["boundedSample"]=streamEvidence;
     time["coarseDefaultNoiseMarginDb"] =
         DetectionParameters{}.bandwidthMarginDb;
     if (!fallbackCoarseEvidence.isEmpty())

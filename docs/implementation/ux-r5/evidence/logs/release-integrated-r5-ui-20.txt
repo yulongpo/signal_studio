@@ -1,0 +1,104 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_ui$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 43
+    Start 43: signal_studio_ui
+
+43: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=workspaceLayout;globalDisplaySettingsApplyAcrossFiles;mainModeCoordinateDirection;continuousMarkCreation;escapeCancelsCreation;selectedMarkMovePreservesSpan;escapeRollsBackMarkMove;singleClickSelectsWithoutChangingView;boxZoomAndHistoryActions;emptyProjectAndFileActions;treeSelectionPreservesNodesAndShiftAnchor;displayChangeSurvivesPendingWheelCommit;largeSampleCoordinatePrecision;auxiliaryYAxisIsolationAndEscape;selectedMarkCornerAndEdgeResize;responsiveWorkspace;propertyFieldsFitSidebar;prototypeDisplayDefaultsAndOptions;paletteControlsStaySynchronized;narrowbandPaletteSelectionUpdatesStftCharts;widebandAuxiliaryRenderingAndGestures;narrowbandAuxiliaryRenderingAndGestures;widebandLinkedCursorsAndFrameSpectrum;narrowbandLinkedCursorsAndFrameSpectrum" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/ui-geometry-test-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+43: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+43: Environment variables: 
+43:  QT_QPA_PLATFORM=offscreen
+43:  QT_SCALE_FACTOR=1.5
+43: Test timeout computed to be: 480
+43: ********* Start testing of UiTests *********
+43: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+43: PASS   : UiTests::initTestCase()
+43: PASS   : UiTests::panelRailsAndBottomTabs()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+43: PASS   : UiTests::unifiedAnnotationDraftsAndSegmentSwitch()
+43: PASS   : UiTests::torchSigLabelsNativeRoundtrip()
+43: PASS   : UiTests::annotationTableBoundsAndIndependentSelection()
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support raise()
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the keyboard
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::widebandAnnotationSelectionAndOverlap() This plugin does not support grabbing the mouse
+43: PASS   : UiTests::widebandAnnotationSelectionAndOverlap()
+43: QWARN  : UiTests::widebandFixtureTaskNativeRoundtrip() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::widebandFixtureTaskNativeRoundtrip() This plugin does not support raise()
+43: PASS   : UiTests::widebandFixtureTaskNativeRoundtrip()
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+43: PASS   : UiTests::annotationSelectionAcrossPagesAndViews()
+43: PASS   : UiTests::annotationHoverProjectionAndNoCalculation()
+43: PASS   : UiTests::annotationCurrentSegmentGeometryAndHandles()
+43: PASS   : UiTests::annotationSelectionContextAndPublication()
+43: PASS   : UiTests::annotationTreeDemandLoadingAndViewOrder()
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent() This plugin does not support grabbing the mouse
+43: PASS   : UiTests::annotationModifiedPlotClicksPreserveAnchorAndCurrent()
+43: PASS   : UiTests::annotationCheckboxShiftExtendsSelection()
+43: PASS   : UiTests::annotationHoverTargetsOnlyOneSegment()
+43: PASS   : UiTests::annotationTreeStructuralNavigationAndLocate()
+43: PASS   : UiTests::annotationTreeSourceColorsSurviveInteractionStates()
+43: QWARN  : UiTests::annotationDirectTableDraftsAndPublication() QWidget::mapFrom(): parent must be in parent hierarchy
+43: PASS   : UiTests::annotationDirectTableDraftsAndPublication()
+43: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+43: QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+43: PASS   : UiTests::annotationAtomicRangeAndUnknownFrequency()
+43: QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+43: QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+43: PASS   : UiTests::annotationDeletePreviewPreservesDraftAndChannels()
+43: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support raise()
+43: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support grabbing the keyboard
+43: QWARN  : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts() This plugin does not support propagateSizeHints()
+43: PASS   : UiTests::annotationFileMenuCancelsWithoutSubmittingDrafts()
+43: PASS   : UiTests::cleanupTestCase()
+43: Totals: 22 passed, 0 failed, 0 skipped, 0 blacklisted, 59240ms
+43: ********* Finished testing of UiTests *********
+43: 
+1/1 Test #43: signal_studio_ui .................   Passed   59.70 sec
+
+The following tests passed:
+	signal_studio_ui
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+geometry    =  59.70 sec*proc (1 test)
+ui          =  59.70 sec*proc (1 test)
+
+Total Test time (real) =  59.72 sec

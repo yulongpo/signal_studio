@@ -1,0 +1,72 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_detection_(store|task|source|model_backend)$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 8
+    Start  8: signal_studio_detection_model_backend
+
+8: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionModelBackendTests.exe
+8: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+8: Test timeout computed to be: 10000000
+8: Detection model backend checks passed
+1/4 Test  #8: signal_studio_detection_model_backend ...   Passed    0.19 sec
+test 10
+    Start 10: signal_studio_detection_store
+
+10: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionStoreTests.exe
+10: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+10: Test timeout computed to be: 10000000
+10: Detection store boundary tests passed
+2/4 Test #10: signal_studio_detection_store ...........   Passed    1.24 sec
+test 12
+    Start 12: signal_studio_detection_task
+
+12: Test command: D:\project\signal_studio_rebuild\out\vs2026-qt611-release_bin\SignalStudioDetectionTaskTests.exe
+12: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+12: Test timeout computed to be: 10000000
+12: PASS isolated native worker, bounded task lifecycle, provenance and persistence
+3/4 Test #12: signal_studio_detection_task ............   Passed    7.97 sec
+test 13
+    Start 13: signal_studio_detection_source
+
+13: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioDetectionSourceTests.exe" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/detection-source-test-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+13: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+13: Test timeout computed to be: 10000000
+13: ********* Start testing of DetectionSourceTests *********
+13: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+13: PASS   : DetectionSourceTests::initTestCase()
+13: PASS   : DetectionSourceTests::adaptiveShortRoiTailAndIrregularGrid()
+13: PASS   : DetectionSourceTests::frozenProfileDeclarationMatchesProviderConfig()
+13: PASS   : DetectionSourceTests::periodicHannDensityAndPowerAveraging()
+13: PASS   : DetectionSourceTests::remainderAndSlotPaddingMatchFrozenRules()
+13: PASS   : DetectionSourceTests::blockSizeRoiAndAbsoluteGridInvariant()
+13: PASS   : DetectionSourceTests::shortPartialFloorAndZeroGuard()
+13: PASS   : DetectionSourceTests::invalidBudgetCancellationAndSourceChanges()
+13: PASS   : DetectionSourceTests::numericalGuardsAndStreamingFailuresAreIndependent()
+13: QINFO  : DetectionSourceTests::frozen20mZeroInputHasExplicitFiniteNumericalGuard() 20M zero IQ: reference float32 density underflows; finite cpu-f64-fft-density-log-ddof1-v1 floor dB -496.213 power floor and std epsilon are distinct
+13: PASS   : DetectionSourceTests::frozen20mZeroInputHasExplicitFiniteNumericalGuard()
+13: PASS   : DetectionSourceTests::wavContainerOverridesAndRawReadBudgetAreRejected()
+13: PASS   : DetectionSourceTests::selectedIntegerChannelAndInvalidIqUseActualReader()
+13: PASS   : DetectionSourceTests::exactPlanningBeyondDoubleIntegerRange()
+13: QINFO  : DetectionSourceTests::actual20mTorchCpuGolden() 20M real WAV / independent Torch CPU oracle: sampled PSD max error dB 3.8147e-05 normalized tensor max error 5.00679e-06
+13: PASS   : DetectionSourceTests::actual20mTorchCpuGolden()
+13: PASS   : DetectionSourceTests::cleanupTestCase()
+13: Totals: 15 passed, 0 failed, 0 skipped, 0 blacklisted, 778ms
+13: ********* Finished testing of DetectionSourceTests *********
+13: 
+4/4 Test #13: signal_studio_detection_source ..........   Passed    1.05 sec
+
+The following tests passed:
+	signal_studio_detection_model_backend
+	signal_studio_detection_store
+	signal_studio_detection_task
+	signal_studio_detection_source
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  10.47 sec

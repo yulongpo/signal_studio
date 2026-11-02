@@ -1,0 +1,1 @@
+UX-R4 Release software=True: 21 main scenes and details passed. D:\project\signal_studio_rebuild\out\tasks\wideband-detection\UX-R4\diagnostics\accepted-release-software\report.json

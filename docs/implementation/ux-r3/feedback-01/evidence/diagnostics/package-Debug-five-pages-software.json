@@ -1,0 +1,2528 @@
+{
+  "acceptanceSymbolRateHypothesisHz": 1000000,
+  "activeChannel": {
+    "bandwidthHz": 1200000,
+    "centerFrequencyHz": 2511200000,
+    "configVersion": "1",
+    "dataStatus": "真实 DDC · STFT · 补零最多 640/帧",
+    "id": "channel-2",
+    "name": "Signal-01",
+    "outputSampleRateHz": 4000000,
+    "pageIndex": 0
+  },
+  "activeFile": {
+    "auxiliaryMode": "waveform",
+    "centerFrequencyHz": 2500000000,
+    "declaredBandwidthHz": 102400000,
+    "durationSeconds": 0.00256,
+    "mainMode": "timeFrequency",
+    "name": "IQ0 · 阿拉善信号样例",
+    "path": ":/signalstudio/demo/narrowband_demo.iq",
+    "realIq": true,
+    "sampleCount": "262144",
+    "sampleRateHz": 102400000
+  },
+  "analysis": {
+    "carrierLocked": false,
+    "cfoHz": 0,
+    "channelId": "channel-2",
+    "conditionalEvm": -1,
+    "constellationStage": 0,
+    "continuousIqSamples": 7549,
+    "diagnostic": "",
+    "eyeStage": 0,
+    "eyeTraces": 256,
+    "outputRateHz": 4000000,
+    "pointCount": 7549,
+    "ready": true,
+    "realSource": true,
+    "samplesPerSymbol": 4,
+    "symbolRateHz": 1000000,
+    "timingLocked": false
+  },
+  "auxiliaryRendering": {
+    "acceptedHeatmapPreview": false,
+    "actualFrameInputSamples": "2048",
+    "actualSpectralFrames": 255,
+    "analysisError": "",
+    "analysisPoints": 2048,
+    "axisLayout": {
+      "dpr": 1.5,
+      "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+      "header": {
+        "height": 16,
+        "width": 612,
+        "x": 8,
+        "y": 4
+      },
+      "headerText": "X 时间 (ms) · Y 幅度 RMS（ADC 计数）",
+      "leftGainFrom88": 31,
+      "localBottom": 51,
+      "localLeft": 57,
+      "localTop": 32,
+      "logicalDpiX": 96,
+      "logicalDpiY": 96,
+      "mode": "A",
+      "plot": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 32
+      },
+      "sharedLeft": 57,
+      "tickHeight": 16,
+      "tickLabelWidth": 42,
+      "widgetHeight": 99,
+      "widgetWidth": 628,
+      "xOrigin": "",
+      "xTickBand": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 60
+      },
+      "xTicks": [
+        "0",
+        "0.512",
+        "1.024",
+        "1.536",
+        "2.048",
+        "2.56"
+      ],
+      "xTitle": "时间 (ms)",
+      "xTitleBand": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 79
+      },
+      "yOrigin": "",
+      "yTicks": [
+        "21103.0",
+        "21197.4",
+        "21291.8",
+        "21386.2",
+        "21480.6"
+      ],
+      "yTitle": "幅度 RMS（ADC 计数）",
+      "yUnit": "ADC 计数"
+    },
+    "binHz": 50000,
+    "colorTransformGenerations": 0,
+    "committedGeneration": 8,
+    "cpuWallTimings": {},
+    "cursorPinned": false,
+    "curveCacheHits": 18,
+    "curvePathElements": 0,
+    "curveRasterMethod": "QPainter::drawLines software fallback",
+    "curveReductions": 2,
+    "curveSourceGenerations": 5,
+    "drawnLineSegments": 0,
+    "drawnPoints": 0,
+    "effectiveOverlap": 0.5,
+    "framePsd": false,
+    "generation": 9,
+    "gpuChartDrawCalls": 0,
+    "gpuDataDrawCalls": 0,
+    "gpuDataRenderer": "QPainter software fallback",
+    "gpuHeatmapDrawCalls": 0,
+    "gpuPaletteUploads": 0,
+    "gpuUploadsPending": false,
+    "gpuVertexUploads": 0,
+    "heatmapCacheHits": 0,
+    "heatmapColorMapping": "QImage color table software fallback",
+    "heatmapHeight": -1,
+    "heatmapWidth": -1,
+    "inverseCursorDrawCalls": 0,
+    "lastMatrixMs": 0,
+    "matrixReductions": 0,
+    "noiseBandwidthHz": 75036.63898387873,
+    "overlayUploads": 0,
+    "paddedFrames": 0,
+    "pinnedFrequencyHz": 0,
+    "pinnedSourceSample": "0",
+    "powerGenerations": 0,
+    "quality": "preview",
+    "requestedGeneration": 9,
+    "requestedHeatmapHeight": -1,
+    "requestedHeatmapWidth": -1,
+    "requestedPixels": 1,
+    "requiredSeconds": 2E-05,
+    "samplePointCount": 0,
+    "samplePointsVisible": false,
+    "settled": false,
+    "sourcePoints": 0,
+    "staleDrops": 0,
+    "textureUploads": 0,
+    "workerIdle": true
+  },
+  "backend": "QPainter 软件绘制",
+  "captureHasVisibleContent": true,
+  "capturePixelSize": [
+    3840,
+    2160
+  ],
+  "completedFrames": 0,
+  "devicePixelRatio": 1.5,
+  "files": 1,
+  "fourK150Verified": true,
+  "freshOverlayFrame": true,
+  "fullScreen": true,
+  "gpuDataDrawCalls": 0,
+  "gpuVertexUploads": 0,
+  "hardwareRenderer": false,
+  "heatmapUploads": 0,
+  "iqInteraction": {},
+  "logicalWindowSize": [
+    2560,
+    1440
+  ],
+  "mainPlotHeight": 92,
+  "mainRendering": {
+    "acceptedHeatmapPreview": true,
+    "actualFrameInputSamples": "2048",
+    "actualSpectralFrames": 255,
+    "analysisError": "",
+    "analysisPoints": 2048,
+    "axisLayout": {
+      "dpr": 1.5,
+      "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+      "header": {
+        "height": 16,
+        "width": 612,
+        "x": 8,
+        "y": 4
+      },
+      "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+      "leftGainFrom88": 31,
+      "localBottom": 51,
+      "localLeft": 50,
+      "localTop": 32,
+      "logicalDpiX": 96,
+      "logicalDpiY": 96,
+      "mode": "A",
+      "plot": {
+        "height": 92,
+        "width": 549,
+        "x": 57,
+        "y": 32
+      },
+      "sharedLeft": 57,
+      "tickHeight": 16,
+      "tickLabelWidth": 35,
+      "widgetHeight": 175,
+      "widgetWidth": 628,
+      "xOrigin": "",
+      "xTickBand": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 136
+      },
+      "xTicks": [
+        "0",
+        "0.512",
+        "1.024",
+        "1.536",
+        "2.048",
+        "2.56"
+      ],
+      "xTitle": "时间 (ms)",
+      "xTitleBand": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 155
+      },
+      "yOrigin": "",
+      "yTicks": [
+        "2448.8",
+        "2474.4",
+        "2500",
+        "2525.6",
+        "2551.2"
+      ],
+      "yTitle": "频率 (MHz)",
+      "yUnit": "MHz"
+    },
+    "binHz": 50000,
+    "colorTransformGenerations": 2,
+    "committedGeneration": 7,
+    "cpuWallTimings": {},
+    "cursorPinned": false,
+    "curveCacheHits": 0,
+    "curvePathElements": 0,
+    "curveRasterMethod": "QRhi heatmap texture",
+    "curveReductions": 0,
+    "curveSourceGenerations": 0,
+    "drawnLineSegments": 0,
+    "drawnPoints": 10800,
+    "effectiveOverlap": 0.5,
+    "framePsd": false,
+    "generation": 7,
+    "gpuChartDrawCalls": 0,
+    "gpuDataDrawCalls": 0,
+    "gpuDataRenderer": "QPainter software fallback",
+    "gpuHeatmapDrawCalls": 0,
+    "gpuPaletteUploads": 0,
+    "gpuUploadsPending": false,
+    "gpuVertexUploads": 0,
+    "heatmapCacheHits": 0,
+    "heatmapColorMapping": "QImage color table software fallback",
+    "heatmapHeight": 90,
+    "heatmapWidth": 120,
+    "inverseCursorDrawCalls": 0,
+    "lastMatrixMs": 9.2125,
+    "matrixReductions": 1,
+    "noiseBandwidthHz": 75036.63898387873,
+    "overlayUploads": 0,
+    "paddedFrames": 0,
+    "pinnedFrequencyHz": 0,
+    "pinnedSourceSample": "0",
+    "powerGenerations": 4,
+    "quality": "preview",
+    "requestedGeneration": 7,
+    "requestedHeatmapHeight": 90,
+    "requestedHeatmapWidth": 120,
+    "requestedPixels": 10800,
+    "requiredSeconds": 2E-05,
+    "samplePointCount": 0,
+    "samplePointsVisible": false,
+    "settled": false,
+    "sourcePoints": 522240,
+    "staleDrops": 3,
+    "textureUploads": 0,
+    "workerIdle": true
+  },
+  "narrowbandPages": [
+    {
+      "backend": "QPainter 软件绘制",
+      "completedFrames": 0,
+      "gpuDataDrawCalls": 0,
+      "gpuReady": false,
+      "gpuVertexUploads": 0,
+      "pageIndex": 0,
+      "settled": true,
+      "textureUploads": 0
+    },
+    {
+      "backend": "QPainter 软件绘制",
+      "completedFrames": 0,
+      "gpuDataDrawCalls": 0,
+      "gpuReady": false,
+      "gpuVertexUploads": 0,
+      "pageIndex": 1,
+      "settled": true,
+      "textureUploads": 0
+    },
+    {
+      "backend": "QPainter 软件绘制",
+      "completedFrames": 0,
+      "gpuDataDrawCalls": 0,
+      "gpuReady": false,
+      "gpuVertexUploads": 0,
+      "pageIndex": 2,
+      "settled": true,
+      "textureUploads": 0
+    },
+    {
+      "backend": "QPainter 软件绘制",
+      "completedFrames": 0,
+      "gpuDataDrawCalls": 0,
+      "gpuReady": false,
+      "gpuVertexUploads": 0,
+      "pageIndex": 3,
+      "settled": true,
+      "textureUploads": 0
+    },
+    {
+      "backend": "QPainter 软件绘制",
+      "completedFrames": 0,
+      "gpuDataDrawCalls": 0,
+      "gpuReady": false,
+      "gpuVertexUploads": 0,
+      "pageIndex": 4,
+      "settled": true,
+      "textureUploads": 0
+    }
+  ],
+  "narrowbandPagesVerified": true,
+  "narrowbandRendering": {
+    "actualFrames": 10,
+    "analysisError": "",
+    "analysisGeneration": "1",
+    "analysisPending": false,
+    "analysisPoints": 2048,
+    "backend": "QPainter 软件绘制",
+    "binHz": 1953.125,
+    "chartLayouts": [
+      {
+        "areaGain": 24960,
+        "areaGainFraction": 0.08980032379924441,
+        "axisFullText": "X 源文件时间 (ms) · Y I / Q (ADC 计数等效值) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "axisShortText": "X 源时间 (ms) · Y I / Q (ADC 计数等效值)",
+        "baselineArea": 277950,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 327,
+          "width": 850,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 382,
+        "canvasWidth": 932,
+        "chart": "narrowbandWaveformPanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "17",
+        "headerAxisMinimumWidth": 216,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 466,
+          "x": 39,
+          "y": 7
+        },
+        "headerAxisText": "X 源文件时间 (ms) · Y I / Q (ADC 计数等效值) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "headerAxisTooltip": "X 源文件时间 (ms) · Y I / Q (ADC 计数等效值) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "headerHeight": 30,
+        "mode": 0,
+        "plotArea": 302910,
+        "plotRect": {
+          "height": 345,
+          "width": 878,
+          "x": 51,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": true,
+        "xAxisLabel": "源文件时间 (ms)",
+        "xOrigin": "时间零点：源样本 #0 · Fs=102400000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 878,
+          "x": 51,
+          "y": 362
+        },
+        "xTicks": [
+          {
+            "baselineX": 52,
+            "baselineY": 374.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 51,
+              "y": 362
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 257.3125,
+            "baselineY": 374.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 256.3125,
+              "y": 362
+            },
+            "text": "0.48",
+            "value": 0.48
+          },
+          {
+            "baselineX": 476.8125,
+            "baselineY": 374.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 475.8125,
+              "y": 362
+            },
+            "text": "0.96",
+            "value": 0.96
+          },
+          {
+            "baselineX": 695.9765625,
+            "baselineY": 374.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 29.046875,
+              "x": 694.9765625,
+              "y": 362
+            },
+            "text": "1.44",
+            "value": 1.44
+          },
+          {
+            "baselineX": 901.625,
+            "baselineY": 374.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 900.625,
+              "y": 362
+            },
+            "text": "1.92",
+            "value": 1.92
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "I / Q (ADC 计数等效值)",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 361.03125,
+          "width": 42.046875,
+          "x": 3.953125,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 12.03125,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 34.96875,
+              "x": 11.03125,
+              "y": 3.984375
+            },
+            "text": "28539",
+            "value": 28538.748697916668
+          },
+          {
+            "baselineX": 11.9375,
+            "baselineY": 102.265625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.0625,
+              "x": 10.9375,
+              "y": 90.234375
+            },
+            "text": "14271",
+            "value": 14271.040364583334
+          },
+          {
+            "baselineX": 38.40625,
+            "baselineY": 188.515625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 37.40625,
+              "y": 176.484375
+            },
+            "text": "3",
+            "value": 3.33203125
+          },
+          {
+            "baselineX": 4.953125,
+            "baselineY": 274.765625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 42.046875,
+              "x": 3.953125,
+              "y": 262.734375
+            },
+            "text": "-14264",
+            "value": -14264.376302083332
+          },
+          {
+            "baselineX": 5.4375,
+            "baselineY": 361.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 41.5625,
+              "x": 4.4375,
+              "y": 348.984375
+            },
+            "text": "-28532",
+            "value": -28532.084635416668
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 29772,
+        "areaGainFraction": 0.1072389535449152,
+        "axisFullText": "X 基带 频率 (MHz) · Y 功率谱密度 (dBFS/Hz) · 基带 0 Hz = RF 2511200000 Hz",
+        "axisShortText": "X 基带 (MHz) · Y dBFS/Hz",
+        "baselineArea": 277623,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 327,
+          "width": 849,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 382,
+        "canvasWidth": 931,
+        "chart": "narrowbandPsdPanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "15",
+        "headerAxisMinimumWidth": 137,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 408,
+          "x": 75,
+          "y": 7
+        },
+        "headerAxisText": "X 基带 频率 (MHz) · Y 功率谱密度 (dBFS/Hz) · 基带 0 Hz = RF 2511200000 Hz",
+        "headerAxisTooltip": "X 基带 频率 (MHz) · Y 功率谱密度 (dBFS/Hz) · 基带 0 Hz = RF 2511200000 Hz",
+        "headerHeight": 30,
+        "mode": 1,
+        "plotArea": 307395,
+        "plotRect": {
+          "height": 345,
+          "width": 891,
+          "x": 37,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": true,
+        "xAxisLabel": "基带 频率 (MHz)",
+        "xOrigin": "基带 0 Hz = RF 2511200000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 891,
+          "x": 37,
+          "y": 362
+        },
+        "xTicks": [
+          {
+            "baselineX": 38,
+            "baselineY": 374.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 37,
+              "y": 362
+            },
+            "text": "-2",
+            "value": -2
+          },
+          {
+            "baselineX": 253.15625,
+            "baselineY": 374.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 252.15625,
+              "y": 362
+            },
+            "text": "-1",
+            "value": -1
+          },
+          {
+            "baselineX": 479.203125,
+            "baselineY": 374.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 478.203125,
+              "y": 362
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 701.953125,
+            "baselineY": 374.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 700.953125,
+              "y": 362
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 920.40625,
+            "baselineY": 374.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 919.40625,
+              "y": 362
+            },
+            "text": "2",
+            "value": 2
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "dBFS/Hz",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 361.03125,
+          "width": 28.5625,
+          "x": 3.4375,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 24.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 23.40625,
+              "y": 3.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 11.21875,
+            "baselineY": 102.265625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 10.21875,
+              "y": 90.234375
+            },
+            "text": "-30",
+            "value": -30
+          },
+          {
+            "baselineX": 11.21875,
+            "baselineY": 188.515625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 10.21875,
+              "y": 176.484375
+            },
+            "text": "-60",
+            "value": -60
+          },
+          {
+            "baselineX": 11.21875,
+            "baselineY": 274.765625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 10.21875,
+              "y": 262.734375
+            },
+            "text": "-90",
+            "value": -90
+          },
+          {
+            "baselineX": 4.4375,
+            "baselineY": 361.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.5625,
+              "x": 3.4375,
+              "y": 348.984375
+            },
+            "text": "-120",
+            "value": -120
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 73984,
+        "areaGainFraction": 0.05576560116258733,
+        "axisFullText": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "axisShortText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "baselineArea": 1326696,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 742,
+          "width": 1788,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 797,
+        "canvasWidth": 1870,
+        "chart": "narrowbandStftPanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "7",
+        "headerAxisMinimumWidth": 155,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 480,
+          "x": 51,
+          "y": 7
+        },
+        "headerAxisText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "headerAxisTooltip": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "headerHeight": 30,
+        "mode": 2,
+        "plotArea": 1400680,
+        "plotRect": {
+          "height": 760,
+          "width": 1843,
+          "x": 24,
+          "y": 12
+        },
+        "rasterRevision": "nb-power/7/0/80",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": true,
+        "xAxisLabel": "源文件时间 (ms)",
+        "xOrigin": "时间零点：源样本 #0 · Fs=102400000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 1843,
+          "x": 24,
+          "y": 777
+        },
+        "xTicks": [
+          {
+            "baselineX": 25,
+            "baselineY": 789.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 24,
+              "y": 777
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 471.5625,
+            "baselineY": 789.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 470.5625,
+              "y": 777
+            },
+            "text": "0.48",
+            "value": 0.48
+          },
+          {
+            "baselineX": 932.3125,
+            "baselineY": 789.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 931.3125,
+              "y": 777
+            },
+            "text": "0.96",
+            "value": 0.96
+          },
+          {
+            "baselineX": 1392.7265625,
+            "baselineY": 789.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 29.046875,
+              "x": 1391.7265625,
+              "y": 777
+            },
+            "text": "1.44",
+            "value": 1.44
+          },
+          {
+            "baselineX": 1839.625,
+            "baselineY": 789.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1838.625,
+              "y": 777
+            },
+            "text": "1.92",
+            "value": 1.92
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "基带 频率 (MHz)",
+        "yOrigin": "基带 0 Hz = RF 2511200000 Hz",
+        "yTickBand": {
+          "height": 776.03125,
+          "width": 15.1875,
+          "x": 3.8125,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 11.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 3.984375
+            },
+            "text": "2",
+            "value": 2
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 206.015625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 193.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 396.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 383.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 586.015625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 573.984375
+            },
+            "text": "-1",
+            "value": -1
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 776.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 763.984375
+            },
+            "text": "-2",
+            "value": -2
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 55724,
+        "areaGainFraction": 0.07601353194740001,
+        "axisFullText": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "axisShortText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "baselineArea": 733080,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 410,
+          "width": 1788,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 465,
+        "canvasWidth": 1870,
+        "chart": "narrowbandModulationStftChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "9",
+        "headerAxisMinimumWidth": 155,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 480,
+          "x": 51,
+          "y": 7
+        },
+        "headerAxisText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "headerAxisTooltip": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "headerHeight": 30,
+        "mode": 2,
+        "plotArea": 788804,
+        "plotRect": {
+          "height": 428,
+          "width": 1843,
+          "x": 24,
+          "y": 12
+        },
+        "rasterRevision": "nb-power/7/0/80",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "源文件时间 (ms)",
+        "xOrigin": "时间零点：源样本 #0 · Fs=102400000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 1843,
+          "x": 24,
+          "y": 445
+        },
+        "xTicks": [
+          {
+            "baselineX": 25,
+            "baselineY": 457.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 24,
+              "y": 445
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 471.5625,
+            "baselineY": 457.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 470.5625,
+              "y": 445
+            },
+            "text": "0.48",
+            "value": 0.48
+          },
+          {
+            "baselineX": 932.3125,
+            "baselineY": 457.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 931.3125,
+              "y": 445
+            },
+            "text": "0.96",
+            "value": 0.96
+          },
+          {
+            "baselineX": 1392.7265625,
+            "baselineY": 457.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 29.046875,
+              "x": 1391.7265625,
+              "y": 445
+            },
+            "text": "1.44",
+            "value": 1.44
+          },
+          {
+            "baselineX": 1839.625,
+            "baselineY": 457.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1838.625,
+              "y": 445
+            },
+            "text": "1.92",
+            "value": 1.92
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "基带 频率 (MHz)",
+        "yOrigin": "基带 0 Hz = RF 2511200000 Hz",
+        "yTickBand": {
+          "height": 444.03125,
+          "width": 15.1875,
+          "x": 3.8125,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 11.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 3.984375
+            },
+            "text": "2",
+            "value": 2
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 123.015625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 110.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 230.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 217.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 337.015625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 324.984375
+            },
+            "text": "-1",
+            "value": -1
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 444.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 431.984375
+            },
+            "text": "-2",
+            "value": -2
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 63636,
+        "areaGainFraction": 0.06565637806584212,
+        "axisFullText": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "axisShortText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "baselineArea": 969228,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 654,
+          "width": 1482,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 709,
+        "canvasWidth": 1564,
+        "chart": "recognitionStftPanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "9",
+        "headerAxisMinimumWidth": 155,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 480,
+          "x": 75,
+          "y": 7
+        },
+        "headerAxisText": "X 源时间 (ms) · Y 基带 (MHz)",
+        "headerAxisTooltip": "X 源文件时间 (ms) · Y 基带 频率 (MHz) · 时间零点：源样本 #0 · Fs=102400000 Hz · 基带 0 Hz = RF 2511200000 Hz",
+        "headerHeight": 30,
+        "mode": 2,
+        "plotArea": 1032864,
+        "plotRect": {
+          "height": 672,
+          "width": 1537,
+          "x": 24,
+          "y": 12
+        },
+        "rasterRevision": "nb-power/7/0/80",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "源文件时间 (ms)",
+        "xOrigin": "时间零点：源样本 #0 · Fs=102400000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 1537,
+          "x": 24,
+          "y": 689
+        },
+        "xTicks": [
+          {
+            "baselineX": 25,
+            "baselineY": 701.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 24,
+              "y": 689
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 395.0625,
+            "baselineY": 701.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 394.0625,
+              "y": 689
+            },
+            "text": "0.48",
+            "value": 0.48
+          },
+          {
+            "baselineX": 779.3125,
+            "baselineY": 701.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 778.3125,
+              "y": 689
+            },
+            "text": "0.96",
+            "value": 0.96
+          },
+          {
+            "baselineX": 1163.2265625,
+            "baselineY": 701.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 29.046875,
+              "x": 1162.2265625,
+              "y": 689
+            },
+            "text": "1.44",
+            "value": 1.44
+          },
+          {
+            "baselineX": 1533.625,
+            "baselineY": 701.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1532.625,
+              "y": 689
+            },
+            "text": "1.92",
+            "value": 1.92
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "基带 频率 (MHz)",
+        "yOrigin": "基带 0 Hz = RF 2511200000 Hz",
+        "yTickBand": {
+          "height": 688.03125,
+          "width": 15.1875,
+          "x": 3.8125,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 11.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 3.984375
+            },
+            "text": "2",
+            "value": 2
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 184.015625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 171.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 11.40625,
+            "baselineY": 352.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 10.40625,
+              "y": 339.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 520.015625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 507.984375
+            },
+            "text": "-1",
+            "value": -1
+          },
+          {
+            "baselineX": 4.8125,
+            "baselineY": 688.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 3.8125,
+              "y": 675.984375
+            },
+            "text": "-2",
+            "value": -2
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 24048,
+        "areaGainFraction": 0.05537428531296551,
+        "axisFullText": "X I (解码 IQ 幅度) · Y Q (解码 IQ 幅度)",
+        "axisShortText": "X I (解码 IQ 幅度) · Y Q (解码 IQ 幅度)",
+        "baselineArea": 434281,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 659,
+          "width": 659,
+          "x": 630.5,
+          "y": 14
+        },
+        "canvasHeight": 714,
+        "canvasWidth": 1870,
+        "chart": "narrowbandConstellationLargeChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": true,
+        "geometryRevision": "12",
+        "headerAxisMinimumWidth": 200,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 200,
+          "x": 89,
+          "y": 7
+        },
+        "headerAxisText": "X I (解码 IQ 幅度) · Y Q (解码 IQ 幅度)",
+        "headerAxisTooltip": "X I (解码 IQ 幅度) · Y Q (解码 IQ 幅度)",
+        "headerHeight": 30,
+        "mode": 3,
+        "plotArea": 458329,
+        "plotRect": {
+          "height": 677,
+          "width": 677,
+          "x": 617,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "I (解码 IQ 幅度)",
+        "xOrigin": "",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 677,
+          "x": 617,
+          "y": 694
+        },
+        "xTicks": [
+          {
+            "baselineX": 618,
+            "baselineY": 706.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.046875,
+              "x": 617,
+              "y": 694
+            },
+            "text": "-0.72",
+            "value": -0.7190120995044709
+          },
+          {
+            "baselineX": 769.609375,
+            "baselineY": 706.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.28125,
+              "x": 768.609375,
+              "y": 694
+            },
+            "text": "-0.36",
+            "value": -0.35954211056232455
+          },
+          {
+            "baselineX": 948.71875,
+            "baselineY": 706.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.5625,
+              "x": 947.71875,
+              "y": 694
+            },
+            "text": "-0",
+            "value": -7.212162017822266E-05
+          },
+          {
+            "baselineX": 1111.5625,
+            "baselineY": 706.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1110.5625,
+              "y": 694
+            },
+            "text": "0.36",
+            "value": 0.3593978673219682
+          },
+          {
+            "baselineX": 1266.625,
+            "baselineY": 706.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1265.625,
+              "y": 694
+            },
+            "text": "0.72",
+            "value": 0.7188678562641144
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "Q (解码 IQ 幅度)",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 693.03125,
+          "width": 35.28125,
+          "x": 576.71875,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 584.625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 583.625,
+              "y": 3.984375
+            },
+            "text": "0.72",
+            "value": 0.7188678562641144
+          },
+          {
+            "baselineX": 584.625,
+            "baselineY": 185.265625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 583.625,
+              "y": 173.234375
+            },
+            "text": "0.36",
+            "value": 0.3593978673219681
+          },
+          {
+            "baselineX": 597.4375,
+            "baselineY": 354.515625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.5625,
+              "x": 596.4375,
+              "y": 342.484375
+            },
+            "text": "-0",
+            "value": -7.212162017822266E-05
+          },
+          {
+            "baselineX": 577.71875,
+            "baselineY": 523.765625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.28125,
+              "x": 576.71875,
+              "y": 511.734375
+            },
+            "text": "-0.36",
+            "value": -0.35954211056232466
+          },
+          {
+            "baselineX": 577.953125,
+            "baselineY": 693.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.046875,
+              "x": 576.953125,
+              "y": 680.984375
+            },
+            "text": "-0.72",
+            "value": -0.7190120995044709
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 25668,
+        "areaGainFraction": 0.05179009555785119,
+        "axisFullText": "X I (归一化) · Y Q (归一化)",
+        "axisShortText": "X I (归一化) · Y Q (归一化)",
+        "baselineArea": 495616,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 704,
+          "width": 704,
+          "x": 139,
+          "y": 14
+        },
+        "canvasHeight": 759,
+        "canvasWidth": 932,
+        "chart": "demodConstellationPanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": true,
+        "geometryRevision": "22",
+        "headerAxisMinimumWidth": 139,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 139,
+          "x": 121,
+          "y": 7
+        },
+        "headerAxisText": "X I (归一化) · Y Q (归一化)",
+        "headerAxisTooltip": "X I (归一化) · Y Q (归一化)",
+        "headerHeight": 30,
+        "mode": 3,
+        "plotArea": 521284,
+        "plotRect": {
+          "height": 722,
+          "width": 722,
+          "x": 122,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "I (归一化)",
+        "xOrigin": "",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 722,
+          "x": 122,
+          "y": 739
+        },
+        "xTicks": [
+          {
+            "baselineX": 123,
+            "baselineY": 751.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 122,
+              "y": 739
+            },
+            "text": "-1",
+            "value": -1
+          },
+          {
+            "baselineX": 289.3125,
+            "baselineY": 751.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 288.3125,
+              "y": 739
+            },
+            "text": "-0.5",
+            "value": -0.5
+          },
+          {
+            "baselineX": 479.703125,
+            "baselineY": 751.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 478.703125,
+              "y": 739
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 653.609375,
+            "baselineY": 751.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 652.609375,
+              "y": 739
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 836.40625,
+            "baselineY": 751.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 835.40625,
+              "y": 739
+            },
+            "text": "1",
+            "value": 1
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "Q (归一化)",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 738.03125,
+          "width": 28.375,
+          "x": 88.625,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 109.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 108.40625,
+              "y": 3.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 96.21875,
+            "baselineY": 196.515625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 95.21875,
+              "y": 184.484375
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 109.40625,
+            "baselineY": 377.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 108.40625,
+              "y": 364.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 89.625,
+            "baselineY": 557.515625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 88.625,
+              "y": 545.484375
+            },
+            "text": "-0.5",
+            "value": -0.5
+          },
+          {
+            "baselineX": 102.8125,
+            "baselineY": 738.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 101.8125,
+              "y": 725.984375
+            },
+            "text": "-1",
+            "value": -1
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 73449,
+        "areaGainFraction": 0.03538230754556637,
+        "axisFullText": "X 时间 (符号周期) · Y 解码 IQ 幅度 · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "axisShortText": "X 时间 (UI) · Y 解码 IQ 幅度",
+        "baselineArea": 2075868,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 1161,
+          "width": 1788,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 1216,
+        "canvasWidth": 1870,
+        "chart": "narrowbandEyeLargeChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "12",
+        "headerAxisMinimumWidth": 146,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 442,
+          "x": 89,
+          "y": 7
+        },
+        "headerAxisText": "X 时间 (符号周期) · Y 解码 IQ 幅度 · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "headerAxisTooltip": "X 时间 (符号周期) · Y 解码 IQ 幅度 · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "headerHeight": 30,
+        "mode": 4,
+        "plotArea": 2149317,
+        "plotRect": {
+          "height": 1179,
+          "width": 1823,
+          "x": 44,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "时间 (符号周期)",
+        "xOrigin": "1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 1823,
+          "x": 44,
+          "y": 1196
+        },
+        "xTicks": [
+          {
+            "baselineX": 45,
+            "baselineY": 1208.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 44,
+              "y": 1196
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 489.859375,
+            "baselineY": 1208.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 488.859375,
+              "y": 1196
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 952.203125,
+            "baselineY": 1208.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 951.203125,
+              "y": 1196
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 1401.359375,
+            "baselineY": 1208.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 1400.359375,
+              "y": 1196
+            },
+            "text": "1.5",
+            "value": 1.5
+          },
+          {
+            "baselineX": 1859.40625,
+            "baselineY": 1208.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 1858.40625,
+              "y": 1196
+            },
+            "text": "2",
+            "value": 2
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "解码 IQ 幅度",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 1195.03125,
+          "width": 35.28125,
+          "x": 3.71875,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 11.625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 10.625,
+              "y": 3.984375
+            },
+            "text": "0.72",
+            "value": 0.7197852362838448
+          },
+          {
+            "baselineX": 11.625,
+            "baselineY": 310.765625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 10.625,
+              "y": 298.734375
+            },
+            "text": "0.36",
+            "value": 0.35990277206567933
+          },
+          {
+            "baselineX": 31.40625,
+            "baselineY": 605.515625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 30.40625,
+              "y": 593.484375
+            },
+            "text": "0",
+            "value": 2.0307847513834076E-05
+          },
+          {
+            "baselineX": 4.71875,
+            "baselineY": 900.265625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.28125,
+              "x": 3.71875,
+              "y": 888.234375
+            },
+            "text": "-0.36",
+            "value": -0.35986215637065166
+          },
+          {
+            "baselineX": 4.953125,
+            "baselineY": 1195.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 35.046875,
+              "x": 3.953125,
+              "y": 1182.984375
+            },
+            "text": "-0.72",
+            "value": -0.7197446205888172
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 45606,
+        "areaGainFraction": 0.076303003533569,
+        "axisFullText": "X 时间 (符号周期) · Y 幅度 (归一化) · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "axisShortText": "X 时间 (UI) · Y 幅度 (归一化)",
+        "baselineArea": 597696,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 704,
+          "width": 849,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 759,
+        "canvasWidth": 931,
+        "chart": "demodEyePanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "22",
+        "headerAxisMinimumWidth": 150,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 445,
+          "x": 97,
+          "y": 7
+        },
+        "headerAxisText": "X 时间 (符号周期) · Y 幅度 (归一化) · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "headerAxisTooltip": "X 时间 (符号周期) · Y 幅度 (归一化) · 1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "headerHeight": 30,
+        "mode": 4,
+        "plotArea": 643302,
+        "plotRect": {
+          "height": 722,
+          "width": 891,
+          "x": 37,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "时间 (符号周期)",
+        "xOrigin": "1 UI = 1 符号周期；折叠时间，不是源文件时间",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 891,
+          "x": 37,
+          "y": 739
+        },
+        "xTicks": [
+          {
+            "baselineX": 38,
+            "baselineY": 751.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 37,
+              "y": 739
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 249.859375,
+            "baselineY": 751.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 248.859375,
+              "y": 739
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 479.203125,
+            "baselineY": 751.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 478.203125,
+              "y": 739
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 695.359375,
+            "baselineY": 751.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 694.359375,
+              "y": 739
+            },
+            "text": "1.5",
+            "value": 1.5
+          },
+          {
+            "baselineX": 920.40625,
+            "baselineY": 751.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 919.40625,
+              "y": 739
+            },
+            "text": "2",
+            "value": 2
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "幅度 (归一化)",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 738.03125,
+          "width": 28.375,
+          "x": 3.625,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 24.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 23.40625,
+              "y": 3.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 11.21875,
+            "baselineY": 196.515625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 10.21875,
+              "y": 184.484375
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 24.40625,
+            "baselineY": 377.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 23.40625,
+              "y": 364.984375
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 4.625,
+            "baselineY": 557.515625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 3.625,
+              "y": 545.484375
+            },
+            "text": "-0.5",
+            "value": -0.5
+          },
+          {
+            "baselineX": 17.8125,
+            "baselineY": 738.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 15.1875,
+              "x": 16.8125,
+              "y": 725.984375
+            },
+            "text": "-1",
+            "value": -1
+          }
+        ],
+        "yTitleBand": 0
+      },
+      {
+        "areaGain": 39360,
+        "areaGainFraction": 0.09351656497690608,
+        "axisFullText": "X 源文件时间 (ms) · Y 置信度 (0–1) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "axisShortText": "X 源时间 (ms) · Y 置信度 (0–1)",
+        "baselineArea": 420888,
+        "baselineModel": "previous fixed 66/14/16/41 margins at current canvas size",
+        "baselinePlotRect": {
+          "height": 284,
+          "width": 1482,
+          "x": 66,
+          "y": 14
+        },
+        "canvasHeight": 339,
+        "canvasWidth": 1564,
+        "chart": "recognitionTimelinePanelChart",
+        "devicePixelRatio": 1.5,
+        "equalAxisScale": false,
+        "geometryRevision": "9",
+        "headerAxisMinimumWidth": 161,
+        "headerAxisRect": {
+          "height": 16,
+          "width": 410,
+          "x": 145,
+          "y": 7
+        },
+        "headerAxisText": "X 源文件时间 (ms) · Y 置信度 (0–1) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "headerAxisTooltip": "X 源文件时间 (ms) · Y 置信度 (0–1) · 时间零点：源样本 #0 · Fs=102400000 Hz",
+        "headerHeight": 30,
+        "mode": 5,
+        "plotArea": 460248,
+        "plotRect": {
+          "height": 302,
+          "width": 1524,
+          "x": 37,
+          "y": 12
+        },
+        "rasterRevision": "",
+        "tickFont": "Consolas,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "visible": false,
+        "xAxisLabel": "源文件时间 (ms)",
+        "xOrigin": "时间零点：源样本 #0 · Fs=102400000 Hz",
+        "xTickBand": {
+          "height": 16.03125,
+          "width": 1524,
+          "x": 37,
+          "y": 319
+        },
+        "xTicks": [
+          {
+            "baselineX": 38,
+            "baselineY": 331.03125,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 37,
+              "y": 319
+            },
+            "text": "0",
+            "value": 0
+          },
+          {
+            "baselineX": 404.8125,
+            "baselineY": 331.03125,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 403.8125,
+              "y": 319
+            },
+            "text": "0.48",
+            "value": 0.48
+          },
+          {
+            "baselineX": 785.8125,
+            "baselineY": 331.03125,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 784.8125,
+              "y": 319
+            },
+            "text": "0.96",
+            "value": 0.96
+          },
+          {
+            "baselineX": 1166.4765625,
+            "baselineY": 331.03125,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 29.046875,
+              "x": 1165.4765625,
+              "y": 319
+            },
+            "text": "1.44",
+            "value": 1.44
+          },
+          {
+            "baselineX": 1533.625,
+            "baselineY": 331.03125,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 1532.625,
+              "y": 319
+            },
+            "text": "1.92",
+            "value": 1.92
+          }
+        ],
+        "xTitleBand": 0,
+        "yAxisLabel": "置信度 (0–1)",
+        "yOrigin": "",
+        "yTickBand": {
+          "height": 318.03125,
+          "width": 28.375,
+          "x": 3.625,
+          "y": 3.984375
+        },
+        "yTicks": [
+          {
+            "baselineX": 24.40625,
+            "baselineY": 16.015625,
+            "fraction": 0,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 23.40625,
+              "y": 3.984375
+            },
+            "text": "1",
+            "value": 1
+          },
+          {
+            "baselineX": 4.625,
+            "baselineY": 91.515625,
+            "fraction": 0.25,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 3.625,
+              "y": 79.484375
+            },
+            "text": "0.75",
+            "value": 0.75
+          },
+          {
+            "baselineX": 11.21875,
+            "baselineY": 167.015625,
+            "fraction": 0.5,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 21.78125,
+              "x": 10.21875,
+              "y": 154.984375
+            },
+            "text": "0.5",
+            "value": 0.5
+          },
+          {
+            "baselineX": 4.625,
+            "baselineY": 242.515625,
+            "fraction": 0.75,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 28.375,
+              "x": 3.625,
+              "y": 230.484375
+            },
+            "text": "0.25",
+            "value": 0.25
+          },
+          {
+            "baselineX": 24.40625,
+            "baselineY": 318.015625,
+            "fraction": 1,
+            "inkRect": {
+              "height": 16.03125,
+              "width": 8.59375,
+              "x": 23.40625,
+              "y": 305.984375
+            },
+            "text": "0",
+            "value": 0
+          }
+        ],
+        "yTitleBand": 0
+      }
+    ],
+    "constellationView": {
+      "autoScale": true,
+      "axisMaximum": 0.7188678562641144,
+      "axisMinimum": -0.7190120995044709,
+      "decisionAvailable": false,
+      "decisionInputI": 0,
+      "decisionInputQ": 0,
+      "decisionMessage": "请选择 PSK、QAM 或 APSK 分析假设。",
+      "decisionOutputFraction": 0,
+      "decisionOutputI": 0,
+      "decisionOutputInteger": "0",
+      "decisionOutputQ": 0,
+      "decisionRequested": false,
+      "decisionSourceFraction": 0,
+      "decisionSourceInteger": "0",
+      "decisionTemplateIndex": 0,
+      "decisionVisible": false,
+      "iqI": 0,
+      "iqPlotHeight": 677,
+      "iqPlotLeft": 617,
+      "iqPlotTop": 12,
+      "iqPlotWidth": 677,
+      "iqPointerX": 0,
+      "iqPointerY": 0,
+      "iqQ": 0,
+      "iqReadoutValid": false,
+      "pointBudget": 4096,
+      "referenceCellCount": 0,
+      "referencePending": false,
+      "referenceRenderer": "QPainter vector Voronoi overlay",
+      "referenceRequested": false,
+      "referenceScale": 0.5884206904357019,
+      "referenceTemplateCount": 0,
+      "renderedPoints": 4096,
+      "sourceStage": 0,
+      "visible": false
+    },
+    "effectiveHop": "768",
+    "effectiveOverlap": 0.625,
+    "eyeView": {
+      "component": 0,
+      "pointsPerUi": 16,
+      "renderedTraces": 64,
+      "traceBudget": 64,
+      "visible": false
+    },
+    "frameGeneration": "7",
+    "gpuDataDrawCalls": 0,
+    "gpuVertexUploads": 0,
+    "inverseCursorDrawCalls": 0,
+    "iqCacheBytes": 61440,
+    "iqCacheHits": 2645,
+    "iqCacheMisses": 2,
+    "matrixBytes": 83520,
+    "noiseBandwidthHz": 2931.1187103077627,
+    "paddedFrames": 2,
+    "pageIndex": 0,
+    "pending": false,
+    "psdGeneration": "3",
+    "repeatedObservation": false,
+    "requestGeneration": "7",
+    "requiredSeconds": 0.000512,
+    "syncPanelExpanded": false,
+    "textureUploads": 0
+  },
+  "navigationRendering": {
+    "acceptedHeatmapPreview": false,
+    "actualFrameInputSamples": "2048",
+    "actualSpectralFrames": 255,
+    "analysisError": "",
+    "analysisPoints": 2048,
+    "axisLayout": {
+      "dpr": 1.5,
+      "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+      "header": {
+        "height": 0,
+        "width": 612,
+        "x": 8,
+        "y": 4
+      },
+      "headerText": "X 时间 (ms) · Y 幅度 RMS（ADC 计数）",
+      "leftGainFrom88": 31,
+      "localBottom": 32,
+      "localLeft": 57,
+      "localTop": 12,
+      "logicalDpiX": 96,
+      "logicalDpiY": 96,
+      "mode": "CompactHeader",
+      "plot": {
+        "height": 28,
+        "width": 602,
+        "x": 13,
+        "y": 0
+      },
+      "sharedLeft": 57,
+      "tickHeight": 16,
+      "tickLabelWidth": 42,
+      "widgetHeight": 28,
+      "widgetWidth": 628,
+      "xOrigin": "",
+      "xTickBand": {
+        "height": 16,
+        "width": 549,
+        "x": 57,
+        "y": 25
+      },
+      "xTicks": [
+        "0",
+        "0.512",
+        "1.024",
+        "1.536",
+        "2.048",
+        "2.56"
+      ],
+      "xTitle": "时间 (ms)",
+      "xTitleBand": {
+        "height": 0,
+        "width": 549,
+        "x": 57,
+        "y": 44
+      },
+      "yOrigin": "",
+      "yTicks": [
+        "21103.0",
+        "21197.4",
+        "21291.8",
+        "21386.2",
+        "21480.6"
+      ],
+      "yTitle": "幅度 RMS（ADC 计数）",
+      "yUnit": "ADC 计数"
+    },
+    "binHz": 50000,
+    "colorTransformGenerations": 0,
+    "committedGeneration": 0,
+    "cpuWallTimings": {},
+    "cursorPinned": false,
+    "curveCacheHits": 0,
+    "curvePathElements": 0,
+    "curveRasterMethod": "QPainter::drawLines software fallback",
+    "curveReductions": 0,
+    "curveSourceGenerations": 0,
+    "drawnLineSegments": 0,
+    "drawnPoints": 1204,
+    "effectiveOverlap": 0.5,
+    "framePsd": false,
+    "generation": 2,
+    "gpuChartDrawCalls": 0,
+    "gpuDataDrawCalls": 0,
+    "gpuDataRenderer": "QPainter software fallback",
+    "gpuHeatmapDrawCalls": 0,
+    "gpuPaletteUploads": 0,
+    "gpuUploadsPending": false,
+    "gpuVertexUploads": 0,
+    "heatmapCacheHits": 0,
+    "heatmapColorMapping": "QImage color table software fallback",
+    "heatmapHeight": -1,
+    "heatmapWidth": -1,
+    "inverseCursorDrawCalls": 0,
+    "lastMatrixMs": 0,
+    "matrixReductions": 0,
+    "noiseBandwidthHz": 75036.63898387873,
+    "overlayUploads": 0,
+    "paddedFrames": 0,
+    "pinnedFrequencyHz": 0,
+    "pinnedSourceSample": "0",
+    "powerGenerations": 0,
+    "quality": "preview",
+    "requestedGeneration": 2,
+    "requestedHeatmapHeight": -1,
+    "requestedHeatmapWidth": -1,
+    "requestedPixels": 1,
+    "requiredSeconds": 2E-05,
+    "samplePointCount": 0,
+    "samplePointsVisible": false,
+    "settled": false,
+    "sourcePoints": 1204,
+    "staleDrops": 0,
+    "textureUploads": 0,
+    "workerIdle": true
+  },
+  "overlayReusesHeatmap": false,
+  "overlaySettled": true,
+  "overlayVerificationMilliseconds": 2260,
+  "pass": true,
+  "powerGenerations": 4,
+  "screen": {
+    "connectedIndex": 1,
+    "deviceName": "\\\\.\\DISPLAY6",
+    "devicePixelRatio": 1.5,
+    "logicalDpi": 96,
+    "logicalGeometry": [
+      0,
+      0,
+      2560,
+      1440
+    ],
+    "name": "Redmi 27 NU",
+    "pixelSize": [
+      3840,
+      2160
+    ],
+    "primary": true
+  },
+  "screenLogicalDpi": 96,
+  "screenLogicalSize": [
+    2560,
+    1440
+  ],
+  "screens": [
+    {
+      "connectedIndex": 1,
+      "deviceName": "\\\\.\\DISPLAY6",
+      "devicePixelRatio": 1.5,
+      "logicalDpi": 96,
+      "logicalGeometry": [
+        0,
+        0,
+        2560,
+        1440
+      ],
+      "name": "Redmi 27 NU",
+      "pixelSize": [
+        3840,
+        2160
+      ],
+      "primary": true
+    }
+  ],
+  "uploadsAfterOverlay": 0,
+  "visibleCaptureSamples": 17280,
+  "workspaceMode": "narrowband",
+  "standaloneProcess": {
+    "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudio.exe",
+    "configuration": "Debug",
+    "systemOnlyPath": true,
+    "physicalMonitorAcceptanceClaimed": false
+  }
+}

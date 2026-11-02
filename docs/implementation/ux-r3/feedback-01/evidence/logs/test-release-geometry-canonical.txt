@@ -1,0 +1,136 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_ui$ -V
+UpdateCTestConfiguration  from :D:/project/signal_studio_rebuild/DartConfiguration.tcl
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 38
+    Start 38: signal_studio_ui
+
+38: Test command: D:\softwares\cmake\bin\cmake.exe "-DSS_UI_TEST=D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiTests.exe" "-DSS_UI_CASES=workspaceLayout;globalDisplaySettingsApplyAcrossFiles;mainModeCoordinateDirection;continuousMarkCreation;escapeCancelsCreation;selectedMarkMovePreservesSpan;escapeRollsBackMarkMove;singleClickSelectsWithoutChangingView;boxZoomAndHistoryActions;emptyProjectAndFileActions;treeSelectionPreservesNodesAndShiftAnchor;displayChangeSurvivesPendingWheelCommit;largeSampleCoordinatePrecision;auxiliaryYAxisIsolationAndEscape;selectedMarkCornerAndEdgeResize;responsiveWorkspace;propertyFieldsFitSidebar;prototypeDisplayDefaultsAndOptions;paletteControlsStaySynchronized;narrowbandPaletteSelectionUpdatesStftCharts;widebandAuxiliaryRenderingAndGestures;narrowbandAuxiliaryRenderingAndGestures;widebandLinkedCursorsAndFrameSpectrum;narrowbandLinkedCursorsAndFrameSpectrum" "-DSS_UI_ALLOW_OVERRIDE=ON" "-DSS_UI_LOG=D:/project/signal_studio_rebuild/out/vs2026-qt611-release/ui-geometry-test-results-release.txt" "-P" "D:/project/signal_studio_rebuild/cmake/run_ui_test.cmake"
+38: Working Directory: D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+38: Environment variables: 
+38:  QT_QPA_PLATFORM=offscreen
+38:  QT_SCALE_FACTOR=1.5
+38: Test timeout computed to be: 480
+38: ********* Start testing of UiTests *********
+38: Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+38: PASS   : UiTests::initTestCase()
+38: PASS   : UiTests::workspaceLayout()
+38: PASS   : UiTests::globalDisplaySettingsApplyAcrossFiles()
+38: PASS   : UiTests::mainModeCoordinateDirection()
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::continuousMarkCreation() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::continuousMarkCreation()
+38: QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::escapeCancelsCreation() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::escapeCancelsCreation()
+38: QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkMovePreservesSpan() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkMovePreservesSpan()
+38: QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::escapeRollsBackMarkMove() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::escapeRollsBackMarkMove()
+38: QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::singleClickSelectsWithoutChangingView() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::singleClickSelectsWithoutChangingView()
+38: QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::boxZoomAndHistoryActions() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::boxZoomAndHistoryActions()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: QWARN  : UiTests::emptyProjectAndFileActions() This plugin does not support propagateSizeHints()
+38: PASS   : UiTests::emptyProjectAndFileActions()
+38: PASS   : UiTests::treeSelectionPreservesNodesAndShiftAnchor()
+38: PASS   : UiTests::displayChangeSurvivesPendingWheelCommit()
+38: PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-beyond-2pow53)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-beyond-2pow53)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(time-frequency-uint64-maximum)
+38: PASS   : UiTests::largeSampleCoordinatePrecision(waterfall-uint64-maximum)
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(waveform-amplitude)
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::auxiliaryYAxisIsolationAndEscape(psd-power)
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(time-frequency) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkCornerAndEdgeResize(time-frequency)
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::selectedMarkCornerAndEdgeResize(waterfall) This plugin does not support grabbing the mouse
+38: PASS   : UiTests::selectedMarkCornerAndEdgeResize(waterfall)
+38: PASS   : UiTests::responsiveWorkspace(4k-150-percent)
+38: PASS   : UiTests::propertyFieldsFitSidebar()
+38: PASS   : UiTests::prototypeDisplayDefaultsAndOptions()
+38: QWARN  : UiTests::paletteControlsStaySynchronized() This plugin does not support propagateSizeHints()
+38: PASS   : UiTests::paletteControlsStaySynchronized()
+38: PASS   : UiTests::narrowbandPaletteSelectionUpdatesStftCharts()
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::widebandAuxiliaryRenderingAndGestures()
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandAuxiliaryRenderingAndGestures() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::narrowbandAuxiliaryRenderingAndGestures()
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::widebandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::widebandLinkedCursorsAndFrameSpectrum()
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: QWARN  : UiTests::narrowbandLinkedCursorsAndFrameSpectrum() This plugin does not support grabbing the mouse
+38: PASS   : UiTests::narrowbandLinkedCursorsAndFrameSpectrum()
+38: PASS   : UiTests::cleanupTestCase()
+38: Totals: 31 passed, 0 failed, 0 skipped, 0 blacklisted, 31667ms
+38: ********* Finished testing of UiTests *********
+38: 
+1/1 Test #38: signal_studio_ui .................   Passed   32.01 sec
+
+The following tests passed:
+	signal_studio_ui
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+geometry    =  32.01 sec*proc (1 test)
+ui          =  32.01 sec*proc (1 test)
+
+Total Test time (real) =  32.02 sec

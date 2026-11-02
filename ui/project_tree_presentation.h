@@ -104,6 +104,7 @@ inline QString relationText(ChannelSourceRelation relation) {
     case ChannelSourceRelation::Rejected: return QStringLiteral("来源质量：已忽略");
     case ChannelSourceRelation::Unconfirmed: return QStringLiteral("旧版段确认记录；保留创建快照");
     case ChannelSourceRelation::LegacyNeedsReview: return QStringLiteral("旧版来源待复核");
+    case ChannelSourceRelation::Retired: return QStringLiteral("关联检测结果已退役，使用创建快照");
   }
   return {};
 }
@@ -118,6 +119,7 @@ inline QStringList channelBadges(const FileState& file, const Channel& channel) 
     case ChannelSourceRelation::Rejected: badges << "已忽略"; break;
     case ChannelSourceRelation::Unconfirmed: badges << "复核"; break;
     case ChannelSourceRelation::LegacyNeedsReview: badges << "旧版"; break;
+    case ChannelSourceRelation::Retired: badges << "来源退役"; break;
   }
   switch (channel.processingState) {
     case ChannelProcessingState::Ready: break;
@@ -177,6 +179,16 @@ class ProjectTreePresentationDelegate final : public QStyledItemDelegate {
     if (active || current)
       painter->fillRect(QRect(rect.left(), rect.top() + 2, 3, rect.height() - 4),
                         QColor("#53bcf0"));
+    if (hovered) {
+      painter->setPen(QPen(QColor("#75c7e5"), 1, Qt::DotLine));
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(rect.adjusted(1, 1, -1, -1));
+    }
+    if (style.state.testFlag(QStyle::State_HasFocus)) {
+      painter->setPen(QPen(QColor("#d0efff"), 1, Qt::DashLine));
+      painter->setBrush(Qt::NoBrush);
+      painter->drawRect(rect.adjusted(4, 3, -3, -3));
+    }
 
     QRect textRect = rect.adjusted(mark ? 20 : 9, 0, -7, 0);
     if (mark) {

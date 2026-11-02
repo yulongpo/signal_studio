@@ -11,7 +11,23 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $package = Join-Path $repoRoot "out/vs2026-qt611-$($Configuration.ToLowerInvariant())_bin"
 $projectFile = Get-Item -LiteralPath $Project
-if ($projectFile.PSIsContainer) { $projectFile = Get-Item -LiteralPath (Join-Path $projectFile.FullName 'project.json') }
+if ($projectFile.PSIsContainer) {
+    $candidates = @(Get-ChildItem -LiteralPath $projectFile.FullName -File -Filter '*.ssproj')
+    if ($candidates.Count -ne 1) { throw 'Specify one .ssproj file; the directory must contain exactly one .ssproj.' }
+    $projectFile = $candidates[0]
+}
+if ($projectFile.Extension -ine '.ssproj') { throw 'Explicitly import legacy v6 JSON in Signal Studio first, then pass the converted .ssproj.' }
+$projectDocument = Get-Content -LiteralPath $projectFile.FullName -Raw | ConvertFrom-Json
+$projectIdentity = [Guid]::Empty
+if ($projectDocument.magic -ne 'SignalStudioProject' -or $projectDocument.schemaVersion -ne 1 -or
+    $projectDocument.state.version -ne 6 -or
+    -not [Guid]::TryParse([string]$projectDocument.projectId, [ref]$projectIdentity) -or
+    $projectIdentity -eq [Guid]::Empty -or
+    [string]::IsNullOrWhiteSpace($projectDocument.assetDirectory)) {
+    throw 'The input must be a valid .ssproj container with v6 state and a stable projectId.'
+}
+$assetSource = [IO.Path]::GetFullPath([IO.Path]::Combine($projectFile.Directory.FullName, $projectDocument.assetDirectory))
+if (-not (Test-Path -LiteralPath $assetSource -PathType Container)) { throw 'The project companion asset directory is missing.' }
 if (-not (Test-Path -LiteralPath (Join-Path $package 'SignalStudioUiCapture.exe') -PathType Leaf)) {
     throw 'Build the native capture package first.'
 }
@@ -44,8 +60,20 @@ try {
             Copy-Item -LiteralPath $source.FullName -Destination $destination
         }
         $copiedProject = Join-Path $caseRoot 'project'
-        Copy-Item -LiteralPath $projectFile.Directory.FullName -Destination $copiedProject -Recurse
+        New-Item -ItemType Directory -Path $copiedProject | Out-Null
         $copiedProjectFile = Join-Path $copiedProject $projectFile.Name
+        # Copy only this project's companion assets. A .ssproj can live in an
+        # arbitrary shared directory or explicitly reference external assets.
+        # Rewrite the test copy's asset reference so refusal probes never save
+        # detection/annotation evidence back into the original project assets.
+        $relativeAssets = "$($projectFile.Name).assets/$($projectDocument.projectId)"
+        $copiedAssets = Join-Path $copiedProject $relativeAssets
+        New-Item -ItemType Directory -Path (Split-Path -Parent $copiedAssets) | Out-Null
+        Copy-Item -LiteralPath $assetSource -Destination $copiedAssets -Recurse
+        $copiedDocument = Get-Content -LiteralPath $projectFile.FullName -Raw | ConvertFrom-Json
+        $copiedDocument.assetDirectory = $relativeAssets
+        $copiedDocument.assetMode = 'copy'
+        $copiedDocument | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $copiedProjectFile -Encoding utf8
         $executable = Join-Path $runtime 'SignalStudioUiCapture.exe'
         $env:CUDA_VISIBLE_DEVICES = if ($case -eq 'no-compatible-gpu') { '-1' } else { $null }
         Push-Location -LiteralPath $runtime

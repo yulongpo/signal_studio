@@ -1,0 +1,10 @@
+********* Start testing of NarrowbandAnalysisUiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+PASS   : NarrowbandAnalysisUiTests::initTestCase()
+QWARN  : NarrowbandAnalysisUiTests::conditionalDecisionsReferenceAndIqCoordinates() IQ pointer mapping QPoint(776,520) QVariant(QPointF, QPointF(776.333,520)) QPointF(-0.996564,-0.998527) QRectF(606,11 679x679) -2 2
+FAIL!  : NarrowbandAnalysisUiTests::conditionalDecisionsReferenceAndIqCoordinates() 'checkPointer(pixel)' returned FALSE. ()
+D:\project\signal_studio_rebuild\tests\narrowband_analysis_ui_tests.cpp(314) : failure location
+PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+Totals: 2 passed, 1 failed, 0 skipped, 0 blacklisted, 1048ms
+********* Finished testing of NarrowbandAnalysisUiTests *********

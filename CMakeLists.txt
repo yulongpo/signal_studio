@@ -8,6 +8,8 @@ set(CMAKE_AUTOMOC ON)
 
 option(SS_BUILD_TESTS "Build the state, persistence, and Qt UI tests" ON)
 option(SS_DEPLOY_RUNTIME "Deploy the Qt runtime next to the Windows executable" ON)
+set(SS_GPU_DSP_RUNTIME_ROOT "$ENV{SS_GPU_DSP_RUNTIME_ROOT}" CACHE PATH
+    "Optional flat CUDA DSP module/cuFFT runtime staging directory")
 set(SS_QT_ROOT "$ENV{SS_QT_ROOT}" CACHE PATH "Qt 6.11 installation root")
 if(SS_QT_ROOT)
     list(PREPEND CMAKE_PREFIX_PATH "${SS_QT_ROOT}")
@@ -35,6 +37,19 @@ function(ss_target_defaults target)
     else()
         target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
     endif()
+endfunction()
+
+function(ss_stage_mkl_runtime target)
+    if(NOT WIN32 OR NOT SS_DEPLOY_RUNTIME)
+        return()
+    endif()
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}"
+            "-DSS_MKL_BIN=${CMAKE_SOURCE_DIR}/out/toolchains/fft-libs/conda/Library/bin"
+            "-DSS_OUTPUT_DIR=$<TARGET_FILE_DIR:${target}>"
+            -P "${CMAKE_SOURCE_DIR}/cmake/deploy_mkl_runtime.cmake"
+        COMMENT "Staging oneMKL DFT runtime next to ${target}"
+        VERBATIM)
 endfunction()
 
 function(ss_add_graphics_shaders target resource_name)
@@ -78,18 +93,31 @@ set_target_properties(SignalStudioCore PROPERTIES AUTOMOC OFF)
 ss_target_defaults(SignalStudioCore)
 
 add_library(SignalStudioInfrastructure STATIC
+    application/detection_result_service.cpp
     infrastructure/wav_metadata.cpp
     infrastructure/label_import.cpp
     infrastructure/annotation_json.cpp
+    infrastructure/annotation_migration.cpp
     infrastructure/annotation_store.cpp
     infrastructure/detection_source.cpp
+    infrastructure/gpu_dsp.cpp
+    infrastructure/mkl_dft.cpp
+    infrastructure/detection_sample_stream.cpp
+    infrastructure/detection_sample_stream_scratch.cpp
+    infrastructure/detection_sample_stream_scratch_recovery.cpp
     infrastructure/detection_protocol.cpp
     infrastructure/detection_store.cpp
     infrastructure/detection_task.cpp
+    infrastructure/detection_resource_diagnostics.cpp
+    infrastructure/runtime_log.cpp
     infrastructure/detection_worker_client.cpp
     infrastructure/detection_projection.cpp
     infrastructure/detection_model_snapshot.cpp
+    infrastructure/ffscn_engine_package.cpp
+    infrastructure/ffscn_engine_package.h
     infrastructure/detection_frequency_analysis.cpp
+    infrastructure/detection_spectrum_spool.cpp
+    infrastructure/detection_spectrum_spool.h
     infrastructure/detection_sample_energy.cpp
     infrastructure/detection_time_analysis.cpp
     infrastructure/detection_refined_publication.cpp
@@ -115,10 +143,32 @@ add_library(SignalStudioInfrastructure STATIC
     infrastructure/int16_iq_file.h
     infrastructure/project_store.cpp
     infrastructure/project_store.h
+    infrastructure/project_file.cpp
+    infrastructure/project_file.h
+    infrastructure/label_discovery.cpp
 )
 set_target_properties(SignalStudioInfrastructure PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioInfrastructure PUBLIC SignalStudioCore Qt6::Core)
 ss_target_defaults(SignalStudioInfrastructure)
+if(WIN32)
+    target_link_libraries(SignalStudioInfrastructure PRIVATE psapi)
+endif()
+
+# Headless production-pipeline measurements, with isolated output roots. This
+# does not replace native QWidget/QRhi acceptance or model-quality evaluation.
+add_executable(SignalStudioDetectionBenchmark tools/detection_benchmark/main.cpp)
+add_executable(SignalStudioSampleRefinementBenchmark tools/sample_refinement_benchmark/main.cpp)
+set_target_properties(SignalStudioSampleRefinementBenchmark PROPERTIES AUTOMOC OFF)
+ss_target_defaults(SignalStudioSampleRefinementBenchmark)
+target_link_libraries(SignalStudioSampleRefinementBenchmark PRIVATE SignalStudioInfrastructure)
+ss_stage_mkl_runtime(SignalStudioSampleRefinementBenchmark)
+set_target_properties(SignalStudioDetectionBenchmark PROPERTIES AUTOMOC OFF)
+ss_target_defaults(SignalStudioDetectionBenchmark)
+target_link_libraries(SignalStudioDetectionBenchmark PRIVATE SignalStudioInfrastructure)
+ss_stage_mkl_runtime(SignalStudioDetectionBenchmark)
+if(WIN32)
+    target_link_libraries(SignalStudioDetectionBenchmark PRIVATE psapi)
+endif()
 
 execute_process(COMMAND git rev-parse --short HEAD WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
     OUTPUT_VARIABLE SS_BUILD_REVISION OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -130,6 +180,8 @@ target_link_libraries(SignalStudioBrand PUBLIC Qt6::Widgets)
 target_compile_definitions(SignalStudioBrand PRIVATE SS_PRODUCT_VERSION="${PROJECT_VERSION}" SS_BUILD_REVISION="${SS_BUILD_REVISION}")
 
 set(SS_UI_SOURCES
+    ui/label_mapping_dialog.cpp
+    ui/label_mapping_dialog.h
     ui/settings_popover.cpp
     ui/settings_popover.h
     ui/chart_control_strip.h
@@ -138,6 +190,12 @@ set(SS_UI_SOURCES
     ui/detection/detection_card.h
     ui/detection/detection_panel.cpp
     ui/detection/detection_panel.h
+    ui/detection/detection_resource_options.cpp
+    ui/detection/detection_resource_options.h
+    ui/detection/ffscn_engine_dialog.cpp
+    ui/detection/ffscn_engine_dialog.h
+    ui/detection/ffscn_engine_switch_dialog.cpp
+    ui/detection/ffscn_engine_switch_dialog.h
     ui/annotations/annotation_panel.cpp
     ui/annotations/annotation_panel.h
     ui/annotations/annotation_evidence_widget.cpp
@@ -166,6 +224,7 @@ add_executable(SignalStudioDetectionWorker tools/detection_worker/main.cpp)
 ss_target_defaults(SignalStudioDetectionWorker)
 set_target_properties(SignalStudioDetectionWorker PROPERTIES AUTOMOC OFF)
 target_link_libraries(SignalStudioDetectionWorker PRIVATE SignalStudioInfrastructure)
+ss_stage_mkl_runtime(SignalStudioDetectionWorker)
 include(cmake/detection_model_runtime.cmake)
 signalstudio_configure_detection_model_backend(SignalStudioDetectionWorker)
 add_executable(SignalStudio WIN32 app/main.cpp ${SS_UI_SOURCES})
@@ -205,6 +264,19 @@ if(WIN32 AND SS_DEPLOY_RUNTIME)
         COMMENT "Deploying Qt and compiler runtime to the standalone output directory"
         VERBATIM
     )
+    if(SS_GPU_DSP_RUNTIME_ROOT)
+        foreach(_ss_gpu_dll IN ITEMS SignalStudioGpuDspCuda.dll cufft64_11.dll nvJitLink_120_0.dll)
+            if(NOT EXISTS "${SS_GPU_DSP_RUNTIME_ROOT}/${_ss_gpu_dll}")
+                message(FATAL_ERROR "Incomplete optional GPU DSP runtime: ${_ss_gpu_dll}")
+            endif()
+            add_custom_command(TARGET SignalStudio POST_BUILD
+                COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                    "${SS_GPU_DSP_RUNTIME_ROOT}/${_ss_gpu_dll}"
+                    "$<TARGET_FILE_DIR:SignalStudio>/${_ss_gpu_dll}"
+                VERBATIM)
+        endforeach()
+    endif()
+    ss_stage_mkl_runtime(SignalStudio)
 endif()
 
 if(SS_BUILD_TESTS)
@@ -218,12 +290,47 @@ if(SS_BUILD_TESTS)
         -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
     set_tests_properties(signal_studio_parameter_input PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioFfscnEngineDialogTests
+        tests/ffscn_engine_dialog_tests.cpp
+        ui/detection/ffscn_engine_dialog.cpp
+        ui/detection/ffscn_engine_dialog.h)
+    target_link_libraries(SignalStudioFfscnEngineDialogTests PRIVATE
+        Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioFfscnEngineDialogTests)
+    add_test(NAME signal_studio_ffscn_engine_dialog COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioFfscnEngineDialogTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ffscn-engine-dialog-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ffscn_engine_dialog PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioDetectionResourceOptionsTests
+        tests/detection_resource_options_tests.cpp
+        ui/detection/detection_resource_options.cpp
+        ui/detection/detection_resource_options.h)
+    target_link_libraries(SignalStudioDetectionResourceOptionsTests PRIVATE
+        SignalStudioInfrastructure Qt6::Widgets Qt6::Test)
+    ss_target_defaults(SignalStudioDetectionResourceOptionsTests)
+    add_test(NAME signal_studio_detection_resource_options COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioDetectionResourceOptionsTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/detection-resource-options-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_detection_resource_options PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 60)
+    add_executable(SignalStudioFfscnEngineSwitchTests
+        tests/ffscn_engine_switch_tests.cpp)
+    target_link_libraries(SignalStudioFfscnEngineSwitchTests PRIVATE
+        SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioFfscnEngineSwitchTests)
+    add_test(NAME signal_studio_ffscn_engine_switch
+        COMMAND SignalStudioFfscnEngineSwitchTests)
+    set_tests_properties(signal_studio_ffscn_engine_switch PROPERTIES TIMEOUT 60)
     add_executable(SignalStudioDetectionRefinedFusionTests tests/detection_refined_fusion_tests.cpp)
     ss_target_defaults(SignalStudioDetectionRefinedFusionTests)
     set_target_properties(SignalStudioDetectionRefinedFusionTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionRefinedFusionTests PRIVATE SignalStudioCore)
     add_test(NAME signal_studio_detection_refined_fusion COMMAND SignalStudioDetectionRefinedFusionTests)
     add_executable(SignalStudioDetectionTimePipelineTests tests/detection_time_pipeline_tests.cpp)
+    ss_stage_mkl_runtime(SignalStudioDetectionTimePipelineTests)
     ss_target_defaults(SignalStudioDetectionTimePipelineTests)
     set_target_properties(SignalStudioDetectionTimePipelineTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionTimePipelineTests PRIVATE SignalStudioInfrastructure)
@@ -234,10 +341,30 @@ if(SS_BUILD_TESTS)
     target_link_libraries(SignalStudioDetectionRefinementTests PRIVATE SignalStudioCore)
     add_test(NAME signal_studio_detection_refinement COMMAND SignalStudioDetectionRefinementTests)
     add_executable(SignalStudioDetectionSampleEnergyTests tests/detection_sample_energy_tests.cpp)
+    ss_stage_mkl_runtime(SignalStudioDetectionSampleEnergyTests)
     ss_target_defaults(SignalStudioDetectionSampleEnergyTests)
     set_target_properties(SignalStudioDetectionSampleEnergyTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionSampleEnergyTests PRIVATE SignalStudioInfrastructure)
     add_test(NAME signal_studio_detection_sample_energy COMMAND SignalStudioDetectionSampleEnergyTests)
+    add_executable(SignalStudioSpeedEffectBenchmark tools/speed_effect_benchmark/main.cpp)
+    ss_stage_mkl_runtime(SignalStudioSpeedEffectBenchmark)
+    ss_target_defaults(SignalStudioSpeedEffectBenchmark)
+    set_target_properties(SignalStudioSpeedEffectBenchmark PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSpeedEffectBenchmark PRIVATE SignalStudioInfrastructure)
+    add_executable(SignalStudioDetectionSampleStreamTests tests/detection_sample_stream_tests.cpp)
+    ss_stage_mkl_runtime(SignalStudioDetectionSampleStreamTests)
+    ss_target_defaults(SignalStudioDetectionSampleStreamTests)
+    set_target_properties(SignalStudioDetectionSampleStreamTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleStreamTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_stream COMMAND SignalStudioDetectionSampleStreamTests --golden --long --run-budget)
+    set_tests_properties(signal_studio_detection_sample_stream PROPERTIES TIMEOUT 180)
+    add_executable(SignalStudioDetectionSampleRecoveryTests tests/detection_sample_stream_recovery_tests.cpp)
+    ss_stage_mkl_runtime(SignalStudioDetectionSampleRecoveryTests)
+    ss_target_defaults(SignalStudioDetectionSampleRecoveryTests)
+    set_target_properties(SignalStudioDetectionSampleRecoveryTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionSampleRecoveryTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_sample_recovery COMMAND SignalStudioDetectionSampleRecoveryTests)
+    set_tests_properties(signal_studio_detection_sample_recovery PROPERTIES TIMEOUT 60 SKIP_RETURN_CODE 77)
     add_executable(SignalStudioDetectionPipelineTests tests/detection_pipeline_tests.cpp)
     ss_target_defaults(SignalStudioDetectionPipelineTests)
     set_target_properties(SignalStudioDetectionPipelineTests PROPERTIES AUTOMOC OFF)
@@ -248,6 +375,11 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioDetectionPostprocessTests PROPERTIES AUTOMOC OFF)
     target_link_libraries(SignalStudioDetectionPostprocessTests PRIVATE SignalStudioCore)
     add_test(NAME signal_studio_detection_postprocess COMMAND SignalStudioDetectionPostprocessTests)
+    add_executable(SignalStudioSsDeRpoTrackingTests tests/ss_de_rpo_tracking_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoTrackingTests)
+    set_target_properties(SignalStudioSsDeRpoTrackingTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoTrackingTests PRIVATE SignalStudioCore)
+    add_test(NAME signal_studio_ss_de_rpo_tracking COMMAND SignalStudioSsDeRpoTrackingTests)
     add_executable(SignalStudioDetectionModelBackendTests tests/detection_model_backend_tests.cpp)
     ss_target_defaults(SignalStudioDetectionModelBackendTests)
     set_target_properties(SignalStudioDetectionModelBackendTests PROPERTIES AUTOMOC OFF)
@@ -269,7 +401,84 @@ if(SS_BUILD_TESTS)
         add_test(NAME "signal_studio_detection_${test_kind_lower}" COMMAND ${test_target})
     endforeach()
     add_dependencies(SignalStudioDetectionTaskTests SignalStudio)
+    add_executable(SignalStudioSsDeRpoLogicTests tests/ss_de_rpo_logic_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoLogicTests)
+    set_target_properties(SignalStudioSsDeRpoLogicTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoLogicTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_logic COMMAND SignalStudioSsDeRpoLogicTests)
+    set_tests_properties(signal_studio_ss_de_rpo_logic PROPERTIES TIMEOUT 60)
+    add_executable(SignalStudioSsDeRpoPipelineTests tests/ss_de_rpo_pipeline_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoPipelineTests)
+    set_target_properties(SignalStudioSsDeRpoPipelineTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoPipelineTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_pipeline COMMAND SignalStudioSsDeRpoPipelineTests)
+    set_tests_properties(signal_studio_ss_de_rpo_pipeline PROPERTIES TIMEOUT 120)
+    add_dependencies(SignalStudioSsDeRpoPipelineTests SignalStudioDetectionWorker)
+    add_executable(SignalStudioSsDeRpoAcceptanceTests tests/ss_de_rpo_acceptance_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoAcceptanceTests)
+    set_target_properties(SignalStudioSsDeRpoAcceptanceTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoAcceptanceTests PRIVATE SignalStudioInfrastructure)
+    add_executable(SignalStudioSsDeRpoSampleTests tests/ss_de_rpo_sample_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoSampleTests)
+    set_target_properties(SignalStudioSsDeRpoSampleTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoSampleTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_sample COMMAND SignalStudioSsDeRpoSampleTests)
+    set_tests_properties(signal_studio_ss_de_rpo_sample PROPERTIES TIMEOUT 60)
+    add_executable(SignalStudioSsDeRpoResourceTests tests/ss_de_rpo_resource_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoResourceTests)
+    set_target_properties(SignalStudioSsDeRpoResourceTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoResourceTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_resource COMMAND SignalStudioSsDeRpoResourceTests)
+    add_executable(SignalStudioSsDeRpoGpuTests tests/ss_de_rpo_gpu_tests.cpp)
+    ss_target_defaults(SignalStudioSsDeRpoGpuTests)
+    set_target_properties(SignalStudioSsDeRpoGpuTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioSsDeRpoGpuTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_ss_de_rpo_gpu COMMAND SignalStudioSsDeRpoGpuTests)
+    add_executable(SignalStudioSsDeRpoUiTests tests/ss_de_rpo_ui_tests.cpp ${SS_UI_SOURCES})
+    add_executable(SignalStudioDetectionNativeBenchmark tools/detection_benchmark/native_main.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioDetectionNativeBenchmark PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioDetectionNativeBenchmark)
+    ss_add_graphics_shaders(SignalStudioDetectionNativeBenchmark signalstudio_detection_native_shaders)
+    ss_add_ui_assets(SignalStudioDetectionNativeBenchmark)
+    add_dependencies(SignalStudioDetectionNativeBenchmark SignalStudioDetectionWorker)
+    target_link_libraries(SignalStudioSsDeRpoUiTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioSsDeRpoUiTests)
+    target_compile_definitions(SignalStudioSsDeRpoUiTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_add_graphics_shaders(SignalStudioSsDeRpoUiTests signalstudio_ss_de_rpo_ui_shaders)
+    ss_add_ui_assets(SignalStudioSsDeRpoUiTests)
+    add_dependencies(SignalStudioSsDeRpoUiTests SignalStudio)
+    add_test(NAME signal_studio_ss_de_rpo_ui COMMAND ${CMAKE_COMMAND}
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioSsDeRpoUiTests>"
+        "-DSS_UI_LOG=${CMAKE_CURRENT_BINARY_DIR}/ss-de-rpo-ui-$<CONFIG>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ss_de_rpo_ui PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
+    add_executable(SignalStudioSsDeRpoStartTests tests/ss_de_rpo_start_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioSsDeRpoStartTests PRIVATE
+        SignalStudioCore SignalStudioInfrastructure SignalStudioBrand Qt6::Widgets Qt6::Test
+        Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioSsDeRpoStartTests)
+    target_compile_definitions(SignalStudioSsDeRpoStartTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    ss_add_graphics_shaders(SignalStudioSsDeRpoStartTests signalstudio_ss_de_rpo_start_shaders)
+    ss_add_ui_assets(SignalStudioSsDeRpoStartTests)
+    add_dependencies(SignalStudioSsDeRpoStartTests SignalStudio)
+    add_test(NAME signal_studio_ss_de_rpo_start COMMAND ${CMAKE_COMMAND}
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioSsDeRpoStartTests>"
+        "-DSS_UI_LOG=${CMAKE_CURRENT_BINARY_DIR}/ss-de-rpo-start-$<CONFIG>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ss_de_rpo_start PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
     add_executable(SignalStudioDetectionSourceTests tests/detection_source_tests.cpp)
+    ss_stage_mkl_runtime(SignalStudioDetectionSourceTests)
+    add_executable(SignalStudioDetectionBenchmarkQualityTests tests/detection_benchmark_quality_tests.cpp)
+    ss_target_defaults(SignalStudioDetectionBenchmarkQualityTests)
+    set_target_properties(SignalStudioDetectionBenchmarkQualityTests PROPERTIES AUTOMOC OFF)
+    target_link_libraries(SignalStudioDetectionBenchmarkQualityTests PRIVATE SignalStudioInfrastructure)
+    add_test(NAME signal_studio_detection_benchmark_quality COMMAND SignalStudioDetectionBenchmarkQualityTests)
     ss_target_defaults(SignalStudioDetectionSourceTests)
     target_link_libraries(SignalStudioDetectionSourceTests PRIVATE SignalStudioInfrastructure Qt6::Test)
     target_compile_definitions(SignalStudioDetectionSourceTests PRIVATE SS_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
@@ -282,6 +491,26 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioAnnotationTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioAnnotationTests)
     add_test(NAME signal_studio_annotations COMMAND SignalStudioAnnotationTests)
+    add_executable(SignalStudioUxR5AnnotationTests tests/ux_r5_annotation_tests.cpp)
+    target_link_libraries(SignalStudioUxR5AnnotationTests PRIVATE SignalStudioCore)
+    set_target_properties(SignalStudioUxR5AnnotationTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioUxR5AnnotationTests)
+    add_test(NAME signal_studio_ux_r5_annotations COMMAND SignalStudioUxR5AnnotationTests)
+    set_tests_properties(signal_studio_ux_r5_annotations PROPERTIES TIMEOUT 60)
+    add_executable(SignalStudioUxR5CompatTests tests/ux_r5_compat_tests.cpp)
+    target_link_libraries(SignalStudioUxR5CompatTests PRIVATE SignalStudioInfrastructure Qt6::Test)
+    ss_target_defaults(SignalStudioUxR5CompatTests)
+    add_test(NAME signal_studio_ux_r5_compat COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR5CompatTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r5-compat-results-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux_r5_compat PROPERTIES TIMEOUT 120)
+    add_executable(SignalStudioUxR5DetectionTests tests/ux_r5_detection_tests.cpp)
+    target_link_libraries(SignalStudioUxR5DetectionTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioUxR5DetectionTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioUxR5DetectionTests)
+    add_test(NAME signal_studio_ux_r5_detection COMMAND SignalStudioUxR5DetectionTests)
+    set_tests_properties(signal_studio_ux_r5_detection PROPERTIES TIMEOUT 120)
     add_executable(SignalStudioAnnotationStoreTests tests/annotation_store_tests.cpp)
     target_link_libraries(SignalStudioAnnotationStoreTests PRIVATE SignalStudioInfrastructure Qt6::Core)
     set_target_properties(SignalStudioAnnotationStoreTests PROPERTIES AUTOMOC OFF)
@@ -318,6 +547,44 @@ if(SS_BUILD_TESTS)
     set_target_properties(SignalStudioCoreTests PROPERTIES AUTOMOC OFF)
     ss_target_defaults(SignalStudioCoreTests)
     add_test(NAME signal_studio_core COMMAND SignalStudioCoreTests)
+
+    add_executable(SignalStudioProjectFileTests tests/project_file_tests.cpp)
+    target_link_libraries(SignalStudioProjectFileTests PRIVATE SignalStudioInfrastructure Qt6::Core)
+    set_target_properties(SignalStudioProjectFileTests PROPERTIES AUTOMOC OFF)
+    ss_target_defaults(SignalStudioProjectFileTests)
+    add_dependencies(SignalStudioProjectFileTests SignalStudio)
+    add_test(NAME signal_studio_project_file COMMAND SignalStudioProjectFileTests)
+    set_tests_properties(signal_studio_project_file PROPERTIES TIMEOUT 120)
+
+    add_executable(SignalStudioUxR3AxisTests tests/ux_r3_axis_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxR3AxisTests PRIVATE SignalStudioInfrastructure SignalStudioBrand
+        Qt6::Widgets Qt6::Test Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxR3AxisTests)
+    ss_add_graphics_shaders(SignalStudioUxR3AxisTests signalstudio_ux_r3_axis_shaders)
+    ss_add_ui_assets(SignalStudioUxR3AxisTests)
+    add_dependencies(SignalStudioUxR3AxisTests SignalStudio)
+    add_test(NAME signal_studio_ux_r3_axes COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR3AxisTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r3-axes-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux_r3_axes PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 120)
+
+    add_executable(SignalStudioUxR3WorkflowTests tests/ux_r3_workflow_tests.cpp ${SS_UI_SOURCES})
+    target_link_libraries(SignalStudioUxR3WorkflowTests PRIVATE SignalStudioInfrastructure SignalStudioBrand
+        Qt6::Widgets Qt6::Test Qt6::GuiPrivate Qt6::OpenGL Threads::Threads)
+    ss_target_defaults(SignalStudioUxR3WorkflowTests)
+    ss_add_graphics_shaders(SignalStudioUxR3WorkflowTests signalstudio_ux_r3_workflow_shaders)
+    ss_add_ui_assets(SignalStudioUxR3WorkflowTests)
+    add_dependencies(SignalStudioUxR3WorkflowTests SignalStudio)
+    add_test(NAME signal_studio_ux_r3_workflows COMMAND "${CMAKE_COMMAND}"
+        "-DSS_UI_TEST=$<TARGET_FILE:SignalStudioUxR3WorkflowTests>"
+        "-DSS_UI_LOG=${CMAKE_BINARY_DIR}/ux-r3-workflows-$<LOWER_CASE:$<CONFIG>>.txt"
+        -P "${CMAKE_SOURCE_DIR}/cmake/run_ui_test.cmake")
+    set_tests_properties(signal_studio_ux_r3_workflows PROPERTIES
+        # All 27 Qt rows run here. Match the established bounded UI guard;
+        # Debug fullscreen software painting can exceed 180 s without a hang.
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1.5" TIMEOUT 480)
     add_executable(SignalStudioChannelProcessorTests tests/channel_processor_tests.cpp)
     add_executable(SignalStudioNarrowbandAnalysisTests tests/narrowband_analysis_tests.cpp)
     add_executable(SignalStudioNarrowbandRecoveryTests tests/narrowband_recovery_tests.cpp)
@@ -432,11 +699,20 @@ if(SS_BUILD_TESTS)
     ss_add_ux_test(detection uxD01_historicalDerivation uxD02_viewSourceKeepsDraft
         uxD01_topDerivationDiscardsCrossFileDraft
         uxD03_crossFileCancellation uxD03_activeTaskCancellationAndFrozenDisplay
+        uxD09_intermediatePreviewAndRedetectClear
         uxD04_modelSpectrumMapping uxD05_foldedParametersAndFirstScreen
         uxD06_visibleRangeEntry uxD08_preflightDetails)
+    ss_add_ux_test(r6_preview uxR6_previewChannelScope)
     ss_add_ux_test(spectral uxS01_methodHistory uxS02_conditionalRows
         uxS03_spectralIndependence uxS03_framePsdPreservesSettings uxS06_invalidDraftRecovery)
     ss_add_ux_test(charts uxR02_chartSettingsStayStable uxA01_roiConfirmationAndEscape roundTwoNarrowbandPsdAndPages)
+    ss_add_ux_test(annotation uxR4_evidenceDisclosureAndFullCopy
+        uxR4_currentObjectAndActionStates uxR4_supplementalSourceAndPagedCopy
+        uxR4_auxiliaryDetailsCloseWithHiddenContext uxR4_searchBoundaryAndOriginalNewlines)
+    ss_add_ux_test(r5_ui uxR5_threeTabsReadOnlyAndConversion
+        uxR5_layersAndIndependentFilters uxR5_crossViewAndUnknownObservation
+        uxR5_readOnlyMenusAndCommandGuards
+        uxR5_algorithmResultHideAndDelete)
     ss_add_ux_test(layout uxR01_chartToolbarLayout uxR02_inspectorRouting
         uxR02_fileProperties uxR02_paletteWorkspaceOwnership
         uxR03_taskKeyboardAndDetails uxR03_taskRowActions uxR01_lateRunFilterPopupAndRefresh roundTwoFlatResponsiveControls)
@@ -505,7 +781,8 @@ if(SS_BUILD_TESTS)
         add_dependencies(SignalStudioUiTests SignalStudio)
         add_dependencies(SignalStudioUiCapture SignalStudio)
         foreach(test_target IN ITEMS SignalStudioDetectionSourceTests SignalStudioLabelImportTests SignalStudioWavTests
-                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture)
+                SignalStudioImportTests SignalStudioUiTests SignalStudioUxTests SignalStudioUiCapture
+                SignalStudioSsDeRpoUiTests SignalStudioSsDeRpoStartTests SignalStudioDetectionNativeBenchmark)
             add_dependencies(${test_target} SignalStudio)
             add_custom_command(TARGET ${test_target} POST_BUILD
                 COMMAND "${CMAKE_COMMAND}" -E copy_if_different

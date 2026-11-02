@@ -6,6 +6,7 @@
 #include <array>
 #include <map>
 #include <unordered_set>
+#include <thread>
 
 #include "application/session.h"
 
@@ -56,11 +57,25 @@ class MainWindow : public QMainWindow {
   bool addIqFile(const QString& path, QString* error = nullptr);
   bool addImportedSource(FileState file, QString& error);
   bool saveProject(const QString& path);
+  bool allowProjectMutation(QString* error = nullptr);
+  void applyDetectionPresentation();
+  bool importLegacyProject(const QString& legacy, const QString& destination, QString* error = nullptr);
+  bool relocateSource(const QString& fileId, const QString& path, QString* error = nullptr);
+  bool isProjectDirty() const;
+  void discoverLabels(const QString& fileId = {});
   void openNarrowbandDemoProject();
   void cancelInteractions(bool exitCreating = true);
   bool clearActiveLinkedCursor();
+  // Fixture-only seams. They no-op unless the detection test fixture is enabled
+  // and pollSourceLoadsForTest runs the production pollSourceLoads path.
+  void setSourceLoadPollingForTest(bool enabled);
+  void pollSourceLoadsForTest();
+  bool sourceLoadActiveForTest(const QString& fileId) const;
+  bool sourceLoadFinishedForTest(const QString& fileId) const;
+  SampleIndex sourceLoadLoadedForTest(const QString& fileId) const;
 
  protected:
+  void closeEvent(QCloseEvent*) override;
   void resizeEvent(QResizeEvent*) override;
   void moveEvent(QMoveEvent*) override;
   void changeEvent(QEvent*) override;
@@ -78,12 +93,17 @@ class MainWindow : public QMainWindow {
   };
   std::map<std::string, LoadJob> sourceLoads_;
   QTimer* sourceLoadTimer_ = nullptr;
+  std::vector<std::jthread> labelWorkers_;
+  std::unordered_set<std::string> labelDiscoveryPending_;
   QPushButton* stopSourceLoad_ = nullptr;
   SpectralSettingsWidget *psdParameters_ = nullptr, *stftParameters_ = nullptr;
   bool handleWindowChrome(QObject*, QEvent*);
   void toggleWindowState();
   void updateWindowControls();
   void openWidebandDetection(const DetectionRun* parentRun = nullptr);
+  void openDetectionResourceOptions();
+  void openFfscnEngineTool();
+  void openFfscnEngineSwitch();
   void beginDetectionRoi();
   void updateDetectionRoiConfirmation();
   void rememberNormalGeometry();
@@ -145,6 +165,7 @@ class MainWindow : public QMainWindow {
   void selectAllMarks();
   void locateMark();
   void deleteMarks();
+  bool canDeleteSelectedAnnotations() const;
   void renameMark();
   void showAddFileDialog();
   void showNewProjectDialog();
@@ -158,6 +179,7 @@ class MainWindow : public QMainWindow {
   void updateBottom();
   void updateCursor(SampleIndex sample, double frequencyHz);
   void log(const QString& message);
+  void syncFormalDetectionSuppression();
   QPushButton* autoPowerFit_ = nullptr;
   std::shared_ptr<const SpectrogramData> powerFitHeatmap_;
   std::shared_ptr<const SpectralFrame> powerFitPsd_;
@@ -180,6 +202,13 @@ class MainWindow : public QMainWindow {
   QPushButton* evidenceMode_ = nullptr;
   bool auxiliaryEvidenceVisible_ = false;
   QString projectPath_;
+  QByteArray savedProjectToken_;
+  void saveProjectAsDialog();
+  void importLegacyProjectDialog();
+  void closeProject();
+  bool confirmProjectTransition();
+  QString projectAssetDirectory() const;
+  bool detectionAssetsInUse() const;
   static constexpr std::size_t kTreeAnnotationBatchSize = 40;
   QString treeAnnotationContext_;
   std::array<std::size_t, 3> treeAnnotationLimits_{kTreeAnnotationBatchSize,
@@ -216,7 +245,7 @@ class MainWindow : public QMainWindow {
   QDoubleSpinBox* effectiveBandwidth_ = nullptr;
   QCheckBox *grid_ = nullptr, *colorScale_ = nullptr;
   std::array<QPushButton*, 2> auxiliaryButtons_{}, mainButtons_{};
-  std::array<QPushButton*, 3> bottomButtons_{};
+  std::array<QPushButton*, 5> bottomButtons_{};
   std::array<QLabel*, 4> fileValues_{};
   std::array<QLabel*, 6> channelValues_{};
   QLabel *channelRevision_ = nullptr, *channelRelation_ = nullptr;
@@ -240,6 +269,7 @@ class MainWindow : public QMainWindow {
   QPlainTextEdit* results_ = nullptr;
   QAction *removeAction_ = nullptr, *saveAction_ = nullptr,
           *addSignalAction_ = nullptr, *deleteAction_ = nullptr,
+          *renameAction_ = nullptr,
           *backAction_ = nullptr, *forwardAction_ = nullptr;
   QMenu* recentProjectsMenu_ = nullptr;
   QTimer* rightSidebarSaveTimer_ = nullptr;

@@ -1,0 +1,26 @@
+2026-10-25T13:09:38.275Z 01-default begin
+2026-10-25T13:09:38.427Z 01-default events settled
+2026-10-25T13:09:38.496Z 01-default widget readback complete
+2026-10-25T13:09:38.837Z 01-default assertions complete
+2026-10-25T13:09:38.839Z long name refresh begin
+2026-10-25T13:09:38.845Z long name refresh complete
+2026-10-25T13:09:38.845Z 02-long-name begin
+2026-10-25T13:09:38.997Z 02-long-name events settled
+2026-10-25T13:09:39.035Z 02-long-name widget readback complete
+2026-10-25T13:09:39.374Z 02-long-name assertions complete
+2026-10-25T13:09:39.673Z 03-narrow-320-long-name begin
+2026-10-25T13:09:39.825Z 03-narrow-320-long-name events settled
+2026-10-25T13:09:39.894Z 03-narrow-320-long-name widget readback complete
+2026-10-25T13:09:40.556Z 03-narrow-320-long-name assertions complete
+2026-10-25T13:09:40.819Z 04-expanded-650 begin
+2026-10-25T13:09:40.970Z 04-expanded-650 events settled
+2026-10-25T13:09:41.029Z 04-expanded-650 widget readback complete
+2026-10-25T13:09:41.632Z 04-expanded-650 assertions complete
+2026-10-25T13:09:42.209Z 05-hidden begin
+2026-10-25T13:09:42.360Z 05-hidden events settled
+2026-10-25T13:09:42.408Z 05-hidden widget readback complete
+2026-10-25T13:09:43.066Z 05-hidden assertions complete
+2026-10-25T13:09:44.122Z 06-located begin
+2026-10-25T13:09:44.274Z 06-located events settled
+2026-10-25T13:09:44.343Z 06-located widget readback complete
+2026-10-25T13:09:44.604Z 06-located assertions complete

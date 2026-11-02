@@ -13,6 +13,8 @@
 #include <vector>
 
 #include "application/session.h"
+#include "ui/charts/axis_layout.h"
+#include "ui/charts/axis_description.h"
 #include "ui/charts/display_sampling.h"
 #include "ui/charts/interaction_feedback.h"
 
@@ -26,13 +28,29 @@ class CurveWorker;
 struct HeatmapPayload;
 struct CurvePayload;
 
+struct ChartPreviewTrack {
+  std::string id;
+  TimeRange time{};
+  FrequencyRange frequency{};
+  bool timeLocalized = false;
+  bool unpublished = false;
+};
+
 class PlotWidget : public QWidget {
   Q_OBJECT
+  Q_PROPERTY(AxisTitleMode axisTitleMode READ axisTitleMode WRITE setAxisTitleMode)
  public:
   enum class Kind { Navigation, Auxiliary, Main };
+  enum class AxisTitleMode { UnitAtTop, Header, Rotated, CompactHeader };
+  Q_ENUM(AxisTitleMode)
   PlotWidget(Session& session, Kind kind, QWidget* parent = nullptr);
   ~PlotWidget() override;
   QRectF plotRect() const;
+  AxisTitleMode axisTitleMode() const { return axisTitleMode_; }
+  Q_INVOKABLE void setAxisTitleMode(AxisTitleMode mode);
+  axis_layout::Layout axisLayout() const;
+  AxisDescription axisDescription() const;
+  Q_INVOKABLE QJsonObject axisLayoutStatistics() const;
   QPointF toPixel(SampleIndex sample, double frequencyHz) const;
   void setCreating(bool enabled);
   bool isCreating() const { return creating_; }
@@ -55,6 +73,14 @@ class PlotWidget : public QWidget {
   void setCursorCoordinates(SampleIndex sample, double frequencyHz);
   void setHoveredMark(const QString& id, const QString& segmentId = {});
   void refreshAnnotationOverlay();
+  void invalidateAnnotationOverlay();
+  void setDetectionPreview(std::vector<ChartPreviewTrack> tracks, std::uint64_t dropped);
+  // Mirrors the active file channel slot's suppressFormalResults for this plot
+  // and its hit testing. The slot in the project is the authority.
+  void setFormalDetectionSuppressed(bool suppressed);
+  bool formalDetectionSuppressed() const { return formalDetectionSuppressed_; }
+  void selectDetectionPreview(const QString& id);
+  QString selectedDetectionPreview() const;
   QString statusText() const;
   QString tipText() const;
   QMenu* createContextMenu(const QPoint& position);
@@ -63,6 +89,8 @@ class PlotWidget : public QWidget {
   quint64 textureUploadCount() const;
   quint64 completedFrameCount() const;
   quint64 powerGenerationCount() const { return powerGenerations_; }
+  QString cachedPowerKey() const { return powerKey_; }
+  int visibleAnnotationRectCount() const { return visibleAnnotationRects_; }
   qsizetype drawnPointCount() const;
   qsizetype sourcePointCount() const;
   QString renderQuality() const;
@@ -76,7 +104,16 @@ class PlotWidget : public QWidget {
   bool isDisplaySettled() const;
   std::shared_ptr<const SpectrogramData> currentSpectrogram() const;
   std::shared_ptr<const SpectralFrame> currentPowerFrame() const;
+  struct Hit {
+    std::string id;
+    int edges = 0;
+    bool selected = false;
+    std::string segmentId;
+  };
+  // Preview tracks are not marks. A hit returns only a formal annotation id.
+  Hit hitMark(QPointF) const;
  signals:
+  void axisDescriptionChanged();
   void stateChanged();
   void statusMessage(const QString& text);
   void markSelectionRequested(const QString& id,
@@ -110,6 +147,14 @@ class PlotWidget : public QWidget {
   bool event(QEvent*) override;
 
  private:
+  struct AxisLayoutCache;
+  const AxisLayoutCache& measuredAxes() const;
+  void freezeAxisLayouts();
+  void releaseAxisLayouts();
+  void refreshAxisLayouts();
+  mutable std::unique_ptr<AxisLayoutCache> axisLayoutCache_;
+  std::optional<axis_layout::Budget> frozenAxisBudget_;
+  AxisTitleMode axisTitleMode_ = AxisTitleMode::CompactHeader;
   using Zone = chart_feedback::Zone;
   enum class Tool {
     ZoomBox,
@@ -138,12 +183,6 @@ class PlotWidget : public QWidget {
     MainMode mainMode = MainMode::TimeFrequency;
     AuxiliaryMode auxiliaryMode = AuxiliaryMode::Waveform;
   };
-  struct Hit {
-    std::string id;
-    int edges = 0;
-    bool selected = false;
-    std::string segmentId;
-  };
   struct DetectionRoiDraft {
     std::string fileId;
     std::uint64_t projectGeneration = 0;
@@ -162,7 +201,7 @@ class PlotWidget : public QWidget {
   bool detectionRoiContextMatches() const;
   std::optional<ViewRange> detectionRoiRange(const Gesture& gesture) const;
   QRectF markRect(const ViewRange&) const;
-  Hit hitMark(QPointF) const;
+  bool showsMark(const FileState&, const Annotation&) const;
   std::vector<Hit> markChoicesAt(QPointF) const;
   std::vector<std::string> marksAt(QPointF) const;
   void addMarkChoices(QMenu*, const std::vector<Hit>&, Qt::KeyboardModifiers);
@@ -189,12 +228,17 @@ class PlotWidget : public QWidget {
   bool creating_ = false;
   bool releasing_ = false;
   std::optional<DetectionRoiDraft> detectionRoi_;
+  std::vector<ChartPreviewTrack> detectionPreview_;
+  bool formalDetectionSuppressed_ = false;
+  std::string selectedPreviewId_;
+  std::uint64_t detectionPreviewDropped_ = 0;
   std::optional<Gesture> gesture_;
   QTimer wheelTimer_;
   QTimer renderSettleTimer_;
   std::optional<ViewSnapshot> wheelBase_;
   WheelAxis wheelAxis_ = WheelAxis::Time;
   QString powerKey_, colorKey_;
+  int visibleAnnotationRects_ = 0;
   QString requestedPowerKey_;
   std::shared_ptr<HeatmapPayload> renderedPower_;
   std::deque<std::shared_ptr<HeatmapPayload>> powerCache_;

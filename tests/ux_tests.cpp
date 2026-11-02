@@ -5,12 +5,26 @@
 #include <QComboBox>
 #include <QFile>
 #include <QListView>
+#include <QMessageBox>
 #include <QLabel>
 #include <QScrollArea>
 #include <QPushButton>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QToolButton>
+#include <QClipboard>
+#include <QDialog>
+#include <QInputDialog>
+#include <QMenu>
+#include <QPlainTextEdit>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QTableView>
+#include <QTreeWidget>
+#include <QTreeWidgetItemIterator>
+#include "ui/annotations/annotation_panel.h"
+#include "infrastructure/label_import.h"
+#include "ui/annotations/annotation_evidence_widget.h"
 
 #include "app/main_window.h"
 #include "infrastructure/annotation_json.h"
@@ -85,6 +99,11 @@ class UxTests : public QObject {
  private:
   QTemporaryDir settings_;
  private slots:
+  void uxR5_threeTabsReadOnlyAndConversion();
+  void uxR5_layersAndIndependentFilters();
+  void uxR5_readOnlyMenusAndCommandGuards();
+  void uxR5_crossViewAndUnknownObservation();
+  void uxR5_algorithmResultHideAndDelete();
   void uxP01_popupDismissal();
   void uxP02_popupChildrenAndGeometry();
   void uxS06_popoverDraftPolicy();
@@ -104,6 +123,10 @@ class UxTests : public QObject {
   void uxR03_taskKeyboardAndDetails();
   void uxR03_taskRowActions();
   void uxD03_activeTaskCancellationAndFrozenDisplay();
+  void uxD09_intermediatePreviewAndRedetectClear();
+  void uxR6_previewChannelScope();
+  void uxR6_commitOverlaySkipsHeatmap();
+  void uxR6_commitFailureKeepsPreviousResult();
   void uxD01_topDerivationDiscardsCrossFileDraft();
   void uxR01_lateRunFilterPopupAndRefresh();
   void roundTwoFlatResponsiveControls();
@@ -116,6 +139,224 @@ class UxTests : public QObject {
     QApplication::setFont(QFont("Microsoft YaHei UI", 10));
   }
   void init() { QSettings().clear(); }
+
+  void uxR4_evidenceDisclosureAndFullCopy() {
+    MainWindow window;
+    window.session().addDemoFile();
+    auto* file = window.session().activeFile();
+    const auto id = window.session().addMark({{1000, 4000}, {99.9e6,100.1e6}});
+    auto* mark = findAnnotation(*file,id);
+    QVERIFY(mark);
+    auto origin = std::make_shared<OriginEvidence>();
+    origin->originalFieldsJson = "{\"payload\":\"" + std::string(16000,'x') + "END_OF_ORIGINAL\"}";
+    origin->originalSegments = mark->segments;
+    origin->evidenceRefs = {"first", "last-complete-reference"};
+    mark->originEvidence = origin;
+    for(auto mode:{AnnotationEvidenceWidget::Mode::Inspector,
+                   AnnotationEvidenceWidget::Mode::Auxiliary}) {
+      AnnotationEvidenceWidget evidence(mode);
+      evidence.resize(360,200);
+      evidence.setAnnotation(mark,file);
+      evidence.show();
+      QTest::qWait(20);
+      auto* dialog = evidence.findChild<QDialog*>("annotationEvidenceDetailsDialog");
+      auto* raw = evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+      QVERIFY(dialog && raw && !dialog->isVisible() && !raw->isVisible());
+      QVERIFY(!evidence.findChild<QLabel*>("annotationEvidenceSummary")->text().contains(QString::fromStdString(id)));
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      QVERIFY(dialog->isVisible());
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      const auto copied=QApplication::clipboard()->text();
+      QVERIFY(copied.contains("END_OF_ORIGINAL"));
+      QVERIFY(copied.contains("last-complete-reference"));
+      QVERIFY(copied.contains(QString::fromStdString(id)));
+      QVERIFY(copied.contains("revisions"));
+      QCOMPARE(mark->originEvidence,origin);
+      evidence.setAnnotation(nullptr,file);
+      QVERIFY(!dialog->isVisible());
+    }
+  }
+
+  void uxR4_currentObjectAndActionStates() {
+    MainWindow window;
+    window.session().addDemoFile();
+    auto* file=window.session().activeFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    QVERIFY(window.session().annotations().addSegment(*file,id,{{5000,8000},{99.9e6,100.1e6}}).ok);
+    const auto other=window.session().addMark({{9000,11000},{100e6,100.2e6}});
+    const auto* mark=findAnnotation(*file,id);
+    QVERIFY(window.session().annotations().select(*file,{id},id,mark->segments.front().id).ok);
+    expose(window);
+    window.findChild<QPushButton*>("contextAnnotation")->click();
+    QVERIFY(window.findChild<QWidget*>("annotationPage")->isVisible());
+    auto* previous=window.findChild<QPushButton*>("annotationPreviousSegment");
+    auto* next=window.findChild<QPushButton*>("annotationNextSegment");
+    auto* create=window.findChild<QPushButton*>("annotationInspectorCreateChannel");
+    QVERIFY(!previous->isEnabled() && next->isEnabled() && create->isEnabled());
+    auto* identity=window.findChild<QLabel*>("annotationIdentity");
+    QVERIFY(!identity->text().contains(QString::fromStdString(id)));
+    const auto view=file->view;
+    next->click();
+    QVERIFY(previous->isEnabled() && !next->isEnabled());
+    QCOMPARE(file->view.time.begin,view.time.begin);
+    QCOMPARE(file->view.time.end,view.time.end);
+    QCOMPARE(file->view.frequency.lowerHz,view.frequency.lowerHz);
+    QCOMPARE(file->view.frequency.upperHz,view.frequency.upperHz);
+    window.session().selectMarks({id,other},id);
+    window.refresh();
+    QVERIFY(!create->isEnabled());
+    QVERIFY(identity->text().contains("已选 2"));
+    window.session().selectMarks({});
+    window.refresh();
+    QVERIFY(!create->isEnabled());
+    QVERIFY(!window.findChild<QPushButton*>("annotationInspectorLocate")->isEnabled());
+  }
+
+  void uxR4_supplementalSourceAndPagedCopy() {
+    QTemporaryDir directory;
+    const auto base=directory.filePath("0000000");
+    const auto read=[](const QString& name) {
+      QFile f(QString::fromUtf8(SS_SOURCE_DIR)+"/tests/fixtures/wideband/"+name);
+      if(!f.open(QIODevice::ReadOnly))return QByteArray{};
+      return f.readAll();
+    };
+    auto primary=read("torchsig-0000000.sigmf-meta");
+    auto extra=QJsonDocument::fromJson(read("torchsig-0000000.json")).object();
+    // Ordinary-sized real parser input. Large RFbench validation is explicitly
+    // excluded by the user's latest instruction.
+    extra["unknown_header_field"]="SUPPLEMENT_HEADER_PRESERVED";
+    const auto supplemental=QJsonDocument(extra).toJson();
+    for(const auto& suffix:{QString(".sigmf-meta"),QString(".json")}) {
+      QFile f(base+suffix);QVERIFY(f.open(QIODevice::WriteOnly));
+      const auto bytes=suffix==".json"?supplemental:primary;
+      QCOMPARE(f.write(bytes),bytes.size());
+    }
+    QFile iq(base+".sigmf-data");QVERIFY(iq.open(QIODevice::WriteOnly));
+    QVERIFY(iq.resize(3200000));iq.close();
+    FileState file;
+    file.metadata.id="supplemental-ui";file.metadata.path=(base+".sigmf-data").toStdString();
+    file.metadata.sampleRateHz=20e6;file.metadata.centerFrequencyHz=2500e6;
+    file.metadata.sampleCount=400000;file.metadata.effectiveBandwidthHz=20e6;
+    file.metadata.sampleFormat.componentEncoding=ComponentEncoding::Float32;
+    file.metadata.sampleFormat.normalizeIntegerAdc=false;
+    const auto imported=importTorchSigLabels(base+".sigmf-meta",file.metadata);
+    QVERIFY2(imported.ok(),qPrintable(imported.error));
+    QVERIFY(!imported.annotations.empty());
+    file.sourceSets={imported.sourceSet};file.marks=imported.annotations;
+    const auto sourceBefore=encodeSourceSet(file.sourceSets.front());
+    const auto markBefore=encodeAnnotation(file.marks.front());
+    for(auto mode:{AnnotationEvidenceWidget::Mode::Inspector,AnnotationEvidenceWidget::Mode::Auxiliary}) {
+      AnnotationEvidenceWidget evidence(mode);
+      evidence.resize(380,230);evidence.setAnnotation(&file.marks.front(),&file);evidence.show();
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle")->click();
+      auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+      QVERIFY(raw->isVisible());
+      QVERIFY(raw->toPlainText().contains("SUPPLEMENT_HEADER_PRESERVED"));
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      const auto copied=QApplication::clipboard()->text();
+      QVERIFY(copied.contains(QString::fromUtf8(primary)));
+      QVERIFY(copied.contains(QString::fromUtf8(supplemental)));
+      QVERIFY(copied.contains(QString::fromStdString(imported.sourceSet.supplementalHash)));
+      QVERIFY(copied.contains("supplementalOriginalText"));
+      QCOMPARE(encodeSourceSet(file.sourceSets.front()),sourceBefore);
+      QCOMPARE(encodeAnnotation(file.marks.front()),markBefore);
+    }
+    // Small synthetic text exercises paging independently of RFbench events.
+    auto origin=std::make_shared<OriginEvidence>(*file.marks.front().originEvidence);
+    origin->originalFieldsJson="{\"paging\":\""+std::string(140000,'p')+"PAGE_TAIL\"}";
+    file.marks.front().originEvidence=origin;
+    AnnotationEvidenceWidget evidence;
+    evidence.setAnnotation(&file.marks.front(),&file);evidence.show();
+    evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+    evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle")->click();
+    auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+    QVERIFY(raw->toPlainText().size()<=65536);
+    auto* search=evidence.findChild<QLineEdit*>("annotationEvidenceSearch");
+    search->setText("PAGE_TAIL");QTest::keyClick(search,Qt::Key_Return);
+    QVERIFY(raw->toPlainText().contains("PAGE_TAIL"));
+    QCOMPARE(raw->textCursor().selectedText(),QString("PAGE_TAIL"));
+    evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+    QVERIFY(QApplication::clipboard()->text().contains(std::string(140000,'p').c_str()));
+  }
+
+  void uxR4_auxiliaryDetailsCloseWithHiddenContext() {
+    MainWindow window;
+    window.session().addDemoFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    window.session().selectMarks({id},id);expose(window);
+    window.findChild<QPushButton*>("detectionEvidenceMode")->click();
+    auto* evidence=window.findChild<QWidget*>("auxiliaryDetectionEvidence");
+    evidence->findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+    auto* dialog=evidence->findChild<QDialog*>("annotationEvidenceDetailsDialog");
+    QVERIFY(dialog->isVisible());
+    window.findChild<QPushButton*>("waveMode")->click();
+    QVERIFY(!dialog->isVisible());
+    window.session().addDemoFile("other",1e6,101e6,.02);window.refresh();
+    QVERIFY(!dialog->isVisible());
+    window.findChild<QPushButton*>("detectionEvidenceMode")->click();
+    QVERIFY(evidence->findChild<QPlainTextEdit*>("auxiliaryAnnotationEvidence")->toPlainText().isEmpty());
+  }
+
+  void uxR4_searchBoundaryAndOriginalNewlines() {
+    MainWindow window;window.session().addDemoFile();
+    auto* file=window.session().activeFile();
+    const auto id=window.session().addMark({{1000,4000},{99.9e6,100.1e6}});
+    auto* mark=findAnnotation(*file,id);QVERIFY(mark);
+    auto origin=std::make_shared<OriginEvidence>(*mark->originEvidence);
+    QString payload(140000,QLatin1Char('x'));
+    payload.replace(0,13,"PAYLOAD_BEGIN");
+    origin->originalFieldsJson=("{\r\n\"payload\":\""+payload+"\"\r\n}").toStdString();
+    mark->originEvidence=origin;
+    AnnotationEvidenceWidget evidence;
+    const auto open=[&] {
+      evidence.findChild<QToolButton*>("annotationEvidenceDetailsToggle")->click();
+      auto* toggle=evidence.findChild<QToolButton*>("annotationOriginalFieldsToggle");
+      if(!toggle->isChecked())toggle->click();
+    };
+    const auto fullCopy=[&] {
+      evidence.findChild<QPushButton*>("annotationCopyEvidence")->click();
+      return QApplication::clipboard()->text();
+    };
+    evidence.setAnnotation(mark,file);evidence.show();open();
+    const auto initial=fullCopy();
+    const auto payloadBegin=initial.indexOf("PAYLOAD_BEGIN");
+    QVERIFY(payloadBegin>0 && payloadBegin<65000);
+    const QString needle="BOUNDARY_NEEDLE";
+    payload.replace(100,needle.size(),needle);
+    payload.replace(65530-payloadBegin,needle.size(),needle);
+    auto revised=std::make_shared<OriginEvidence>(*origin);
+    revised->originalFieldsJson=("{\r\n\"payload\":\""+payload+"\"\r\n}").toStdString();
+    mark->originEvidence=revised;evidence.setAnnotation(mark,file);open();
+    auto* search=evidence.findChild<QLineEdit*>("annotationEvidenceSearch");
+    auto* raw=evidence.findChild<QPlainTextEdit*>("annotationEvidence");
+    const auto verifyAll=[&](const QString& word) {
+      const auto original=fullCopy();
+      QList<qsizetype> hits;
+      for(qsizetype at=original.indexOf(word);at>=0;at=original.indexOf(word,at+word.size()))hits.append(at);
+      QVERIFY(hits.size()>=2);
+      search->setText(word);
+      for(qsizetype i=0;i<=hits.size();++i) {
+        QTest::keyClick(search,Qt::Key_Return);
+        QCOMPARE(raw->textCursor().selectedText(),word);
+        QVERIFY(evidence.findChild<QLabel*>("annotationEvidencePage")->text()
+          .startsWith(QString("第 %1/").arg(hits[i%hits.size()]/65536+1)));
+      }
+      QCOMPARE(fullCopy(),original);
+    };
+    const auto boundaryCopy=fullCopy();
+    QCOMPARE(boundaryCopy.indexOf(needle,boundaryCopy.indexOf(needle)+needle.size()),qsizetype(65530));
+    verifyAll(needle);
+    for(const auto& text:QStringList{
+          "{\r\n\"a\":\"TARGET\",\r\n\"b\":\"TARGET\"\r\n}",
+          "{\r\n\"a\":\"TARGET\",\r\"b\":\"TARGET\",\n\"c\":\"TARGET\"\r\n}"}) {
+      auto sample=std::make_shared<OriginEvidence>(*origin);
+      sample->originalFieldsJson=text.toStdString();mark->originEvidence=sample;
+      evidence.setAnnotation(mark,file);open();
+      QVERIFY(fullCopy().contains(text));verifyAll("TARGET");
+      QVERIFY(fullCopy().contains(text));
+    }
+  }
 
   void uxD01_historicalDerivation() {
     QTemporaryDir directory;
@@ -295,6 +536,7 @@ class UxTests : public QObject {
 #include "inspector_ux_tests.h"
 #include "detection_card_ux_tests.h"
 #include "task_ux_tests.h"
+#include "ux_r5_ui_tests.h"
 
 QTEST_MAIN(UxTests)
 #include "ux_tests.moc"

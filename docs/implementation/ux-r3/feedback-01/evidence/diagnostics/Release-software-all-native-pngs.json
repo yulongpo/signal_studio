@@ -1,0 +1,362 @@
+[
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-psd-tf-long.png",
+    "bytes": 572488,
+    "sha256": "e0ca9e3e6c5e64993a7a2b7d701f1cbac5cce02dd1d0d239924455036e287360"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-psd-tf-short.png",
+    "bytes": 1319604,
+    "sha256": "2e9ef41c44e2ac411438dba2b0f8487080d631950e380c83611be96783348716"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-psd-waterfall-long.png",
+    "bytes": 650830,
+    "sha256": "7cd2d2c1766535c7bdfa4815a8a8569089fb74ab7cbe93535f95aef8ad19db22"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-psd-waterfall-short.png",
+    "bytes": 1859949,
+    "sha256": "e65dc773174f87c5e1e5b299557845152af23d7cc66da529676b768f9a400c11"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-waveform-tf-long.png",
+    "bytes": 558978,
+    "sha256": "848d3cb26f3bb2b5e8bd5435114e53167c8ac96f63c0565f1e64025a4efa1925"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-waveform-tf-short.png",
+    "bytes": 1317605,
+    "sha256": "65b666bd790be77b6793cbe60b1b74141ec18394274f03f93cc2c8c5fdf9e145"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-waveform-waterfall-long.png",
+    "bytes": 635657,
+    "sha256": "9986bf504b9084a76141003b4c13cb1d6c73ec40426f216e7a438b207e6bbd6b"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\A-waveform-waterfall-short.png",
+    "bytes": 1844485,
+    "sha256": "94ada8346e5a49189662d0b52a6075b1e462daa4c1b48941ae8d60ce45da44cb"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-psd-tf-long.png",
+    "bytes": 575137,
+    "sha256": "9a4fb0c94334c8918d216ec54f6d567022bfecad640907199237f4226cceb7e6"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-psd-tf-short.png",
+    "bytes": 1321486,
+    "sha256": "e50c4c4bc5138af1ebc8512cdf5a41c61bf77207f6da996b4bef8fd343e1ece1"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-psd-waterfall-long.png",
+    "bytes": 653569,
+    "sha256": "d1bd29cb76d9233709ba0bb55d6265ecbcc6992be24f568ff48e684d97c4418e"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-psd-waterfall-short.png",
+    "bytes": 1862868,
+    "sha256": "9612c48abf5b3d65e92c3fdb7d8db77b5f6210ba95ccaf215052c76ae50ec08f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-waveform-tf-long.png",
+    "bytes": 562295,
+    "sha256": "7728eb1061cc63a8bdce1d2f7a7c46d4bd479db7859d63d14968378db1edd6b0"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-waveform-tf-short.png",
+    "bytes": 1310459,
+    "sha256": "fef44eaa4e37c22aaa84caf3916a0dadb642f3b6f26554a75a503b7e776dca71"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-waveform-waterfall-long.png",
+    "bytes": 637964,
+    "sha256": "5314e9c5212b670c07d01d9f990acf55f769500ea691276ec458a58eefd60b24"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\B-waveform-waterfall-short.png",
+    "bytes": 1846021,
+    "sha256": "550c6164472966e719412829b0527fa33413e7cc361b1e19268cfedb65d023db"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-psd-tf-long.png",
+    "bytes": 572167,
+    "sha256": "c05c1c6deff146b90cacd8877670431538814c53f5a5aa8a9701f4e6f9e2c532"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-psd-tf-short.png",
+    "bytes": 1329616,
+    "sha256": "ffd92a4c6b7db86ccaba4c3d37b9481fe4eb59ee5deeb3bcc2adc396ab4cdd6d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-psd-waterfall-long.png",
+    "bytes": 654967,
+    "sha256": "331acf92d3f2d98193bdd62e4edfd55c25cfac81d93d4e550b4a5098c681bc65"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-psd-waterfall-short.png",
+    "bytes": 1853824,
+    "sha256": "7451c86357dca27428f742bf998de348cde2067a0c894a52a6ecbc82b4afc45d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-waveform-tf-long.png",
+    "bytes": 561119,
+    "sha256": "1ebafdbff949c3a09988a7c154b93d18e59da082335ba2dcd7ecfc138f0de109"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-waveform-tf-short.png",
+    "bytes": 1318112,
+    "sha256": "e01c04cbab6365bd47d6bf0ab49c283736fa295b27722c0b081220db910791ce"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-waveform-waterfall-long.png",
+    "bytes": 636669,
+    "sha256": "dca1195bfb2de2459c73ee0a8e67776aa36d03afc29001752244cd2969ddf738"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\C-waveform-waterfall-short.png",
+    "bytes": 1840490,
+    "sha256": "6d0fb4cfec99eaa090f3c4fd9381d29a5248c612092d262d66f74dc3ab6fc965"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-psd-tf-long.png",
+    "bytes": 586082,
+    "sha256": "3ac0c28cc4823fe4f6ad5170c62d44b58876630f4605014ab9facf5f0ed5bcda"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-psd-tf-short.png",
+    "bytes": 1361478,
+    "sha256": "84e74785162fc34890add8a9c013bf1e1fb428c439e20e627208161ea1f685b5"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-psd-waterfall-long.png",
+    "bytes": 664050,
+    "sha256": "cc8d1e08f9752fe9878c2fa448f14287d46f1ccdcdd463aee65b79ec3f07d3d2"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-psd-waterfall-short.png",
+    "bytes": 1903493,
+    "sha256": "f5668d5ea2f8b1c2a835cd9df989c8bafa7c8ccbe44e804f6734d889493996d1"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-waveform-tf-long.png",
+    "bytes": 570286,
+    "sha256": "ca3d44d8fdbd37eaf53a08b1cabcb3154ed62bfbbb57bfe0763da0cb6eb7f274"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-waveform-tf-short.png",
+    "bytes": 1349490,
+    "sha256": "f197c7f8ea582e7969632f70f280d10c88f0f10b9519ef6f66bca0dbe44057de"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-waveform-waterfall-long.png",
+    "bytes": 648098,
+    "sha256": "f134472a129ba5597b678e6004eb5e6708dbf65dd1cc8f632401a26380ce2725"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\CompactHeader-waveform-waterfall-short.png",
+    "bytes": 1886285,
+    "sha256": "fa27d1f50a13013e0b535db35a21ded2d1f47ccfb447ab90495de31418d2501a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-known-dedup-ok-file-picker.png",
+    "bytes": 41371,
+    "sha256": "7897f42261151db08ea7ff10c9692b96a469348a8d8265735353e3086891958f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-known-dedup-ok-preview-ok.png",
+    "bytes": 63662,
+    "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-unknown-mapping-cancel-file-picker.png",
+    "bytes": 34901,
+    "sha256": "54ff57e9187fe04ef9bc18c9269d6c8c7e19a781bcde08ea7922dcd2d2dca599"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-unknown-mapping-cancel-mapping-cancel.png",
+    "bytes": 79239,
+    "sha256": "cd9520a2cce2ddda67fee2cfd2fc999483a1c54e8282ef3bc93c5b86231acc08"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-unknown-preview-cancel-file-picker.png",
+    "bytes": 34901,
+    "sha256": "54ff57e9187fe04ef9bc18c9269d6c8c7e19a781bcde08ea7922dcd2d2dca599"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-unknown-preview-cancel-mapping-confirm.png",
+    "bytes": 80523,
+    "sha256": "e098ef22158f0c6c8929d9d5a19f4a00292235b8aa4eae1a401009ac68d71bde"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-bottom-unknown-preview-cancel-preview-cancel.png",
+    "bytes": 55416,
+    "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-known-dedup-ok-file-picker.png",
+    "bytes": 41371,
+    "sha256": "7897f42261151db08ea7ff10c9692b96a469348a8d8265735353e3086891958f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-known-dedup-ok-preview-ok.png",
+    "bytes": 63662,
+    "sha256": "5cc15ef6987dcb24cf7ef248996fe6cf76a44004169ad92ff43790adaadab9b0"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-unknown-mapping-cancel-file-picker.png",
+    "bytes": 34901,
+    "sha256": "54ff57e9187fe04ef9bc18c9269d6c8c7e19a781bcde08ea7922dcd2d2dca599"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-unknown-mapping-cancel-mapping-cancel.png",
+    "bytes": 79239,
+    "sha256": "cd9520a2cce2ddda67fee2cfd2fc999483a1c54e8282ef3bc93c5b86231acc08"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-unknown-preview-cancel-file-picker.png",
+    "bytes": 34901,
+    "sha256": "54ff57e9187fe04ef9bc18c9269d6c8c7e19a781bcde08ea7922dcd2d2dca599"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-unknown-preview-cancel-mapping-confirm.png",
+    "bytes": 80523,
+    "sha256": "e098ef22158f0c6c8929d9d5a19f4a00292235b8aa4eae1a401009ac68d71bde"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-Release-software\\diagnostics\\Release-software-20261025-150726-364\\ux-r3-software-815cc49f-bc7b-4074-923a-e325b209acb7\\manual-label-menu-unknown-preview-cancel-preview-cancel.png",
+    "bytes": 55416,
+    "sha256": "e2d13fe39560bd26ac306b521dbf678992579ec4bf5520e164f71d2bca65a64a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-01-ddc.png",
+    "bytes": 362870,
+    "sha256": "40a4d843625d1d24ade1499ad3c716cc1d20dbfd3d54125c23c38daddcc087a7"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-02-raw.png",
+    "bytes": 660058,
+    "sha256": "5c554f27a98cebcdf8f976dcefefdd53eae2e0bfbd45a6cfd794044051c3055d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-03-manual-eye.png",
+    "bytes": 2467631,
+    "sha256": "e15b0e7c6e8e4199f962a3945a6dde0ac0af030589e8b345aae4de0e3934e824"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-04-recovered-constellation.png",
+    "bytes": 379730,
+    "sha256": "5def13888c2ff86c65ec0fa44f75450dc564c551f7c625a7af3539602470f0d6"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-05-recovered-eye.png",
+    "bytes": 2213030,
+    "sha256": "80f0d06105243449f58b76e9bdfe740626f3243ab1e04a257fd064ede8bdea06"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-06-recognition-unavailable.png",
+    "bytes": 407268,
+    "sha256": "e9c035971a7edb94a81eee2593c34396183ef31a33b9fb22f0f35b7ee94935f5"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-07-demodulation-unavailable.png",
+    "bytes": 1863993,
+    "sha256": "2f791492f64f6d201fa00fe6a100a9bf1546bcbd260a7050d35f396a6a3a7769"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-08-reopened-eye.png",
+    "bytes": 2209913,
+    "sha256": "b6ab8ece94c9c4968353d89b6bed184e2e38be03fa81c41362e56a2854fb1133"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-09-cancelled.png",
+    "bytes": 225050,
+    "sha256": "5a8fea857d9507859ae6d297f826c58b7686e436a5049676eeee41a5216356ed"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-10-decision-unknown.png",
+    "bytes": 660664,
+    "sha256": "3e609a0a8eaef98bba9bfef6fa554789e10cf443f37c1ab48f5c75cd0ad50cac"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-11-decision-reference.png",
+    "bytes": 375866,
+    "sha256": "dd6157256aa43a7aed170051a29b17ef0454a3e6f7f00bbfff071773999ac5ef"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-12-decision-iq-zoom.png",
+    "bytes": 376163,
+    "sha256": "cd6630df7090a8b740fe5f2e30096ca8ab9d049b562b2e3cce4c1bfa4e68147a"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\cf32-13-decision-reference-off.png",
+    "bytes": 372314,
+    "sha256": "ebb5d9305c6b433d7dfef9b93679dfd176ed420d2bfa7ee00b997c6a889af8d8"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-01-ddc.png",
+    "bytes": 383973,
+    "sha256": "7f660e27aa481e94ed39d4891cb136b71f069c903243431c11bf5c4bcb5c41eb"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-02-raw.png",
+    "bytes": 658548,
+    "sha256": "1771dc387db32f078aedd23b18e8fb9c35f547943db6e9d8eb8cfd4118f65956"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-03-manual-eye.png",
+    "bytes": 2465524,
+    "sha256": "9210e2d4b0f2cdeaec59dc92e68b85e8c9a8901115a740ea34588d6cd109b418"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-04-recovered-constellation.png",
+    "bytes": 361221,
+    "sha256": "c0a98d953a9b5467d40ac75cd45ccfef91f94ff1c6f0d9b356a7cea759de912e"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-05-recovered-eye.png",
+    "bytes": 2191914,
+    "sha256": "8c88cbbeadfd4b86844b9849f154e962b175d6c4f5c23c97b29f5b58ddeb2666"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-06-recognition-unavailable.png",
+    "bytes": 388799,
+    "sha256": "ca3bb6c9a99eeef4c322e958d7d1f9833c0279bab698594e14b929134cc8e739"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-07-demodulation-unavailable.png",
+    "bytes": 1842237,
+    "sha256": "862318dd734d3167d333f4ec61694b826712441ffc538f395f9f30135ba92372"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-08-reopened-eye.png",
+    "bytes": 2189501,
+    "sha256": "b6e267fcc48eca62e74f57175f9bba8f01c8fd413979c92363018c48dd591f7f"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-09-cancelled.png",
+    "bytes": 223809,
+    "sha256": "852a07ad46b883505756a513a7afd3b3b94eb86afd30a094f59dbc6cd8a37f56"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-10-decision-unknown.png",
+    "bytes": 659053,
+    "sha256": "0b08014f4c7d0cf0b799c75508b70ce9e7acc25b89451f0665e25899076ec333"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-11-decision-reference.png",
+    "bytes": 357031,
+    "sha256": "291b7f6d5a52344bc03d3a1593f1c77e428546d25f9c73244bc52a391302628d"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-12-decision-iq-zoom.png",
+    "bytes": 358743,
+    "sha256": "82a755a66b7d925d065fc5884d8089a8cdeb4a1e6f0b5f86b8d69cc60c5fc73b"
+  },
+  {
+    "originalPath": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3-FEEDBACK-01\\native-final-narrowband-Release-software\\diagnostics\\native-20261025-151117-393-Release\\ci16-13-decision-reference-off.png",
+    "bytes": 353781,
+    "sha256": "b618d7ca0aecb2678cfcf782a863a0f461e0593e113156938612d3a729ec6044"
+  }
+]

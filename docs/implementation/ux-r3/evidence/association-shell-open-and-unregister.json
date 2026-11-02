@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "pass": true,
+  "project": "D:\\project\\signal_studio_rebuild\\out\\tasks\\wideband-detection\\UX-R3\\G7\\assets\\association path 中文\\with spaces 中文.ssproj",
+  "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe",
+  "registeredCommand": "\"D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudio.exe\" --project \"%1\"",
+  "openedProcessId": 62392,
+  "windowTitle": "axis-real-iq · Signal Studio UX-R3",
+  "unregistered": true,
+  "error": null
+}

@@ -1,0 +1,1 @@
+Narrowband Debug gpu passed 26 scenes; physical native acceptance: True. Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\UX-R3-FEEDBACK-01\native-final-narrowband-Debug-gpu\diagnostics\native-20261025-152216-950-Debug\narrowband-analysis-report.json

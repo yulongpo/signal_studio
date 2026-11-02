@@ -1,0 +1,1 @@
+Narrowband Debug software passed 26 scenes; physical native acceptance: True. Report: D:\project\signal_studio_rebuild\out\tasks\wideband-detection\UX-R3-FEEDBACK-01\native-final-narrowband-Debug-software\diagnostics\native-20261025-153642-502-Debug\narrowband-analysis-report.json

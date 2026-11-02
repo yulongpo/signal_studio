@@ -19,14 +19,17 @@ bool describeRawFile(const QString& path,const SampleFormat& format,double fs,do
     m.availability.fingerprint=iqSourceFingerprint(path).toStdString();target=std::move(m);error.clear();return true;
 }
 RawSampleReader::~RawSampleReader(){if(mapped_)file_.unmap(mapped_);}
-bool RawSampleReader::open(const QString& path,const SampleFormat& format,QString& error){
+bool RawSampleReader::open(const QString& path,const SampleFormat& format,QString& error,Access access){
     if(mapped_)file_.unmap(mapped_);mapped_=nullptr;file_.close();count_=0;
     file_.setFileName(path);
     if(!file_.open(QIODevice::ReadOnly)){error=file_.errorString();return false;}
     std::string message;
     if(!sampleCountForBytes(format,static_cast<std::uint64_t>(file_.size()),count_,message)){error=QString::fromStdString(message);file_.close();return false;}
-    mapped_=file_.map(0,file_.size());
-    if(!mapped_){error="无法建立只读样本映射："+file_.errorString();file_.close();count_=0;return false;}
+    access_=access;
+    if(access==Access::Mapped){
+        mapped_=file_.map(0,file_.size());
+        if(!mapped_){error="无法建立只读样本映射："+file_.errorString();file_.close();count_=0;return false;}
+    }
     format_=format;error.clear();return true;
 }
 double RawSampleReader::component(std::uint64_t componentIndex) const {
@@ -49,6 +52,7 @@ double RawSampleReader::decode(const uchar* p) const {
     return value/adcScale(format_);
 }
 bool RawSampleReader::sampleAt(std::uint64_t n,std::complex<double>& output,QString* error) const {
+    if(access_==Access::Sequential){if(error)*error="顺序读取模式不提供逐点映射访问，请使用有界 read";return false;}
     if(!mapped_||n>=count_){if(error)*error="样本索引越界";return false;}
     const auto c=format_.selectedChannel, channels=format_.channels;
     const bool complex=format_.structure==SampleStructure::ComplexIQ;
@@ -70,6 +74,7 @@ bool RawSampleReader::sampleAt(std::uint64_t n,std::complex<double>& output,QStr
     output={i,q};return true;
 }
 bool RawSampleReader::read(TimeRange range,std::vector<std::complex<float>>& output,const std::function<bool()>& cancel,QString* error) const {
+    if(!isOpen()){if(error)*error="样本源未打开";return false;}
     if(range.end>count_||range.begin>=range.end||range.end-range.begin>4'194'304){if(error)*error="读取范围越界或超过 32MiB 解码预算";return false;}
     const auto n=range.end-range.begin,bytes=bytesPerComponent(format_);
     const bool complex=format_.structure==SampleStructure::ComplexIQ,planar=complex&&format_.iqLayout==IQLayout::PlanarIQ;

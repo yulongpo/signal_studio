@@ -1,0 +1,12 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_ux_annotation$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start 36: signal_studio_ux_annotation
+1/1 Test #36: signal_studio_ux_annotation ......   Passed    1.15 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Label Time Summary:
+annotation     =   1.15 sec*proc (1 test)
+wideband-ux    =   1.15 sec*proc (1 test)
+
+Total Test time (real) =   1.18 sec

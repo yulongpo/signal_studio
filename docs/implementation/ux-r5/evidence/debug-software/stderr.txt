@@ -1,0 +1,2 @@
+QFont::setPointSize: Point size <= 0 (-1), must be greater than 0
+QWindowsWindow::setGeometry: Unable to set geometry 930x45+4000+425 (frame: 952x101+3989+380) on QWidgetWindow/"channelConfigDialogWindow" on "Redmi 27 NU". Resulting geometry: 930x1217+4000+425 (frame: 952x1273+3989+380) margins: 11, 45, 11, 11 minimum size: 620x770 MINMAXINFO(maxSize=POINT(x=0, y=0), maxpos=POINT(x=0, y=0), maxtrack=POINT(x=0, y=0), mintrack=POINT(x=952, y=1211)))

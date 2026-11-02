@@ -1,0 +1,70 @@
+# UX-R6 实际验证记录（持续更新）
+
+本轮产物和首次失败均保留 `out/tasks/ux-r6/`。范围依据为reference四文件，不因局部测试绿灯缩小最终目标。当前仍未终审、未推送。
+
+## R6-0 原故障
+
+用户原工程、两份164/639错误manifest、本轮原WAV/原冻结请求失败重跑、GPU采样及BUG02实际Qt诊断见 `evidence/baseline/`。详细根因见 ROOT_CAUSE。原失败中的ROI与用户描述Sample须分开；没有猜测OOM。
+
+## R6-1 版本与构建
+
+构建输入为本仓库 `cf1584f` 后的R6-1工作树，随后本节点提交冻结相同实现；不能把程序内嵌的旧buildRevision当作整个工作树身份。Debug/Release 公共完整构建分别退出0，原始日志 `evidence/r6-1/{debug,release}-build.txt`。本轮没有更换Qt、模型权重、Engine、精度或DSP算法。
+
+| 实际批次 / 每配置 | Debug | Release | 范围 |
+|---|---:|---:|---|
+| 主代理核心/存储11组 | 11/11，94.54s | 11/11，28.52s | store/task/protocol/source/model_backend/pipeline、core/project_file/annotations/annotation_store、R5 compat |
+| BUG02子任务3组 | 3/3，54.18s | 3/3，17.53s | 生命周期11业务case、R5 UI4业务函数、Layout8业务函数，均新构建实际执行 |
+
+两批并行调度，耗时不能相加解释为单次端到端性能。此处测试无失败，日志保留实际Qt totals及跳过统计；它们不证明实屏、真实模型质量或全R6矩阵。
+
+新增/强化边界：独立raw-head配额与旧combined兼容、原子超额拒绝、完整raw内容篡改；整任务配额不足不得启动worker；非空旧committed在参数/模型/运行/异常与重开保持ID/证据/可见性；pending/retired不穿透；成功含0仍整体切换；历史转换、人工权限、通道及DDC/事务/GC既有断言保留。
+
+## R6-1 用户原WAV真实FFSCN
+
+同一20MS/s、int16 IQ、16M样本WAV及原65536/0.25ms/score0.5/batch2模型参数；新请求显式选择256MiB独立raw-head配额，JSON配额保持32MiB。原输出/进度报告为 `evidence/r6-1/` 对应子目录，完整head资产仍在out。
+
+| 运行 | 目标与实际 | 原始状态 | 用途与限制 |
+|---|---|---|---|
+| ROI，范围限制0.02s | 15/15；11375ms；10对象/10段 | Completed，pass=true | 完成/精修/落盘正例；不是完整0.8s |
+| Sample，范围限制0.02s | 15/15；9472ms；10对象/10段 | Completed，pass=true | 独立Sample分支正例；不是完整0.8s |
+| 原完整范围、200窗时取消 | 200/639；179057ms；23前缀观察/0活动段 | Cancelled，pass=false，cancellationSent=true | 跨旧164失败点及实际取消；不能称639/639通过或正式发布 |
+
+该取消试验的预期行为断言成立，但未改写原始CLI pass=false。旧正式结果保护由真实服务/.ssproj/Qt回归证明，headless benchmark不会改原用户工程；前缀观察不是正式结果。
+
+已找到原WAV同名生成器TXT（13对象），频率坐标继续采用现有可信解析器 `generator FC - Fs/2 + bound Fc`，后续质量测量使用该依据，不能按预测结果反推标签。尚未在本节给出完整质量指标。
+
+## R6-2 测量实现与自检
+
+观测功能和固定物理匹配均实际编译执行，未改变模型权重/精度、FFT算术、阈值或精修算法。Debug选定7目标构建完成，5个定向CTest（model_backend/store/task/benchmark_quality/source）5/5，34.33s。新增行为验证覆盖：可选profile旧文件兼容/64KiB超限/坏schema原子拒绝；producer checkpoint抛异常转durable Failed；永久terminal写入抛异常只报Failed并禁止发布；最大匹配重配对、重复预测一对一、时间不相交/频率模式、2^54以上单样本差、观察不制造事件及物理裁剪/容量拒绝。
+
+Release首次profiling选定6目标构建通过，原4个定向组4/4（10.47s）；后来新增quality与terminal异常保护，quality/store/model_backend三个隔离目标重建和CTest3/3通过。最新terminal异常保护已在Debug执行，Release task重建/补测待完整长运行释放worker后执行，不能把此前4/4算成最新异常用例的Release执行。一次包含source目标的Release构建通过部署依赖尝试重链接正在运行的worker，实际LNK1104退出1；原日志保留，随后隔离3目标构建通过。不得把该失败说成首轮全过。
+
+真实模型短重复：ROI/Sample各5次、每次15/15完成，固定标签指标均为10/10匹配，原始measurement/progress/GPU CSV及launcher/summary归档 `evidence/r6-2/`。脚本由PowerShell/Python解析检查，且真实启动smoke成功。数据和方法边界见 PERFORMANCE；无并发构建的10次短基线与有并发构建的完整长请求分开。
+
+`r6-2-baseline-roi-full`为同一原WAV完整639窗请求，显式独立raw-head配额，其余模型/FFT/hop/ROI参数沿用；尚未结束时不能预记成功。已记录并发工作开始UTC，长运行只验证完成性与全范围标签质量，不作为受控优化前后性能对照。原始用户工程不写入，benchmark只在私有out任务目录发布检测资产。
+
+## R6-3 定向闭合（2026-10-27）
+
+Release 重新执行样本能量、样本流（`--golden --long --run-budget`）、恢复、时间管线和来源 oneMKL 对照。首轮在 `MKL_SET_DYNAMIC` 崩溃，修复线程层装载顺序后这 5 组通过。STFT 密度差实测为 0，低于 `3.8e-5` dB。原 WAV 0.02s 显式 FIR 与完整 639 窗 ROI 的原始 measurement 见 `evidence/r6-3/r6-3-real-sample-fir-short-02/` 和 `r6-3-full-roi-completion-01/`。完整 ROI 为 Completed 639/639、精修 44/44；活动 F1=0.871 不是全检通过，留给 R6-7 的质量结论。启动器 pass 字段因退出码未采集而为 false，不以该字段否定 `measurement.pass=true`。
+
+## 尚未闭合
+
+批次 1/2/4/8/16 的 FFSCN 实测见 PERFORMANCE 的 R6-4 节。优化后同设备 p50/p95、多场景检出质量、预览 UI 的 4K/150% GPU/软件、最终回归、独立审核及安全发布仍待后续节点。大型 RFbench 按要求不执行。
+
+## R6-6 预览界面与 4K 屏（2026-10-27）
+
+检测结果 Tab 的状态行在有预览时附加“预览 N 条 · 时间未定位 · 不能转换为人工标记或创建窄带”。时间图只在算法来源层叠加虚线观察带，命中测试仍只看正式标记。切文件或工程代次后 `previewFor` 不返回旧 run。参数草稿仍只把正式结果标成待更新。
+
+原生烟测命令是 `--demo-data --smoke-test --screen 4k --full-screen --verify-4k-150`，分别加 `--require-gpu` 和 `--software-renderer`。两次退出码都是 0。屏幕是 Redmi 27 NU / DISPLAY6 / 连接序号 2 / 3840×2160 / 1.5。GPU 报告后端是 `QRhi D3D11 | AMD Radeon(TM) 880M Graphics`，主图 `textureUploads=1`。软件报告后端是 `QPainter 软件绘制`，`hardwareRenderer=false`。原始 JSON 在 `out/tasks/ux-r6/diagnostics/r6-6-native/`。演示 IQ 烟测没有检测预览对象，所以没有在这块屏上拍到预览框。
+
+## R6-7 回归（2026-10-27）
+
+Debug 与 Release 用同一组正则各跑 19 项，都是 19/19。范围是检测后处理、模型后端、任务、存储、协议、管线、来源、样本能量/流/恢复、时间管线、精修、融合、质量、注释、注释存储和 UX-R5 三组。Release 约 65 s，Debug 约 204 s。这组不并入 R6-3 的定向通过。
+
+Release UI 第一次直接调用 CTest 时缺少字体目录，geometry/parameters/annotations 大面积失败，该轮作废。补上 `QT_QPA_FONTDIR` 为 Windows Fonts 后：`signal_studio_ui_annotations` 通过；`signal_studio_ui` 失败 `singleClickSelectsWithoutChangingView` 和 `paletteControlsStaySynchronized`；`signal_studio_ui_parameters` 失败 `contextMenuActionsAndCoveredMarkSelection` 和 `unselectedMarkClickAndSubthresholdGesture`。Debug UI 没有跑。
+
+合成样本流在上述 19 项里重新执行，包含 low-snr、稀疏突发和全零输入。这不是跳频或现场 RF 矩阵。取消、worker 失败和检查点失败没有新的注入实验；任务测试与一次 headless 取消重新通过。大型 RFbench 未跑。
+
+## R6-5 轨迹预览（2026-10-27）
+
+`signal_studio_detection_postprocess` Release 通过，输出 `Detection postprocess tests: 14 groups passed`。覆盖同一信号跨窗保持一个 ID、接近信号在现有规则不合并时保持两个 ID、队列上限 2 时丢弃最旧且正式轨迹仍为 4 次命中、成功封存 Finalized、取消封存 Closed。这些事件不进入正式 publication。

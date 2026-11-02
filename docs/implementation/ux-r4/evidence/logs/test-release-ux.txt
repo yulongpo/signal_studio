@@ -1,0 +1,18 @@
+D:\softwares\cmake\bin\ctest.exe --preset local-release --output-on-failure -R ^signal_studio_ux_(layout|charts|popovers|annotation)$
+Test project D:/project/signal_studio_rebuild/out/vs2026-qt611-release
+    Start 35: signal_studio_ux_charts
+1/3 Test #35: signal_studio_ux_charts ..........   Passed    9.02 sec
+    Start 36: signal_studio_ux_layout
+2/3 Test #36: signal_studio_ux_layout ..........   Passed    8.98 sec
+    Start 37: signal_studio_ux_popovers
+3/3 Test #37: signal_studio_ux_popovers ........   Passed    1.21 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Label Time Summary:
+charts         =   9.02 sec*proc (1 test)
+layout         =   8.98 sec*proc (1 test)
+popovers       =   1.21 sec*proc (1 test)
+wideband-ux    =  19.21 sec*proc (3 tests)
+
+Total Test time (real) =  19.23 sec

@@ -23,14 +23,15 @@ class QLabel;
 class QPlainTextEdit;
 class QProgressBar;
 class QPushButton;
+class QScrollArea;
 class QStackedWidget;
 class QTimer;
-
-class QStackedWidget;
+class QToolButton;
 
 namespace signalstudio {
 
 class NarrowbandChart;
+struct ConstellationObservation;
 
 class NarrowbandWorkspace final : public QWidget {
     Q_OBJECT
@@ -48,6 +49,8 @@ public:
     QString dataStatusText() const;
     QString displayDiagnosticsText() const;
     int currentPageIndex() const;
+    void activatePage(NarrowbandPage page);
+    void setSyncPanelExpanded(bool expanded);
     void activatePageForAcceptance(int index);
     bool visibleChartsSettled() const;
     bool visibleChartsGpuReady() const;
@@ -70,8 +73,13 @@ private:
     void requestAnalysis(bool force = false);
     bool invalidateChangedAnalysisSource();
     void installAnalysis();
+    void renderAnalysis();
+    void setAnalysisStatus(const QString& text);
     void buildPages();
     void showPage(NarrowbandPage page);
+    enum class ChannelEditResult { Refused, Unavailable, Accepted };
+    ChannelEditResult commitActiveChannelEdit(const std::function<bool(Channel&)>& edit);
+    void restoreCommittedControls();
     void updateFrequencyAxisLabels();
     void updateLinkedCursors();
     void updatePowerColors();
@@ -117,8 +125,10 @@ private:
 
     Session& session_;
     QStackedWidget* pages_ = nullptr;
-    std::array<QWidget*, 4> pageWidgets_{};
-    std::array<QPushButton*, 4> pageButtons_{};
+    std::array<QWidget*, 5> pageWidgets_{};
+    std::array<QPushButton*, 5> pageButtons_{};
+    QScrollArea* syncPanel_ = nullptr;
+    QToolButton* syncPanelToggle_ = nullptr;
     std::vector<NarrowbandChart*> charts_;
     NarrowbandChart* navigation_ = nullptr;
     NarrowbandChart *waveform_ = nullptr, *psd_ = nullptr, *stft_ = nullptr;
@@ -143,6 +153,9 @@ private:
     QTimer* chartWheelTimer_ = nullptr;
     QTimer* displaySettleTimer_ = nullptr;
     bool displayPending_ = false;
+    bool restoringCommittedControls_ = false;
+    // Refused edits replay committed widgets without starting display or analysis work.
+    bool suppressDisplayRefresh_ = false;
     std::optional<ChannelViewSnapshot> chartWheelBase_;
     QString selectedModelFile_;
     std::vector<RecognitionSegment> recognitionSegments_;
@@ -181,7 +194,11 @@ private:
     TimeRange lastAnalysisTime_;
     std::uint64_t analysisGeneration_ = 0;
     bool analysisPending_ = false;
+    QString analysisProjectionKey_;
+    QString constellationObservationKey_;
+    std::shared_ptr<const ConstellationObservation> constellationObservation_;
     QLabel* modulationStatus_ = nullptr;
+    QLabel* analysisSummary_ = nullptr;
     ChannelSampleCacheStats displayCacheStats_;
     std::vector<float> averagePsd_;
     std::shared_ptr<const SpectralFrame> averagePower_;

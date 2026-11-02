@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "configuration": "Debug",
+  "pass": true,
+  "groups": [
+    {
+      "logs": [
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug\\ui-geometry-test-results-debug.txt",
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug\\ui-parameters-test-results-debug.txt",
+        "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug\\ui-annotations-test-results-debug.txt"
+      ],
+      "inventory": "D:\\project\\signal_studio_rebuild\\tests\\fixtures\\ui_main_cases.txt",
+      "businessCases": 106,
+      "suite": "main"
+    },
+    {
+      "logs": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug\\nb-analysis-ui-debug.txt",
+      "inventory": "D:\\project\\signal_studio_rebuild\\tests\\fixtures\\ui_narrowband_cases.txt",
+      "businessCases": 11,
+      "suite": "narrowband"
+    }
+  ]
+}

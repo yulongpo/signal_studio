@@ -11,21 +11,35 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMetaObject>
+#include <QPointer>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSizePolicy>
+#include <QStringList>
 #include <QStyle>
+#include <QThread>
 #include <QToolButton>
+#include <QSettings>
 #include <QUuid>
+#include <QWheelEvent>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <condition_variable>
 #include <limits>
+#include <mutex>
+#include <optional>
+#include <thread>
 #include <utility>
 
 #include "infrastructure/detection_model_snapshot.h"
 #include "infrastructure/detection_source.h"
+#include "infrastructure/detection_task.h"
+#include "ui/detection/detection_resource_options.h"
 #include "ui/controls/adaptive_value_edit.h"
 #include "ui/controls/unsigned_value_edit.h"
 #include "ui/detection/detection_phase.h"
@@ -34,6 +48,12 @@
 namespace signalstudio {
 namespace {
 QString text(const std::string& value) { return QString::fromUtf8(value); }
+
+std::uint64_t steadyClockNanoseconds() {
+  const auto now = std::chrono::steady_clock::now().time_since_epoch();
+  return static_cast<std::uint64_t>(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(now).count());
+}
 
 QString number(double value) { return QString::number(value, 'g', 9); }
 
@@ -88,6 +108,8 @@ DetectionSourceConfig sourceConfig(const DetectionRequest& request) {
   config.hopSeconds = request.profile.hopSeconds;
   config.workingSetBudgetBytes = request.workingSetBudgetBytes;
   config.evidenceBudgetBytes = request.evidenceBudgetBytes;
+  config.rawHeadBudgetBytes = request.rawHeadBudgetBytes;
+  config.legacyCombinedRawHeads = request.legacyCombinedEvidence;
   config.maximumCandidates = request.parameters.topK;
   return config;
 }
@@ -144,6 +166,14 @@ QString lifecycleText(DetectionLifecycle state) {
   return "未知";
 }
 
+class NoWheelCheckBox : public QCheckBox {
+ public:
+  using QCheckBox::QCheckBox;
+
+ protected:
+  void wheelEvent(QWheelEvent* event) override { event->ignore(); }
+};
+
 QWidget* foldableFields(const QString& title, QWidget* body, bool expanded,
                         const char* name, QWidget* parent) {
   auto* group = new QFrame(parent);
@@ -170,7 +200,375 @@ QWidget* foldableFields(const QString& title, QWidget* body, bool expanded,
       });
   return group;
 }
+
+QString quickModelIssue(const DetectionRequest& value, bool fixturesEnabled) {
+  if (value.profile.backend == DetectionBackendKind::Experimental17)
+    return QStringLiteral(
+        "实验配置的 131072 输入尚未通过原张量对照，不能作为正式检测运行");
+  if (value.profile.backend == DetectionBackendKind::Fixture && !fixturesEnabled)
+    return QStringLiteral(
+        "系统链路夹具仅在显式测试模式开放，不能代替真实模型");
+  return {};
+}
+
+struct TimingCopy {
+  QString physical;
+  QString details;
+};
+
+TimingCopy composeTimingCopy(double sampleRateHz, std::uint64_t availableSamples,
+                             const DetectionProfile& profile,
+                             const DetectionRequest* request,
+                             const DetectionSourcePlan* plan,
+                             const QString* planFailure) {
+  TimingCopy copy;
+  if (sampleRateHz <= 0 || !std::isfinite(sampleRateHz)) {
+    copy.physical = QStringLiteral("观测时长：待载入真实 IQ");
+    copy.details = QStringLiteral("FFT 窗 / 谱步长 / 模型上下文 / 窗口滑动：—");
+    return copy;
+  }
+  const double fftMs =
+      std::bit_ceil(profile.fftSize) / sampleRateHz * 1000;
+  const double hopMs = std::floor(sampleRateHz * profile.hopSeconds) /
+                       sampleRateHz * 1000;
+  const double contextMs = fftMs + (profile.modelFrames - 1) * hopMs;
+  copy.physical = QString("请求观测 %1 ms · 滑动 %2 ms")
+                      .arg(number(contextMs))
+                      .arg(number(profile.modelHopFrames * hopMs));
+  copy.details =
+      QString(
+          "FFT 窗 %1 ms · 谱步长 %2 ms\n模型上下文（请求）%3 帧 / %4 ms\n"
+          "窗口滑动 %5 帧 / %6 ms\n上下文标称 %7 ms，观测支持含 FFT 窗。"
+          "hop 是相邻谱帧间隔，不是独立时间分辨率。")
+          .arg(number(fftMs))
+          .arg(number(hopMs))
+          .arg(profile.modelFrames)
+          .arg(number(contextMs))
+          .arg(profile.modelHopFrames)
+          .arg(number(profile.modelHopFrames * hopMs))
+          .arg(number(profile.modelFrames * hopMs));
+  if (plan) {
+    const auto realSupport =
+        std::min(plan->contextRange.end, availableSamples) -
+        std::min(plan->contextRange.begin, availableSamples);
+    copy.physical = QString("实际窗口 %1 帧 · 上下文支持 %2 ms\n滑动 %3 ms")
+                        .arg(plan->actualWindowFrames)
+                        .arg(number(realSupport / sampleRateHz * 1000))
+                        .arg(number(profile.modelHopFrames * hopMs));
+    copy.details +=
+        QString(
+            "\n实际窗口 %1 帧 · 计算FFT %2 点 · 模型输入 %3 点。"
+            "\n实际上下文样本 [%4, %5)，谱帧步长 %6 样本。"
+            "\n源边缘补零 %7 / %8 样本；谱槽补零 %9 / %10 样本。"
+            "边缘补零按实际支持记录；插值不增加真实分辨率。")
+            .arg(plan->actualWindowFrames)
+            .arg(plan->transformBins)
+            .arg(request ? detectionModelInputBins(*request) : profile.fftSize)
+            .arg(plan->contextRange.begin)
+            .arg(plan->contextRange.end)
+            .arg(plan->hopSamples)
+            .arg(plan->sourceLeadingPadding)
+            .arg(plan->sourceTrailingPadding)
+            .arg(plan->slotLeadingPadding)
+            .arg(plan->slotTrailingPadding);
+  } else if (planFailure)
+    copy.details += QStringLiteral("\n来源计划：") + *planFailure;
+  return copy;
+}
 }  // namespace
+
+bool detectionSourcePlanRunsOffCallerThread(const QThread* schedulingThread,
+                                            const QThread* workerThread) {
+  return schedulingThread != nullptr && workerThread != nullptr &&
+         schedulingThread != workerThread;
+}
+
+DetectionDiagnosticReport buildDetectionDiagnosticReport(
+    const DetectionDiagnosticInput& input, const QThread* schedulingThread) {
+  DetectionDiagnosticReport report;
+  const auto* workerThread = QThread::currentThread();
+  report.ranOffCallerThread =
+      detectionSourcePlanRunsOffCallerThread(schedulingThread, workerThread);
+  // ASSERT: makeDetectionSourcePlan for diagnostics runs only when
+  // detectionSourcePlanRunsOffCallerThread(schedulingThread, current) is true.
+  // A null scheduling thread is a direct test call. DetectionCard::refresh,
+  // refreshStatus, and refreshTiming do not enter this function.
+  if (schedulingThread != nullptr && !report.ranOffCallerThread) {
+    Q_ASSERT_X(false, "buildDetectionDiagnosticReport",
+               "source plan ran on the caller thread");
+    return report;
+  }
+
+  const auto firstIssue = [&](const QString& blocking) {
+    if (!input.draftIssue.isEmpty()) return input.draftIssue;
+    if (!input.sourceIssue.isEmpty()) return input.sourceIssue;
+    if (!input.configurationIssue.isEmpty()) return input.configurationIssue;
+    if (!input.rangeIssue.isEmpty()) return input.rangeIssue;
+    if (!input.profileIssue.isEmpty()) return input.profileIssue;
+    return blocking;
+  };
+  const bool earlier = !input.draftIssue.isEmpty() ||
+                       !input.sourceIssue.isEmpty() ||
+                       !input.configurationIssue.isEmpty() ||
+                       !input.rangeIssue.isEmpty() ||
+                       !input.profileIssue.isEmpty();
+
+  DetectionSourcePlan plan;
+  QString planError;
+  bool planOk = false;
+  if (input.hasMetadata) {
+    report.planInvoked = true;
+    planOk = makeDetectionSourcePlan(input.metadata, input.request.requestedRange,
+                                     sourceConfig(input.request), plan, planError,
+                                     input.projectGeneration);
+  }
+
+  QString modelIssue;
+  QStringList details;
+  const auto addIssue = [&details](const QString& category, const QString& error) {
+    details.append(category + QStringLiteral("：") +
+                   (error.isEmpty() ? QStringLiteral("通过") : error));
+  };
+  if (input.request.profile.backend != DetectionBackendKind::Fixture) {
+    auto snapshot = input.request;
+    freezeDetectionModelSnapshot(snapshot, modelIssue);
+    addIssue(QStringLiteral("模型包"), modelIssue);
+  } else {
+    addIssue(QStringLiteral("测试夹具"),
+             input.fixturesEnabled
+                 ? QString()
+                 : QStringLiteral("未显式启用测试夹具"));
+  }
+  const auto quick = quickModelIssue(input.request, input.fixturesEnabled);
+  if (modelIssue.isEmpty()) modelIssue = quick;
+
+  QString resourceIssue;
+  if (planOk) {
+    auto budgeted = input.request;
+    resourceIssue =
+        applyDetectionEvidencePreflight(input.projectDirectory, plan, budgeted);
+  }
+  QString blocking;
+  if (!earlier) {
+    if (!modelIssue.isEmpty())
+      blocking = modelIssue;
+    else if (input.hasMetadata && !planOk)
+      blocking = QStringLiteral("来源预检失败：") + planError;
+    else if (planOk && !plan.eligibleWindowCount)
+      blocking = QStringLiteral("请求范围没有可用的真实观测");
+    else if (planOk && !resourceIssue.isEmpty())
+      blocking = resourceIssue;
+    else if (planOk) {
+      std::uint64_t reserve = 0;
+      if (!detectionExecutionBatchSize(plan, input.request.parameters.batchSize,
+                                       reserve))
+        blocking = QStringLiteral(
+            "减少批量后，单窗口仍超出DSP、输入报文或观测证据分片预算");
+    }
+  }
+  report.blockingIssue = blocking;
+
+  auto context = input.request.contextRange;
+  if (planOk) {
+    context.time = {
+        std::min(input.request.requestedRange.time.begin, plan.contextRange.begin),
+        std::max(input.request.requestedRange.time.end, plan.contextRange.end)};
+  }
+  const auto requested =
+      rangeText(input.request.requestedRange, input.sampleRateHz);
+  const auto issue = firstIssue(blocking);
+  report.preflightDetail =
+      issue.isEmpty()
+          ? QString(
+                "配置预检可运行。只读必要上下文：%1\n输出限定：%2。频率 ROI "
+                "仅筛选输出，模型输入保持全 Fs 频带。来源指纹由任务预检核验。")
+                .arg(rangeText(context, input.sampleRateHz), requested)
+          : issue;
+
+  QStringList body{QStringLiteral("预检：") + report.preflightDetail};
+  const auto addBody = [&body](const QString& category, const QString& error) {
+    body.append(category + QStringLiteral("：") +
+                (error.isEmpty() ? QStringLiteral("通过") : error));
+  };
+  addBody(QStringLiteral("来源"), input.sourceIssue);
+  addBody(QStringLiteral("配置"), input.configurationIssue);
+  addBody(QStringLiteral("范围"), input.rangeIssue);
+  addBody(QStringLiteral("模型身份"), input.profileIssue);
+  for (const auto& line : details) body.append(line);
+  if (input.hasMetadata) {
+    if (!planOk)
+      addBody(QStringLiteral("来源计划"), planError);
+    else {
+      std::uint64_t reserve = 0;
+      addBody(QStringLiteral("真实观测"),
+              plan.eligibleWindowCount
+                  ? QString()
+                  : QStringLiteral("请求范围没有可用的真实观测"));
+      addBody(QStringLiteral("观测与原始输出"), resourceIssue);
+      addBody(QStringLiteral("资源预算"),
+              detectionExecutionBatchSize(
+                  plan, input.request.parameters.batchSize, reserve)
+                  ? QString()
+                  : QStringLiteral("单窗口超出 DSP、报文或观测证据预算"));
+      if (plan.eligibleWindowCount && plan.modelHeadBytesPerWindow &&
+          plan.eligibleWindowCount <=
+              std::numeric_limits<std::uint64_t>::max() /
+                  plan.modelHeadBytesPerWindow) {
+        body.append(
+            QString("原始输出%1：%2 窗 × %3 字节，合计 %4 字节；观测 JSON 预算 %5 字节")
+                .arg(input.request.retainRawModelOutput ? QStringLiteral("保留")
+                                                       : QStringLiteral("不保留"))
+                .arg(plan.eligibleWindowCount)
+                .arg(plan.modelHeadBytesPerWindow)
+                .arg(plan.eligibleWindowCount * plan.modelHeadBytesPerWindow)
+                .arg(input.request.evidenceBudgetBytes));
+      }
+      body.append(QString("可处理窗口 %1 · 读取上下文样本 [%2, %3)")
+                      .arg(plan.eligibleWindowCount)
+                      .arg(plan.contextRange.begin)
+                      .arg(plan.contextRange.end));
+      for (const auto& exclusion : plan.exclusions)
+        body.append(QString("排除样本 [%1, %2)：%3")
+                        .arg(exclusion.samples.begin)
+                        .arg(exclusion.samples.end)
+                        .arg(text(exclusion.reason)));
+    }
+  }
+  if (input.hasRun) {
+    body.append(
+        QString("运行 %1 · 来源状态 %2\n覆盖：%3")
+            .arg(text(input.runId),
+                 QString::fromUtf8(detectionSourceValidityName(input.sourceValidity)),
+                 input.hasCoverage
+                     ? QStringLiteral(
+                           "实际覆盖见底部任务详情；未读与排除区域没有检测结论。")
+                     : QStringLiteral("尚未发布覆盖；请求范围尚无完整结论。")));
+    if (input.includeCoverage)
+      for (const auto& coverage : input.coverage)
+        body.append(
+            QString("%1：%2 · %3")
+                .arg(QString::fromUtf8(detectionCoverageKindName(coverage.kind)),
+                     rangeText(coverage.range, input.runSampleRateHz),
+                     text(coverage.reason)));
+    if (!input.runError.empty())
+      body.append(QStringLiteral("运行错误：") + text(input.runError));
+    body.append(
+        QString("实际谱帧 %1 · 精修候选 %2/%3；不可变快照、设备、分片及技术 "
+                "JSON 见底部任务详情。")
+            .arg(input.readFrames)
+            .arg(input.refinedCandidates)
+            .arg(input.totalRefinementCandidates));
+  }
+  report.diagnostics = body.join('\n');
+
+  const QString* failure = nullptr;
+  if (input.hasMetadata && !planOk) failure = &planError;
+  const auto timing =
+      composeTimingCopy(input.sampleRateHz, input.availableSamples,
+                        input.request.profile, &input.request,
+                        planOk ? &plan : nullptr, failure);
+  report.physicalTimes = timing.physical;
+  report.calculationDetails = timing.details;
+  return report;
+}
+
+struct DetectionDiagnosticWorker {
+  using Delivery =
+      std::function<void(std::uint64_t, DetectionDiagnosticReport)>;
+  struct Job {
+    std::uint64_t generation = 0;
+    QThread* caller = nullptr;
+    DetectionDiagnosticInput input;
+  };
+  struct State {
+    std::mutex mutex;
+    std::condition_variable wake;
+    std::optional<Job> pending;
+    bool stopped = false;
+    bool accepting = false;
+    QObject* target = nullptr;
+    Delivery delivery;
+  };
+
+  DetectionDiagnosticWorker(QObject* target, Delivery delivery)
+      : state_(std::make_shared<State>()) {
+    state_->target = target;
+    state_->delivery = std::move(delivery);
+    state_->accepting = true;
+  }
+  DetectionDiagnosticWorker(const DetectionDiagnosticWorker&) = delete;
+  DetectionDiagnosticWorker& operator=(const DetectionDiagnosticWorker&) = delete;
+  ~DetectionDiagnosticWorker() {
+    {
+      std::lock_guard lock(state_->mutex);
+      state_->accepting = false;
+      state_->stopped = true;
+      state_->pending.reset();
+    }
+    state_->wake.notify_all();
+    // Do not join. A long source plan must not freeze window teardown. The
+    // thread keeps state_ alive and will not post after accepting is false.
+    if (thread_.joinable()) thread_.detach();
+  }
+
+  void submit(std::uint64_t generation, DetectionDiagnosticInput input,
+              QThread* caller) {
+    bool start = false;
+    {
+      std::lock_guard lock(state_->mutex);
+      state_->pending = Job{generation, caller, std::move(input)};
+      start = !thread_.joinable();
+    }
+    if (start) {
+      auto state = state_;
+      thread_ = std::thread([state] { loop(std::move(state)); });
+    }
+    state_->wake.notify_one();
+  }
+
+ private:
+  static void loop(std::shared_ptr<State> state) {
+    for (;;) {
+      std::optional<Job> job;
+      {
+        std::unique_lock lock(state->mutex);
+        state->wake.wait(lock, [&] {
+          return state->stopped || state->pending.has_value();
+        });
+        if (state->stopped) return;
+        job = std::move(state->pending);
+        state->pending.reset();
+      }
+      if (!job || !job->caller) continue;
+      DetectionDiagnosticReport report;
+      try {
+        report = buildDetectionDiagnosticReport(job->input, job->caller);
+      } catch (...) {
+        report.ranOffCallerThread = detectionSourcePlanRunsOffCallerThread(
+            job->caller, QThread::currentThread());
+        report.diagnostics = QStringLiteral("诊断详情生成失败");
+      }
+      if (!report.ranOffCallerThread) continue;
+      std::lock_guard lock(state->mutex);
+      if (!state->accepting || state->stopped || !state->target ||
+          !state->delivery)
+        return;
+      const auto generation = job->generation;
+      const auto delivery = state->delivery;
+      QMetaObject::invokeMethod(
+          state->target,
+          [delivery, generation, report]() mutable {
+            if (delivery) delivery(generation, std::move(report));
+          },
+          Qt::QueuedConnection);
+    }
+  }
+
+  std::shared_ptr<State> state_;
+  std::thread thread_;
+};
+
+DetectionCard::~DetectionCard() = default;
 
 DetectionCard::DetectionCard(Session& session,
                              std::function<QString()> projectDirectory,
@@ -233,11 +631,16 @@ DetectionCard::DetectionCard(Session& session,
   // Keep the public diagnostics toggle name independent of the text label.
   layout->addWidget(foldableFields("检测诊断详情", diagnostics_, false,
                                    "detectionDiagnosticsSection", this));
-  auto* diagnosticsToggle =
+  diagnosticsToggle_ =
       findChild<QToolButton*>("detectionDiagnosticsSectionToggle");
-  diagnosticsToggle->setObjectName("detectionDiagnosticsToggle");
-  connect(diagnosticsToggle, &QToolButton::toggled, this, [this](bool open) {
-    if (open) refreshStatus();
+  diagnosticsToggle_->setObjectName("detectionDiagnosticsToggle");
+  connect(diagnosticsToggle_, &QToolButton::toggled, this, [this](bool open) {
+    if (open) publishDiagnosticInputs(true);
+  });
+  calculationToggle_ =
+      findChild<QToolButton*>("detectionCalculationDetailsToggle");
+  connect(calculationToggle_, &QToolButton::toggled, this, [this](bool open) {
+    if (open) publishDiagnosticInputs(true);
   });
   // MainWindow owns the application input filter. This local policy only
   // discards card drafts when its physical source context changes.
@@ -603,7 +1006,7 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
   rows->setContentsMargins(0, 0, 0, 0);
   rows->setSpacing(8);
   auto* batch = addUnsigned(
-      "detectionBatchSize", "batch", 2, 1,
+      "detectionBatchSize", "batch", 16, 1,
       [](const auto& value) { return value.parameters.batchSize; },
       [](auto& value, auto number) {
         value.parameters.batchSize = static_cast<std::uint32_t>(number);
@@ -624,6 +1027,26 @@ void DetectionCard::setupAdvanced(QVBoxLayout* layout) {
   auto* merge = addParameter("detectionMergeFrequencyHz", "merge / Hz",
                              &DetectionParameters::mergeFrequencyHz, 1e12);
   rows->addWidget(pairedFields("最多漏检", miss, "合并频差 / Hz", merge));
+  const bool restoreIntermediate =
+      qApp->property("uiStatePersistenceEnabled").toBool() &&
+      QSettings().contains(QStringLiteral("detection/showIntermediateResults"));
+  const bool showIntermediate =
+      !restoreIntermediate ||
+      QSettings().value(QStringLiteral("detection/showIntermediateResults"), true)
+          .toBool();
+  showIntermediate_ = new NoWheelCheckBox("显示中间结果", body);
+  showIntermediate_->setObjectName("showIntermediateDetectionResults");
+  showIntermediate_->setChecked(showIntermediate);
+  showIntermediate_->setToolTip(
+      "勾选后，检测进行中在时频图和检测结果中显示虚线中间框。"
+      "取消勾选则进行中不显示。检测完成、失败、取消或中断后都会自动清除这些中间框。");
+  rows->addWidget(showIntermediate_);
+  connect(showIntermediate_, &QCheckBox::toggled, this, [this](bool shown) {
+    if (qApp->property("uiStatePersistenceEnabled").toBool())
+      QSettings().setValue(QStringLiteral("detection/showIntermediateResults"),
+                           shown);
+    emit intermediateResultsToggled(shown);
+  });
   layout->addWidget(foldableFields("高级资源参数", body, false,
                                    "detectionResourceParameters", this));
 }
@@ -681,8 +1104,12 @@ void DetectionCard::setupStatus(QVBoxLayout* layout) {
   actions_->hide();
   connect(run_, &QPushButton::clicked, this, &DetectionCard::submit);
   connect(cancel_, &QPushButton::clicked, this, [this] {
-    if (const auto* run = focusedUnfinished())
+    if (const auto* run = focusedUnfinished()) {
       emit cancelRunRequested(text(run->request.runId));
+      return;
+    }
+    if (startLatchActive_ && !startLatchRunId_.empty())
+      emit cancelRunRequested(text(startLatchRunId_));
   });
   connect(viewRunning_, &QPushButton::clicked, this, [this] {
     const auto* run = unfinishedRun();
@@ -710,6 +1137,7 @@ void DetectionCard::rejectControl(QLineEdit* edit, const QString& error,
 
 void DetectionCard::saveConfiguration(DetectionRequest value) {
   configuration_ = std::move(value);
+  emit configurationCommitted();
   profileConfigurations_[configurationKey(configuration_)] = configuration_;
   refreshTiming();
   refreshBranchState();
@@ -730,6 +1158,7 @@ void DetectionCard::switchProfile() {
   for (auto* widget : findChildren<QWidget*>())
     if (auto* draft = dynamic_cast<ParameterDraft*>(widget)) draft->discard();
   configuration_ = found->second;
+  emit configurationCommitted();
   loadControls();
   refresh();
 }
@@ -798,6 +1227,12 @@ void DetectionCard::refreshSource() {
     inputPolicy_->setContext(key);
     contextKey_ = key;
     displayRunId_.clear();
+    startLatchActive_ = false;
+    startLatchRunId_.clear();
+    startLatchSteadyNs_ = 0;
+    startNotice_.clear();
+    startNoticeInputKey_.clear();
+    ++statusGeneration_;
     requestedRoi_.reset();
     segmentAnnotationId_.clear();
     segmentRevisionId_.clear();
@@ -867,7 +1302,11 @@ ViewRange DetectionCard::availableRange() const {
            source_.centerFrequencyHz + source_.sampleRateHz / 2}};
 }
 
-DetectionRequest DetectionCard::request() const {
+bool DetectionCard::showIntermediateResults() const {
+  return showIntermediate_ && showIntermediate_->isChecked();
+}
+
+DetectionRequest DetectionCard::baseRequest() const {
   auto value = configuration_;
   value.runId.clear();
   value.sourceIdentity = source_;
@@ -893,6 +1332,15 @@ DetectionRequest DetectionCard::request() const {
     }
   }
   value.contextRange = availableRange();
+  if (qApp->property("uiStatePersistenceEnabled").toBool())
+    DetectionResourceOptions::load(projectDirectory_()).applyTo(value);
+  return value;
+}
+
+DetectionRequest DetectionCard::request() const {
+  // Explicit assembly for submit and callers of request(). Refresh uses
+  // baseRequest() so a progress poll does not run the source plan here.
+  auto value = baseRequest();
   if (metadata_) {
     DetectionSourcePlan plan;
     QString error;
@@ -932,65 +1380,26 @@ void DetectionCard::refreshTiming() {
   model_->setToolTip(help);
   spectrumMode_->setToolTip(help);
   if (source_.sampleRateHz <= 0 || !std::isfinite(source_.sampleRateHz)) {
-    physicalTimes_->setText("观测时长：待载入真实 IQ");
-    calculationDetails_->setText("FFT 窗 / 谱步长 / 模型上下文 / 窗口滑动：—");
+    appliedTimingKey_.clear();
+    const auto timing =
+        composeTimingCopy(source_.sampleRateHz, source_.availableSamples,
+                          profile, nullptr, nullptr, nullptr);
+    physicalTimes_->setText(timing.physical);
+    calculationDetails_->setText(timing.details);
+    physicalTimes_->setToolTip(timing.details);
     return;
   }
-  const double fftMs =
-      std::bit_ceil(profile.fftSize) / source_.sampleRateHz * 1000;
-  const double hopMs = std::floor(source_.sampleRateHz * profile.hopSeconds) /
-                       source_.sampleRateHz * 1000;
-  const double contextMs = fftMs + (profile.modelFrames - 1) * hopMs;
-  physicalTimes_->setText(QString("请求观测 %1 ms · 滑动 %2 ms")
-                              .arg(number(contextMs))
-                              .arg(number(profile.modelHopFrames * hopMs)));
-  QString details =
-      QString(
-          "FFT 窗 %1 ms · 谱步长 %2 ms\n模型上下文（请求）%3 帧 / %4 ms\n"
-          "窗口滑动 %5 帧 / %6 ms\n上下文标称 %7 ms，观测支持含 FFT 窗。"
-          "hop 是相邻谱帧间隔，不是独立时间分辨率。")
-          .arg(number(fftMs))
-          .arg(number(hopMs))
-          .arg(profile.modelFrames)
-          .arg(number(contextMs))
-          .arg(profile.modelHopFrames)
-          .arg(number(profile.modelHopFrames * hopMs))
-          .arg(number(profile.modelFrames * hopMs));
-  if (metadata_) {
-    DetectionSourcePlan plan;
-    QString issue;
-    const auto snapshot = request();
-    if (makeDetectionSourcePlan(*metadata_, snapshot.requestedRange,
-                                sourceConfig(snapshot), plan, issue,
-                                source_.projectGeneration)) {
-      const auto realSupport =
-          std::min(plan.contextRange.end, source_.availableSamples) -
-          std::min(plan.contextRange.begin, source_.availableSamples);
-      physicalTimes_->setText(
-          QString("实际窗口 %1 帧 · 上下文支持 %2 ms\n滑动 %3 ms")
-              .arg(plan.actualWindowFrames)
-              .arg(number(realSupport / source_.sampleRateHz * 1000))
-              .arg(number(profile.modelHopFrames * hopMs)));
-      details += QString(
-                     "\n实际窗口 %1 帧 · 计算FFT %2 点 · 模型输入 %3 点。"
-                     "\n实际上下文样本 [%4, %5)，谱帧步长 %6 样本。"
-                     "\n源边缘补零 %7 / %8 样本；谱槽补零 %9 / %10 样本。"
-                     "边缘补零按实际支持记录；插值不增加真实分辨率。")
-                     .arg(plan.actualWindowFrames)
-                     .arg(plan.transformBins)
-                     .arg(detectionModelInputBins(snapshot))
-                     .arg(plan.contextRange.begin)
-                     .arg(plan.contextRange.end)
-                     .arg(plan.hopSamples)
-                     .arg(plan.sourceLeadingPadding)
-                     .arg(plan.sourceTrailingPadding)
-                     .arg(plan.slotLeadingPadding)
-                     .arg(plan.slotTrailingPadding);
-    } else
-      details += "\n来源计划：" + issue;
-  }
-  calculationDetails_->setText(details);
-  physicalTimes_->setToolTip(details);
+  const auto key = currentTimingKey();
+  // Progress ticks share this key. Keep the last plan-backed copy until a
+  // profile or rate change, or until a diagnostic generation replaces it.
+  if (key == appliedTimingKey_) return;
+  appliedTimingKey_ = key;
+  const auto timing =
+      composeTimingCopy(source_.sampleRateHz, source_.availableSamples, profile,
+                        nullptr, nullptr, nullptr);
+  physicalTimes_->setText(timing.physical);
+  calculationDetails_->setText(timing.details);
+  physicalTimes_->setToolTip(timing.details);
 }
 
 void DetectionCard::refreshBranchState() {
@@ -1088,13 +1497,219 @@ const DetectionRun* DetectionCard::focusedUnfinished() const {
   return nullptr;
 }
 
-void DetectionCard::refreshStatus() {
+QString DetectionCard::draftIssue() const {
+  for (auto* edit : findChildren<QLineEdit*>())
+    if (edit->property("parameterDraft").toBool() &&
+        edit->property("invalid").toBool()) {
+      const auto label = edit->property("parameterLabel").toString();
+      return (label.isEmpty() ? QString{} : label + QStringLiteral("：")) +
+             edit->property("parameterError").toString();
+    }
+  return {};
+}
+
+QString DetectionCard::statusIssue() const {
+  if (const auto draft = draftIssue(); !draft.isEmpty()) return draft;
+  if (const auto issue = sourceValidationError(); !issue.isEmpty()) return issue;
+  const auto value = baseRequest();
+  if (const auto issue = configurationError(value); !issue.isEmpty()) return issue;
+  if (const auto issue = rangeError(value); !issue.isEmpty()) return issue;
+  if (const auto issue = profileValidationError(value); !issue.isEmpty())
+    return issue;
+  if (const auto issue = quickModelIssue(value, testFixturesEnabled());
+      !issue.isEmpty())
+    return issue;
+  return planIssue_;
+}
+
+QString DetectionCard::currentTimingKey() const {
+  const auto& profile = configuration_.profile;
+  return QString::number(source_.sampleRateHz, 'g', 17) + '|' + text(profile.id) +
+         '|' + QString::number(profile.version) + '|' +
+         QString::number(static_cast<int>(profile.backend)) + '|' +
+         QString::number(profile.fftSize) + '|' +
+         QString::number(profile.modelFrames) + '|' +
+         QString::number(profile.modelHopFrames) + '|' +
+         QString::number(profile.hopSeconds, 'g', 17);
+}
+
+QString DetectionCard::diagnosticInputKey() const {
+  const auto value = baseRequest();
+  const auto* run = latestRun();
+  const auto& profile = value.profile;
+  const auto& parameters = value.parameters;
+  QStringList parts;
+  parts << QString::number(source_.projectGeneration) << text(source_.fileId)
+        << text(source_.path)
+        << text(sampleFormatKey(source_.sampleFormat))
+        << QString::number(source_.sampleRateHz, 'g', 17)
+        << QString::number(source_.centerFrequencyHz, 'g', 17)
+        << text(source_.quickFingerprint)
+        << QString::number(source_.physicalSamples)
+        << QString::number(source_.availableSamples)
+        << QString::number(source_.selectedSampleChannel) << projectDirectory_()
+        << QString::number(metadata_ && metadata_->demo) << text(profile.id)
+        << QString::number(profile.version)
+        << QString::number(static_cast<int>(profile.backend))
+        << QString::number(profile.fftSize) << QString::number(profile.modelFrames)
+        << QString::number(profile.modelHopFrames)
+        << QString::number(profile.hopSeconds, 'g', 17)
+        << QString::number(value.inputAdaptationVersion)
+        << QString::number(static_cast<int>(value.spectrumMode))
+        << text(value.rangeOrigin)
+        << QString::number(value.requestedRange.time.begin)
+        << QString::number(value.requestedRange.time.end)
+        << QString::number(value.requestedRange.frequency.lowerHz, 'g', 17)
+        << QString::number(value.requestedRange.frequency.upperHz, 'g', 17)
+        << text(value.sourceAnnotationId) << text(value.sourceRevisionId)
+        << QString::number(value.workingSetBudgetBytes)
+        << QString::number(value.evidenceBudgetBytes)
+        << QString::number(value.rawHeadBudgetBytes)
+        << QString::number(value.retainRawModelOutput)
+        << QString::number(value.legacyCombinedEvidence)
+        << QString::number(value.sampleScratchBudgetBytes)
+        << QString::number(parameters.scoreThreshold, 'g', 17)
+        << QString::number(parameters.nmsIou, 'g', 17)
+        << QString::number(parameters.topK) << QString::number(parameters.batchSize)
+        << QString::number(parameters.minHits) << QString::number(parameters.maxMiss)
+        << QString::number(parameters.mergeFrequencyHz, 'g', 17)
+        << QString::number(parameters.bandwidthMarginDb, 'g', 17)
+        << QString::number(static_cast<int>(parameters.timeStrategy))
+        << QString::number(parameters.splitBursts)
+        << QString::number(parameters.sampleEdgeRatio, 'g', 17)
+        << QString::number(parameters.minOnSeconds, 'g', 17)
+        << QString::number(parameters.minOffSeconds, 'g', 17)
+        << QString::number(parameters.smoothSeconds, 'g', 17)
+        << QString::number(parameters.coarseSplitGapSeconds, 'g', 17)
+        << QString::number(parameters.coarseMinBurstSeconds, 'g', 17)
+        << (value.parentRunId ? text(*value.parentRunId) : QString())
+        << QString::number(testFixturesEnabled()) << text(displayRunId_)
+        << (run ? text(run->request.runId) : QString())
+        << (run ? QString::number(static_cast<int>(run->lifecycle))
+                : QStringLiteral("-1"))
+        << (run ? text(run->error) : QString());
+  return parts.join('\n');
+}
+
+bool DetectionCard::detailSectionExpanded() const {
+  return (diagnosticsToggle_ && diagnosticsToggle_->isChecked()) ||
+         (calculationToggle_ && calculationToggle_->isChecked());
+}
+
+DetectionDiagnosticInput DetectionCard::captureDiagnosticInput() const {
+  DetectionDiagnosticInput input;
+  input.hasMetadata = metadata_.has_value();
+  if (metadata_) input.metadata = *metadata_;
+  input.projectGeneration = source_.projectGeneration;
+  input.sampleRateHz = source_.sampleRateHz;
+  input.availableSamples = source_.availableSamples;
+  input.request = baseRequest();
+  input.projectDirectory = projectDirectory_ ? projectDirectory_() : QString{};
+  input.fixturesEnabled = testFixturesEnabled();
+  input.draftIssue = draftIssue();
+  input.sourceIssue = sourceValidationError();
+  input.configurationIssue = configurationError(input.request);
+  input.rangeIssue = rangeError(input.request);
+  input.profileIssue = profileValidationError(input.request);
+  input.includeCoverage =
+      diagnosticsToggle_ && diagnosticsToggle_->isChecked();
+  if (const auto* run = latestRun()) {
+    input.hasRun = true;
+    input.hasCoverage = !run->coverage.empty();
+    input.runId = run->request.runId;
+    input.sourceValidity = run->sourceValidity;
+    input.runError = run->error;
+    input.readFrames = run->readFrames;
+    input.refinedCandidates = run->refinedCandidates;
+    input.totalRefinementCandidates = run->totalRefinementCandidates;
+    input.runSampleRateHz = run->request.sourceIdentity.sampleRateHz;
+    if (input.includeCoverage) input.coverage = run->coverage;
+  }
+  return input;
+}
+
+void DetectionCard::ensureDiagnosticWorker() {
+  if (diagnosticWorker_) return;
+  diagnosticWorker_ = std::make_unique<DetectionDiagnosticWorker>(
+      this, [this](std::uint64_t generation, DetectionDiagnosticReport report) {
+        applyDiagnosticReport(generation, std::move(report));
+      });
+}
+
+void DetectionCard::publishDiagnosticInputs(bool force) {
   if (!preflight_) return;
+  const auto key = diagnosticInputKey();
+  const bool changed = !diagnosticKeyReady_ || key != diagnosticKey_;
+  // Progress polling repeats refresh with the same source and parameters.
+  // That must not schedule another source plan.
+  if (!changed && !force) return;
+  if (changed) {
+    if (!startNotice_.isEmpty() && key != startNoticeInputKey_) {
+      startNotice_.clear();
+      startNoticeInputKey_.clear();
+    }
+    diagnosticKey_ = key;
+    diagnosticKeyReady_ = true;
+    planIssue_.clear();
+    diagnosticDetailReady_ = false;
+  }
+  ++diagnosticGeneration_;
+  if (!detailSectionExpanded()) return;
+  diagnosticStatusGeneration_.clear();
+  diagnosticStatusGeneration_.emplace(diagnosticGeneration_, statusGeneration_);
+  ensureDiagnosticWorker();
+  diagnosticWorker_->submit(diagnosticGeneration_, captureDiagnosticInput(),
+                            QThread::currentThread());
+}
+
+void DetectionCard::applyDiagnosticReport(std::uint64_t generation,
+                                          DetectionDiagnosticReport report) {
+  const auto scheduled = diagnosticStatusGeneration_.find(generation);
+  const bool hadSchedule = scheduled != diagnosticStatusGeneration_.end();
+  const auto scheduledStatus = hadSchedule ? scheduled->second : 0;
+  if (hadSchedule) diagnosticStatusGeneration_.erase(scheduled);
+  if (generation != diagnosticGeneration_ || !report.ranOffCallerThread) return;
+  // A report captured for an older source, or while a provisional start owns
+  // the card, must not unlock the button or replace the preparing text.
+  if (!hadSchedule || scheduledStatus != statusGeneration_ || startLatchActive_)
+    return;
+  if (diagnostics_) diagnostics_->setText(report.diagnostics);
+  if (!report.calculationDetails.isEmpty() && calculationDetails_) {
+    calculationDetails_->setText(report.calculationDetails);
+    if (physicalTimes_) physicalTimes_->setToolTip(report.calculationDetails);
+  }
+  if (!report.physicalTimes.isEmpty() && physicalTimes_)
+    physicalTimes_->setText(report.physicalTimes);
+  if (!report.preflightDetail.isEmpty() && preflight_) {
+    preflight_->setToolTip(report.preflightDetail);
+    diagnosticDetailReady_ = true;
+  }
+  planIssue_ = report.blockingIssue;
+  updateShortStatus();
+}
+
+void DetectionCard::releaseStartLatchIfRunVisible() {
+  if (!startLatchActive_ || startLatchRunId_.empty()) return;
+  for (const auto& file : session_.project().files)
+    for (const auto& run : file.detectionRuns)
+      if (run.request.runId == startLatchRunId_) {
+        // The persisted run now owns the button. A later terminal state can
+        // enable it again. Rejection before save never inserts this id.
+        startLatchActive_ = false;
+        ++statusGeneration_;
+        return;
+      }
+}
+
+void DetectionCard::updateShortStatus() {
+  if (!preflight_) return;
+  releaseStartLatchIfRunVisible();
   const auto* activeRun = unfinishedRun();
+  const bool preparing = startLatchActive_ && activeRun == nullptr;
   const bool draft = hasDraft();
   draftNote_->setVisible(draft);
   draftNote_->setText(draft ? "草稿待提交 · Enter / Tab / 应用内点击" : "");
-  const auto value = request();
+  const auto value = baseRequest();
   const auto requested = rangeText(value.requestedRange, source_.sampleRateHz);
   rangeSummary_->setText(value.requestedRange.time.begin <
                                  value.requestedRange.time.end
@@ -1103,92 +1718,25 @@ void DetectionCard::refreshStatus() {
   rangeSummary_->setToolTip(requested + QString("\n可用前缀 %1 / %2 样本")
                                             .arg(source_.availableSamples)
                                             .arg(source_.physicalSamples));
-  const auto issue = validationError();
-  const auto rawPreflight =
-      issue.isEmpty()
-          ? QString(
-                "配置预检可运行。只读必要上下文：%1\n输出限定：%2。频率 ROI "
-                "仅筛选输出，模型输入保持全 Fs 频带。来源指纹由任务预检核验。")
-                .arg(rangeText(value.contextRange, source_.sampleRateHz),
-                     requested)
-          : issue;
+  const auto issue = statusIssue();
   const auto firstReason =
       issue.section('\n', 0, 0).section(QStringLiteral("；"), 0, 0);
   preflight_->setText(issue.isEmpty()
                           ? "配置就绪 · 可运行"
                           : firstReason + "；" + preflightAdvice(issue));
-  preflight_->setToolTip(rawPreflight);
-  QStringList details{"预检：" + rawPreflight};
-  const auto addIssue = [&details](const QString& category,
-                                   const QString& error) {
-    details.append(category + "：" + (error.isEmpty() ? "通过" : error));
-  };
-  addIssue("来源", sourceValidationError());
-  addIssue("配置", configurationError(value));
-  addIssue("范围", rangeError(value));
-  addIssue("模型身份", profileValidationError(value));
-  if (value.profile.backend != DetectionBackendKind::Fixture) {
-    auto snapshot = value;
-    QString error;
-    freezeDetectionModelSnapshot(snapshot, error);
-    addIssue("模型包", error);
-  } else
-    addIssue("测试夹具",
-             testFixturesEnabled() ? QString{} : QString("未显式启用测试夹具"));
-  if (metadata_) {
-    DetectionSourcePlan plan;
-    QString error;
-    if (!makeDetectionSourcePlan(*metadata_, value.requestedRange,
-                                 sourceConfig(value), plan, error,
-                                 source_.projectGeneration))
-      addIssue("来源计划", error);
-    else {
-      std::uint64_t reserve = 0;
-      addIssue("真实观测", plan.eligibleWindowCount
-                               ? QString{}
-                               : QString("请求范围没有可用的真实观测"));
-      addIssue("资源预算", detectionExecutionBatchSize(
-                               plan, value.parameters.batchSize, reserve)
-                               ? QString{}
-                               : QString("单窗口超出 DSP、报文或观测证据预算"));
-      details.append(QString("可处理窗口 %1 · 读取上下文样本 [%2, %3)")
-                         .arg(plan.eligibleWindowCount)
-                         .arg(plan.contextRange.begin)
-                         .arg(plan.contextRange.end));
-      for (const auto& exclusion : plan.exclusions)
-        details.append(QString("排除样本 [%1, %2)：%3")
-                           .arg(exclusion.samples.begin)
-                           .arg(exclusion.samples.end)
-                           .arg(text(exclusion.reason)));
-    }
+  if (!issue.isEmpty())
+    preflight_->setToolTip(issue);
+  else if (!diagnosticDetailReady_)
+    preflight_->setToolTip(QStringLiteral("配置就绪 · 可运行"));
+  if (preparing) {
+    preflight_->setText(detectionPhaseText("preparing"));
+    preflight_->setToolTip(QStringLiteral("启动已受理，正在准备检测"));
+  } else if (!activeRun && issue.isEmpty() && !startNotice_.isEmpty()) {
+    // A retryable start error is presentation state, not a validation error.
+    // Background planning/progress refreshes must not erase it or lock retry.
+    preflight_->setText(startNotice_);
+    preflight_->setToolTip(startNotice_);
   }
-  if (const auto* run = latestRun()) {
-    details.append(
-        QString("运行 %1 · 来源状态 %2\n覆盖：%3")
-            .arg(text(run->request.runId),
-                 text(detectionSourceValidityName(run->sourceValidity)),
-                 run->coverage.empty()
-                     ? "尚未发布覆盖；请求范围尚无完整结论。"
-                     : "实际覆盖见底部任务详情；未读与排除区域没有检测结论。"));
-    // Large histories remain cheap while diagnostics are folded. Opening the
-    // section refreshes the full coverage text; task JSON stays in the panel.
-    if (diagnostics_->isVisible())
-      for (const auto& coverage : run->coverage)
-        details.append(
-            QString("%1：%2 · %3")
-                .arg(text(detectionCoverageKindName(coverage.kind)),
-                     rangeText(coverage.range,
-                               run->request.sourceIdentity.sampleRateHz),
-                     text(coverage.reason)));
-    if (!run->error.empty()) details.append("运行错误：" + text(run->error));
-    details.append(
-        QString("实际谱帧 %1 · 精修候选 %2/%3；不可变快照、设备、分片及技术 "
-                "JSON 见底部任务详情。")
-            .arg(run->readFrames)
-            .arg(run->refinedCandidates)
-            .arg(run->totalRefinementCandidates));
-  }
-  diagnostics_->setText(details.join('\n'));
   if (preflight_->property("preflightOk").toBool() != issue.isEmpty()) {
     preflight_->setProperty("preflightOk", issue.isEmpty());
     refreshStyle(preflight_);
@@ -1196,10 +1744,31 @@ void DetectionCard::refreshStatus() {
   const auto* focusedRun = focusedUnfinished();
   const bool otherFile =
       activeRun && activeRun->request.sourceIdentity.fileId != source_.fileId;
-  run_->setEnabled(issue.isEmpty() && !activeRun);
-  cancel_->setEnabled(focusedRun &&
-                      focusedRun->lifecycle != DetectionLifecycle::Cancelling);
-  cancel_->setToolTip(focusedRun ? "取消运行 " + text(focusedRun->request.runId)
+  // A provisional latch with no unfinished run is the gap before the task
+  // exists. Do not turn the button back on in that gap.
+  run_->setEnabled(issue.isEmpty() && !activeRun && !preparing);
+  bool hasCommittedResult = false;
+  if (const auto* file = session_.activeFile(); file && file->currentDetectionSlots)
+    for (const auto& slot : *file->currentDetectionSlots)
+      hasCommittedResult |= slot.sampleChannel == file->metadata.sampleFormat.selectedChannel && !slot.committedRunId.empty();
+  run_->setText(preparing
+                    ? detectionPhaseText("preparing")
+                    : (hasCommittedResult ? QStringLiteral("应用并重新检测")
+                                          : QStringLiteral("开始检测")));
+  run_->setToolTip(
+      "显式开始检测或重新检测。启动事务保存成功后，本文件、本 IQ 通道的上次正式结果被丢弃，"
+      "之后失败或取消也不恢复；其它文件和通道不受影响。"
+      "修改参数、模型或引擎不会清除已提交结果。"
+      "保存前被拒绝或准备阶段取消会恢复被临时隐藏的正式结果。");
+  const bool provisionalCancel =
+      preparing && !startLatchRunId_.empty();
+  cancel_->setEnabled(provisionalCancel ||
+                      (focusedRun &&
+                       focusedRun->lifecycle != DetectionLifecycle::Cancelling));
+  cancel_->setToolTip(provisionalCancel
+                          ? "取消尚未保存的启动 " + text(startLatchRunId_) +
+                                "，上次正式结果会保留"
+                      : focusedRun ? "取消运行 " + text(focusedRun->request.runId)
                       : otherFile ? "其他文件的任务需先定位后再取消"
                                   : "没有未完成任务");
   if (otherRun_ && viewRunning_) {
@@ -1220,11 +1789,18 @@ void DetectionCard::refreshStatus() {
     }
   }
   selectRoi_->setEnabled(metadata_ && availableSamples(*metadata_) > 0);
-  if (const auto* run = latestRun()) {
+  if (preparing) {
+    phaseBar_->hide();
+    runSummary_->setText(detectionPhaseText("preparing"));
+    runSummary_->setToolTip(QStringLiteral("启动已受理，正在准备检测"));
+    runSummary_->show();
+  } else if (const auto* run = latestRun()) {
     const auto phase = text(run->computationPhase);
     const int step = phase == "completed"                           ? 4
                      : phase == "refine" || phase == "publishing"   ? 3
-                     : phase == "inference" || phase == "frequency" ? 2
+                     : phase == "inference" || phase == "frequency" ||
+                           phase == "decoding" || phase == "storing-heads" ||
+                           phase == "tracking" || phase == "checkpoint" ? 2
                      : phase == "reading"                           ? 1
                                                                     : 0;
     phaseBar_->show();
@@ -1253,11 +1829,20 @@ void DetectionCard::refreshStatus() {
   }
 }
 
+void DetectionCard::refreshStatus() {
+  if (!preflight_) return;
+  publishDiagnosticInputs(false);
+  updateShortStatus();
+}
+
 void DetectionCard::refresh() {
   refreshSource();
   refreshSegments();
   refreshTiming();
   refreshBranchState();
+  // ASSERT: this path does not call makeDetectionSourcePlan or
+  // buildDetectionDiagnosticReport. Short status uses the run snapshot;
+  // expanded detail sections schedule one background generation.
   refreshStatus();
 }
 
@@ -1281,7 +1866,8 @@ QString DetectionCard::configurationError(const DetectionRequest& value) const {
   }
   const auto& p = value.parameters;
   if (!p.topK || p.topK > 512) return "topK 须为 1–512";
-  if (!p.batchSize || p.batchSize > 2) return "batch 须为 1–2";
+  if (!isDetectionExecutionBatchTier(p.batchSize))
+    return "batch 须为 1、2、4、8 或 16";
   if (!p.minHits || p.minHits > 10000 || p.maxMiss > 10000)
     return "minHits 须为 1–10000，maxMiss 须为 0–10000";
   if (source_.sampleRateHz > 0 && p.mergeFrequencyHz > source_.sampleRateHz)
@@ -1355,12 +1941,14 @@ QString DetectionCard::profileValidationError(
 
 QString DetectionCard::contextValidationError(
     const DetectionRequest& value) const {
+  if (const auto quick = quickModelIssue(value, testFixturesEnabled());
+      !quick.isEmpty())
+    return quick;
   if (value.profile.backend != DetectionBackendKind::Fixture) {
     auto snapshot = value;
     QString issue;
     if (!freezeDetectionModelSnapshot(snapshot, issue)) return issue;
-  } else if (!testFixturesEnabled())
-    return "系统链路夹具仅在显式测试模式开放，不能代替真实模型";
+  }
   DetectionSourcePlan plan;
   QString planError;
   if (!makeDetectionSourcePlan(*metadata_, value.requestedRange,
@@ -1375,15 +1963,10 @@ QString DetectionCard::contextValidationError(
 }
 
 QString DetectionCard::validationError() const {
-  for (auto* edit : findChildren<QLineEdit*>())
-    if (edit->property("parameterDraft").toBool() &&
-        edit->property("invalid").toBool()) {
-      const auto label = edit->property("parameterLabel").toString();
-      return (label.isEmpty() ? QString{} : label + "：") + edit->property("parameterError").toString();
-    }
+  if (const auto issue = draftIssue(); !issue.isEmpty()) return issue;
   if (const auto issue = sourceValidationError(); !issue.isEmpty())
     return issue;
-  const auto value = request();
+  const auto value = baseRequest();
   if (const auto issue = configurationError(value); !issue.isEmpty())
     return issue;
   if (const auto issue = rangeError(value); !issue.isEmpty()) return issue;
@@ -1443,13 +2026,71 @@ void DetectionCard::focusRun(const QString& runId) {
   refreshStatus();
 }
 
+void DetectionCard::noteStartRejected(const std::string& runId,
+                                      const QString& notice) {
+  if (QThread::currentThread() != thread()) {
+    QPointer<DetectionCard> self(this);
+    const auto id = runId;
+    const auto text = notice;
+    QMetaObject::invokeMethod(
+        this,
+        [self, id, text] {
+          if (self) self->noteStartRejected(id, text);
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+  if (!startLatchActive_ || runId != startLatchRunId_) return;
+  startLatchActive_ = false;
+  ++statusGeneration_;
+  planIssue_.clear();
+  startNotice_ = notice;
+  startNoticeInputKey_ = diagnosticInputKey();
+  refreshStatus();
+  if (preflight_ && !notice.isEmpty()) {
+    preflight_->setText(notice);
+    preflight_->setToolTip(notice);
+  }
+}
+
 void DetectionCard::submit() {
+  if (QThread::currentThread() != thread()) {
+    QPointer<DetectionCard> self(this);
+    QMetaObject::invokeMethod(
+        this,
+        [self] {
+          if (self) self->submit();
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+  // A click that is still inside this function, and any later click while
+  // the provisional run has not been rejected or persisted, must not emit
+  // again. The message is the prepare wait, not a publication wait.
+  if (startLatchActive_) {
+    emit message(QStringLiteral("检测正在准备，请稍候"));
+    return;
+  }
   // Enter/Tab/application clicks are the only commit paths. Running also
-  // commits any remaining drafts, then validates the complete next request.
+  // commits any remaining drafts. The source plan, disk query, and evidence
+  // budget stay on the detection commit worker; this click only rejects
+  // drafts and local configuration before handing off the request.
   for (auto* widget : findChildren<QWidget*>())
     if (auto* draft = dynamic_cast<ParameterDraft*>(widget)) draft->commit();
   refresh();
-  const auto issue = validationError();
+  auto value = baseRequest();
+  const auto issue = [&] {
+    if (const auto draft = draftIssue(); !draft.isEmpty()) return draft;
+    if (const auto source = sourceValidationError(); !source.isEmpty())
+      return source;
+    if (const auto configuration = configurationError(value);
+        !configuration.isEmpty())
+      return configuration;
+    if (const auto range = rangeError(value); !range.isEmpty()) return range;
+    if (const auto profile = profileValidationError(value); !profile.isEmpty())
+      return profile;
+    return quickModelIssue(value, testFixturesEnabled());
+  }();
   if (!issue.isEmpty()) {
     emit message(issue);
     return;
@@ -1458,11 +2099,35 @@ void DetectionCard::submit() {
     emit message("本工程已有未完成任务；当前参数用于下一次运行");
     return;
   }
-  auto value = request();
+  if (startLatchActive_) {
+    emit message(QStringLiteral("检测正在准备，请稍候"));
+    return;
+  }
   value.runId =
       "run-" + QUuid::createUuid().toString(QUuid::WithoutBraces).toStdString();
   displayRunId_ = value.runId;
+  startLatchRunId_ = value.runId;
+  startNotice_.clear();
+  startNoticeInputKey_.clear();
+  startLatchActive_ = true;
+  ++statusGeneration_;
+  startLatchSteadyNs_ = steadyClockNanoseconds();
+  const auto preparing = detectionPhaseText("preparing");
+  run_->setEnabled(false);
+  run_->setText(preparing);
+  if (preflight_) preflight_->setText(preparing);
+  if (cancel_) {
+    cancel_->setEnabled(true);
+    cancel_->setToolTip(QStringLiteral("取消尚未保存的启动 ") + text(value.runId) +
+                        QStringLiteral("，上次正式结果会保留"));
+  }
+  // Paint the accepted provisional state before dispatching preparation. Only
+  // these small controls are repainted; no nested event loop can submit a run.
+  run_->repaint();
+  if (preflight_) preflight_->repaint();
   emit requestSubmitted(value);
-  refreshStatus();
+  // A synchronous rejection clears the latch and writes the real error.
+  // Refreshing again here would replace that text with "配置就绪 · 可运行".
+  if (startLatchActive_) refreshStatus();
 }
 }  // namespace signalstudio

@@ -180,10 +180,25 @@ bool fuseRefinedDetectionEvents(std::span<const DetectionRefinedEvent> input,
     bool found = false;
     PairKey bestKey;
     std::size_t bestFirst = 0, bestSecond = 0;
-    for (std::size_t i = 0; i < nodes.size(); ++i) {
-      if (!nodes[i].active) continue;
-      for (std::size_t j = i + 1; j < nodes.size(); ++j) {
-        if (!nodes[j].active) continue;
+    // Reuse the already-budgeted ordering vector. Rebuild after every merge
+    // because an envelope may acquire neighbors that were previously disjoint.
+    order.clear();
+    for (std::size_t i = 0; i < nodes.size(); ++i)
+      if (nodes[i].active) order.push_back(i);
+    std::sort(order.begin(), order.end(), [&](std::size_t a, std::size_t b) {
+      return std::tie(nodes[a].range.frequency.lowerHz, a) <
+             std::tie(nodes[b].range.frequency.lowerHz, b);
+    });
+    for (std::size_t position = 0; position < order.size(); ++position) {
+      if (!(position % 512) && cancelled(options))
+        return fail(error, "Refined fusion cancelled");
+      const auto left = order[position];
+      for (std::size_t other = position + 1; other < order.size(); ++other) {
+        const auto right = order[other];
+        if (nodes[right].range.frequency.lowerHz >= nodes[left].range.frequency.upperHz)
+          break;  // sameCarrier requires strictly positive frequency overlap.
+        const auto i = std::min(left, right);
+        const auto j = std::max(left, right);
         if (tentativeSummary.pairComparisons == options.maximumPairComparisons)
           return fail(error,
                       "Refined-fusion cumulative comparison budget exceeded");

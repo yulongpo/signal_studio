@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-10-26T21:28:06.3853073+08:00",
+  "head": "cf1584f41ee4b5d9a7f98002c974b71ba82bc08a",
+  "configurationResults": [
+    {
+      "configuration": "Debug",
+      "scriptExit": 0,
+      "ctestPassed": 3,
+      "ctestFailed": 0,
+      "lifecycleCasesPassed": 11,
+      "r5UiBusinessCasesPassed": 4,
+      "layoutBusinessCasesPassed": 8,
+      "qtR5UiTotals": 6,
+      "qtLayoutTotals": 10,
+      "elapsedSeconds": 54.18,
+      "log": "fixed-debug-targeted.txt"
+    },
+    {
+      "configuration": "Release",
+      "scriptExit": 0,
+      "ctestPassed": 3,
+      "ctestFailed": 0,
+      "lifecycleCasesPassed": 11,
+      "r5UiBusinessCasesPassed": 4,
+      "layoutBusinessCasesPassed": 8,
+      "qtR5UiTotals": 6,
+      "qtLayoutTotals": 10,
+      "elapsedSeconds": 17.53,
+      "log": "fixed-release-targeted.txt"
+    }
+  ],
+  "command": "scripts/build.ps1 -Configuration <Debug|Release> -Action Test -TestRegex ^(signal_studio_ux_r5_detection|signal_studio_ux_(r5_ui|layout))$ -VerboseTests",
+  "implementationFiles": [
+    "domain/project.h",
+    "ui/annotations/annotation_panel.cpp",
+    "tests/task_ux_tests.h",
+    "tests/ux_r5_detection_tests.cpp",
+    "tests/ux_r5_ui_tests.h"
+  ],
+  "executedBinaries": [
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUxTests.exe",
+      "modifiedAt": "2026-10-26T21:22:03.6645429+08:00"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUxR5DetectionTests.exe",
+      "modifiedAt": "2026-10-26T21:19:42.6011774+08:00"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUxTests.exe",
+      "modifiedAt": "2026-10-26T21:22:49.4276748+08:00"
+    },
+    {
+      "path": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioUxR5DetectionTests.exe",
+      "modifiedAt": "2026-10-26T21:19:27.0688998+08:00"
+    }
+  ],
+  "validationScope": "offscreen Qt + actual temporary project/store IO + synthetic pipeline fixture; no native GPU/model/RF accuracy claim",
+  "productEditedDuringValidation": false,
+  "rebuiltDuringValidation": false,
+  "committed": false,
+  "pushed": false,
+  "finalReviewer": false
+}

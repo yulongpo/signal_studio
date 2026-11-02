@@ -1,0 +1,14 @@
+{
+  "schema": "ss-de-rpo-formal-pilot-v1",
+  "baseSourceHead": "7220b2e295963288cb5d11e76946bb77646be0b0",
+  "configuration": "Debug",
+  "input": "existing original IQ referenced by UX-R6 baseline manifest",
+  "profile": "ffscn-gui-iq-v1",
+  "windows": "20",
+  "pass": true,
+  "formalCommitPerformed": true,
+  "formalProjectReopened": true,
+  "elapsedMs": 27139,
+  "measurement": "out/tasks/ss-de-rpo/N0/diagnostics/formal-pilot-01/measurement.json",
+  "boundary": "New isolated-project benchmark transaction path, real IQ/Worker/TensorRT; not native UI acceptance or performance comparison."
+}

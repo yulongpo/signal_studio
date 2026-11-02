@@ -350,13 +350,13 @@ inline void UxTests::uxD08_preflightDetails() {
   QVERIFY(calculation && calculation->isVisible());
   for (const auto* word :
        {"FFT 窗", "谱步长", "模型上下文", "模型输入", "补零", "真实分辨率"})
-    QVERIFY2(calculation->text().contains(QString::fromUtf8(word)), word);
+    QTRY_VERIFY2(calculation->text().contains(QString::fromUtf8(word)), word);
   auto* times = card->findChild<QLabel*>("detectionPhysicalTimes");
   QVERIFY(times && times->text().count('\n') <= 1);
   QVERIFY(uxDetectionFold(window, "detectionDiagnosticsToggle"));
   QVERIFY(diagnostics->isVisible());
-  QVERIFY(diagnostics->text().contains("只读必要上下文"));
-  QVERIFY(diagnostics->text().contains("来源指纹"));
+  QTRY_VERIFY(diagnostics->text().contains("只读必要上下文"));
+  QTRY_VERIFY(diagnostics->text().contains("来源指纹"));
   const auto available = card->request().contextRange;
   auto invalid = available;
   invalid.time.end = window.session().activeFile()->metadata.sampleCount + 1;
@@ -364,7 +364,7 @@ inline void UxTests::uxD08_preflightDetails() {
   QVERIFY(card->validationError().contains("前缀"));
   QVERIFY(preflight->text().contains("前缀") &&
           preflight->text().contains("请"));
-  QVERIFY(diagnostics->text().contains(card->validationError()));
+  QTRY_VERIFY(diagnostics->text().contains(card->validationError()));
   card->useVisibleRange();
   // Experimental profile gives a deterministic model error without altering
   // assets.
@@ -373,8 +373,8 @@ inline void UxTests::uxD08_preflightDetails() {
   QVERIFY(preflight->text().contains("实验"));
   QVERIFY(preflight->text().contains("请选择") ||
           preflight->text().contains("选择已验证模型"));
-  QVERIFY(diagnostics->text().contains("模型包"));
-  QVERIFY(diagnostics->text().contains(card->validationError()));
+  QTRY_VERIFY(diagnostics->text().contains("模型包"));
+  QTRY_VERIFY(diagnostics->text().contains(card->validationError()));
   QVERIFY(uxDetectionReveal(window, model));
   model->setCurrentIndex(model->findData("pipeline-fixture-v1"));
   auto& metadata = window.session().activeFile()->metadata;
@@ -383,7 +383,7 @@ inline void UxTests::uxD08_preflightDetails() {
   metadata.availability.availableSamples = 0;
   card->refresh();
   QVERIFY(!preflight->property("preflightOk").toBool());
-  QVERIFY(diagnostics->text().contains("可用前缀"));
+  QTRY_VERIFY(diagnostics->text().contains("可用前缀"));
   metadata.availability = availability;
   card->refresh();
   QCOMPARE(preflight->text(), QString("配置就绪 · 可运行"));

@@ -224,7 +224,8 @@ AnnotationValidation validateAnnotation(const Annotation& annotation,
   const bool manualFormat =
       origin.formatId == "manual-v1" || origin.formatId == "legacy-manual-v1";
   const bool importedFormat = origin.formatId == "generator-txt-v1" ||
-                              origin.formatId == "torchsig-rfbench-sigmf-v1";
+                              origin.formatId == "torchsig-rfbench-sigmf-v1" ||
+                              origin.formatId == "mapped-txt-v1";
   if ((annotation.sourceKind == AnnotationSource::Manual && !manualFormat) ||
       (annotation.sourceKind == AnnotationSource::ImportedLabel &&
        !importedFormat) ||

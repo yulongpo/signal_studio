@@ -1,12 +1,25 @@
 #include "infrastructure/detection_source.h"
 
+#include "domain/detection.h"
+#include "infrastructure/detection_spectrum_spool.h"
+
+#include <list>
+#include <mutex>
+#include <optional>
+#include <unordered_map>
+#include <utility>
+
 #include <QCryptographicHash>
+#include <QCoreApplication>
+#include <QDir>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QtEndian>
+#include <QScopeGuard>
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <limits>
@@ -80,15 +93,16 @@ void validateConfig(const DetectionSourceConfig& config,
   require(config.readBlockBytes >= bytesPerFrame(source.sampleFormat) &&
               config.readBlockBytes <= 32 * 1024 * 1024,
           "检测单次读取预算须包含完整帧且不超过 32 MiB");
-  require(config.workingSetBudgetBytes > 0 &&
-              config.workingSetBudgetBytes <= 1024ULL * 1024 * 1024,
+  require(config.workingSetBudgetBytes >= kDetectionWorkingSetMinBytes &&
+              config.workingSetBudgetBytes <= detectionWorkingSetLimitBytes(),
           "检测CPU工作集预算无效");
   require(config.maximumCandidates > 0 && config.maximumCandidates <= 512,
           "检测候选数预算须为1–512");
 }
 void validateSource(const FileMetadata& source, ViewRange request,
                     RawSampleReader& reader, QString& error,
-                    QString& fingerprint) {
+                    QString& fingerprint, const DetectionSourceCancel& cancel) {
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(source.sampleFormat.structure == SampleStructure::ComplexIQ,
           "复数 IQ profile 不接受实数 ADC");
   require(!source.id.empty() && source.sampleCount > 0 &&
@@ -100,7 +114,9 @@ void validateSource(const FileMetadata& source, ViewRange request,
   require(source.availability.availableSamples <= source.sampleCount,
           "可用前缀超出物理样本范围");
   const auto path = canonicalPath(source.path);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   fingerprint = iqSourceFingerprint(path);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   if (!source.availability.fingerprint.empty())
     require(fingerprint.toStdString() == source.availability.fingerprint,
             "检测源与已读前缀的物理文件身份不一致");
@@ -112,7 +128,9 @@ void validateSource(const FileMetadata& source, ViewRange request,
                 descriptor.format == source.sampleFormat,
             "检测源 WAV 的 Fs 或格式与容器冲突");
   }
-  const bool opened = reader.open(path, source.sampleFormat, error);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
+  const bool opened = reader.open(path, source.sampleFormat, error,RawSampleReader::Access::Sequential);
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(opened, error);
   require(reader.sampleCount() == source.sampleCount,
           "检测源物理样本数与元数据不一致");
@@ -127,6 +145,7 @@ void validateSource(const FileMetadata& source, ViewRange request,
               request.frequency.lowerHz >= lower &&
               request.frequency.upperHz <= upper,
           "检测频率 ROI 超出物理 Nyquist 频段");
+  if (cancelled(cancel)) invalid(QStringLiteral("Cancelled during source validation"));
   require(iqSourceFingerprint(path) == fingerprint,
           "检测源在打开过程中发生变化");
 }
@@ -319,10 +338,18 @@ bool transform(std::vector<std::complex<double>>& values,
   }
   return true;
 }
-void hashFloat(QCryptographicHash& hash, float value) {
-  char bytes[4];
-  qToLittleEndian(std::bit_cast<quint32>(value), bytes);
-  hash.addData(QByteArrayView(bytes, 4));
+void hashFloatBlock(QCryptographicHash& hash,std::span<const float> values) {
+  static_assert(sizeof(float)==4 && std::numeric_limits<float>::is_iec559);
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+  hash.addData(QByteArrayView(reinterpret_cast<const char*>(values.data()),qsizetype(values.size_bytes())));
+#else
+  std::array<char,16384> bytes{};
+  for(std::size_t first=0;first<values.size();) {
+    const auto count=std::min<std::size_t>(bytes.size()/4,values.size()-first);
+    for(std::size_t i=0;i<count;++i) qToLittleEndian(std::bit_cast<quint32>(values[first+i]),bytes.data()+i*4);
+    hash.addData(QByteArrayView(bytes.data(),qsizetype(count*4)));first+=count;
+  }
+#endif
 }
 void hashSupport(QCryptographicHash& hash, const DetectionFftSupport& support) {
   const auto bytes =
@@ -342,13 +369,14 @@ double inputScale(const SampleFormat& format) {
   normalized.normalizeIntegerAdc = true;
   return 1 / adcScale(normalized);
 }
+template<class Scalar>
 bool readTransformInput(RawSampleReader& reader,
                         const DetectionFftSupport& support,
                         const DetectionSourcePlan& plan,
-                        std::vector<std::complex<double>>& work,
+                        std::vector<std::complex<Scalar>>& work,
                         QCryptographicHash& hash, QString& error,
                         const DetectionSourceCancel& cancel) {
-  std::fill(work.begin(), work.end(), std::complex<double>{});
+  std::fill(work.begin(), work.end(), std::complex<Scalar>{});
   hashSupport(hash, support);
   const auto chunkSamples = std::min<std::uint64_t>(
       4194304, plan.config.readBlockBytes /
@@ -373,9 +401,10 @@ bool readTransformInput(RawSampleReader& reader,
       const float real = static_cast<float>(decoded[i].real() * scale);
       const float imaginary = static_cast<float>(decoded[i].imag() * scale);
       work[static_cast<std::size_t>(offset) + i] = {real, imaginary};
-      hashFloat(hash, real);
-      hashFloat(hash, imaginary);
+      decoded[i]={real,imaginary};
     }
+    // std::complex<float> guarantees interleaved array-oriented scalar access.
+    hashFloatBlock(hash,{reinterpret_cast<const float*>(decoded.data()),decoded.size()*2});
     first = end;
   }
   return true;
@@ -468,9 +497,12 @@ QJsonObject encodeDetectionFrameMapping(const DetectionFrameMapping& frame) {
 std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan& plan,
                                           std::uint32_t requestedBatch,
                                           std::uint64_t& reservedBytes) {
-  for (auto batch = static_cast<std::uint32_t>(
-           std::min<std::uint64_t>(requestedBatch, plan.eligibleWindowCount));
-       batch > 0; --batch) {
+  auto batch = static_cast<std::uint32_t>(
+      std::min<std::uint64_t>(requestedBatch, plan.eligibleWindowCount));
+  if (batch > 16) batch = 16;
+  else if (!isDetectionExecutionBatchTier(batch))
+    batch = batch > 8 ? 8 : batch > 4 ? 4 : batch > 2 ? 2 : 1;
+  for (; batch > 0; batch = batch == 1 ? 0 : batch / 2) {
     const auto payload = std::uint64_t{batch} * plan.actualWindowFrames *
                          plan.config.fftSize * sizeof(float);
     const auto reserve =
@@ -488,13 +520,193 @@ std::uint32_t detectionExecutionBatchSize(const DetectionSourcePlan& plan,
   return 0;
 }
 
+namespace {
+struct SourcePlanCache {
+  std::mutex mutex;
+  std::list<std::pair<std::string, DetectionSourcePlan>> entries;
+  DetectionSourcePlanCacheStats stats{};
+};
+
+SourcePlanCache& sourcePlanCache() {
+  static SourcePlanCache cache;
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  return cache;
+}
+
+void appendCacheText(std::string& key, const std::string& text) {
+  key.push_back('|');
+  key.append(std::to_string(text.size()));
+  key.push_back(':');
+  key.append(text);
+}
+
+void appendCacheUnsigned(std::string& key, std::uint64_t value) {
+  key.push_back('|');
+  key.append(std::to_string(value));
+}
+
+void appendCacheDouble(std::string& key, double value) {
+  appendCacheUnsigned(key, std::bit_cast<std::uint64_t>(value));
+}
+
+std::string sourcePlanCacheKey(const FileMetadata& source, ViewRange requested,
+                               const DetectionSourceConfig& config,
+                               std::uint64_t generation) {
+  std::string key = "source-plan-v1";
+  appendCacheText(key, source.id);
+  appendCacheText(key, source.path);
+  appendCacheDouble(key, source.sampleRateHz);
+  appendCacheDouble(key, source.centerFrequencyHz);
+  appendCacheDouble(key, source.effectiveBandwidthHz);
+  appendCacheUnsigned(key, source.sampleCount);
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(source.availability.status));
+  appendCacheUnsigned(key, source.availability.availableSamples);
+  appendCacheUnsigned(key, source.availability.generation);
+  appendCacheText(key, source.availability.fingerprint);
+  appendCacheUnsigned(key, availableSamples(source));
+  const auto& format = source.sampleFormat;
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.structure));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.componentEncoding));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.byteOrder));
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.iqLayout));
+  appendCacheUnsigned(key, format.channels);
+  appendCacheUnsigned(key, format.selectedChannel);
+  appendCacheUnsigned(key, static_cast<std::uint64_t>(format.channelLayout));
+  appendCacheUnsigned(key, format.headerBytes);
+  appendCacheUnsigned(key, format.trailerBytes);
+  appendCacheUnsigned(key, format.normalizeIntegerAdc ? 1 : 0);
+  appendCacheUnsigned(key, requested.time.begin);
+  appendCacheUnsigned(key, requested.time.end);
+  appendCacheDouble(key, requested.frequency.lowerHz);
+  appendCacheDouble(key, requested.frequency.upperHz);
+  appendCacheUnsigned(key, generation);
+  appendCacheUnsigned(key, config.preferGpu ? 1 : 0);
+  appendCacheUnsigned(key, config.inputAdaptationVersion);
+  appendCacheText(key, config.profileId);
+  appendCacheUnsigned(key, config.profileVersion);
+  appendCacheUnsigned(key, config.fftSize);
+  appendCacheUnsigned(key, config.modelFrames);
+  appendCacheUnsigned(key, config.modelHopFrames);
+  appendCacheDouble(key, config.hopSeconds);
+  appendCacheUnsigned(key, config.readBlockBytes);
+  appendCacheUnsigned(key, config.workingSetBudgetBytes);
+  appendCacheUnsigned(key, config.evidenceBudgetBytes);
+  appendCacheUnsigned(key, config.rawHeadBudgetBytes);
+  appendCacheUnsigned(key, config.legacyCombinedRawHeads ? 1 : 0);
+  appendCacheUnsigned(key, config.maximumCandidates);
+  appendCacheUnsigned(key, config.useHostMkl ? 1 : 0);
+  return key;
+}
+
+std::optional<DetectionSourcePlan> takeCachedSourcePlan(const std::string& key) {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  for (auto it = cache.entries.begin(); it != cache.entries.end(); ++it) {
+    if (it->first != key) continue;
+    cache.entries.splice(cache.entries.begin(), cache.entries, it);
+    ++cache.stats.hits;
+    return cache.entries.front().second;
+  }
+  return std::nullopt;
+}
+
+void noteSourcePlanCacheMiss() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  ++cache.stats.misses;
+}
+
+void storeCachedSourcePlan(const std::string& key, const DetectionSourcePlan& plan) {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  for (auto it = cache.entries.begin(); it != cache.entries.end(); ++it) {
+    if (it->first != key) continue;
+    it->second = plan;
+    cache.entries.splice(cache.entries.begin(), cache.entries, it);
+    ++cache.stats.stores;
+    return;
+  }
+  cache.entries.emplace_front(key, plan);
+  while (cache.entries.size() > kDetectionSourcePlanCacheCapacity)
+    cache.entries.pop_back();
+  ++cache.stats.stores;
+  cache.stats.retained = cache.entries.size();
+}
+}  // namespace
+
+DetectionSourcePlanCacheStats detectionSourcePlanCacheStatsForTest() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+  cache.stats.retained = cache.entries.size();
+  return cache.stats;
+}
+
+void clearDetectionSourcePlanCacheForTest() {
+  auto& cache = sourcePlanCache();
+  std::lock_guard lock(cache.mutex);
+  cache.entries.clear();
+  cache.stats = {};
+  cache.stats.capacity = kDetectionSourcePlanCacheCapacity;
+}
+
+bool detectionPreparedSourcePlanMatches(const FileMetadata& source,
+                                        ViewRange requested,
+                                        const DetectionSourceConfig& config,
+                                        std::uint64_t generation,
+                                        const DetectionSourcePlan& plan) {
+  if (!(plan.config == config) || !(plan.requestedRange == requested))
+    return false;
+  // quickFingerprint is the live file size/mtime. prepare stores the plan
+  // before queue copies that fingerprint onto the job, and open() writes it
+  // again after this check. It is not part of the reusable grid identity.
+  auto plannedIdentity = plan.sourceIdentity;
+  auto liveIdentity = annotationSourceIdentity(source, generation);
+  plannedIdentity.quickFingerprint.clear();
+  liveIdentity.quickFingerprint.clear();
+  if (!(plannedIdentity == liveIdentity)) return false;
+  const auto& identity = plan.sourceIdentity;
+  const double hop = std::floor(identity.sampleRateHz * config.hopSeconds);
+  if (!(hop >= 1.0) ||
+      plan.hopSamples != static_cast<std::uint64_t>(hop))
+    return false;
+  const auto bins = config.inputAdaptationVersion == 2
+                        ? std::bit_ceil(config.fftSize)
+                        : config.fftSize;
+  if (plan.transformBins != bins) return false;
+  const double first =
+      identity.centerFrequencyHz - identity.sampleRateHz / 2.0;
+  const double step =
+      identity.sampleRateHz / static_cast<double>(config.fftSize);
+  return plan.frequencyFirstBinHz == first && plan.frequencyStepHz == step;
+}
+
 bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
                              DetectionSourceConfig config,
                              DetectionSourcePlan& target, QString& error,
-                             std::uint64_t generation) {
+                             std::uint64_t generation,
+                             const DetectionSourceCancel& cancel) {
+  const auto stop = [&] {
+    if (!cancelled(cancel)) return false;
+    error = QStringLiteral("Cancelled during source planning");
+    return true;
+  };
+  if (stop()) return false;
   try {
     validatePlanMetadata(source, requested);
+    if (stop()) return false;
     validateConfig(config, source);
+    if (stop()) return false;
+    const auto key = sourcePlanCacheKey(source, requested, config, generation);
+    if (stop()) return false;
+    if (auto cached = takeCachedSourcePlan(key)) {
+      target = std::move(*cached);
+      error.clear();
+      return true;
+    }
+    noteSourcePlanCacheMiss();
     DetectionSourcePlan plan;
     plan.config = std::move(config);
     plan.sourceIdentity = annotationSourceIdentity(source, generation);
@@ -540,9 +752,11 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
                         plan.actualWindowFrames - 1;
       for (const auto window :
            {std::uint64_t{0}, plan.eligibleWindowCount - 1}) {
+        if (stop()) return false;
         std::uint64_t bytes = 4096;
         const auto start = windowStartForPlan(plan, window);
         for (std::uint32_t row = 0; row < plan.actualWindowFrames; ++row) {
+          if (stop()) return false;
           const auto anchor = (start + row) * plan.hopSamples;
           const auto slotLength =
               plan.config.inputAdaptationVersion == 2
@@ -569,13 +783,22 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
         plan.estimatedWindowEvidenceBytes =
             std::max(plan.estimatedWindowEvidenceBytes, bytes);
       }
-      require(plan.estimatedWindowEvidenceBytes + plan.modelHeadBytesPerWindow +
-                      plan.outputJsonReserveBytes <=
-                  plan.config.evidenceBudgetBytes,
-              "单窗口观测、模型原始输出与候选证据超过当前保存预算");
+      const auto jsonWindowBytes = plan.estimatedWindowEvidenceBytes +
+                                   plan.outputJsonReserveBytes;
+      if (plan.config.rawHeadBudgetBytes == 0 &&
+          plan.config.legacyCombinedRawHeads) {
+        require(jsonWindowBytes + plan.modelHeadBytesPerWindow <=
+                    plan.config.evidenceBudgetBytes,
+                "单窗口观测、模型原始输出与候选证据超过当前保存预算");
+      } else {
+        require(jsonWindowBytes <= plan.config.evidenceBudgetBytes,
+                "单窗口观测与候选证据超过当前 JSON 保存预算");
+      }
       plan.contextRange = {frameMappingForPlan(plan, first).actualSamples.begin,
                            frameMappingForPlan(plan, last).actualSamples.end};
     }
+    if (stop()) return false;
+    storeCachedSourcePlan(key, plan);
     target = std::move(plan);
     error.clear();
     return true;
@@ -586,17 +809,175 @@ bool makeDetectionSourcePlan(const FileMetadata& source, ViewRange requested,
   }
 }
 
+
+struct DetectionFrameCache {
+  struct Entry {
+    DetectionSpectrumFrame frame;
+    bool suppressGpu = false;
+    bool hostMkl = false;
+    std::uint64_t bytes = 0;
+  };
+  std::list<std::pair<std::uint64_t, Entry>> order;
+  std::unordered_map<std::uint64_t,
+                     std::list<std::pair<std::uint64_t, Entry>>::iterator>
+      index;
+  std::uint64_t bytes = 0;
+};
+
+namespace {
+std::uint64_t cachedSpectrumBytes(const DetectionSpectrumFrame& frame) {
+  std::uint64_t bytes = frame.densityDb.size() * sizeof(float);
+  bytes += frame.mapping.fftSupports.size() * sizeof(DetectionFftSupport);
+  bytes += frame.mapping.inputHash.size();
+  return std::max<std::uint64_t>(bytes, 1);
+}
+}  // namespace
+
+FixedDetectionSource::FixedDetectionSource() = default;
+FixedDetectionSource::~FixedDetectionSource() = default;
+
+void FixedDetectionSource::adoptFrequencySpool(
+    std::unique_ptr<SpectrumSpool> spool) {
+  frequencySpool_ = std::move(spool);
+}
+
+void FixedDetectionSource::clearFrequencySpool() {
+  frequencySpool_.reset();
+  replayedSpectrumFrames_ = 0;
+}
+
+bool FixedDetectionSource::frequencySpoolCovers(std::uint64_t first,
+                                               std::uint64_t end) const {
+  return frequencySpool_ && frequencySpool_->covers(first, end);
+}
+
+bool FixedDetectionSource::replayFrequencyFrame(
+    std::uint64_t index, std::vector<float>& densityDb, TimeRange& slotSamples,
+    bool& ioFailure, QString& error, const DetectionSourceCancel& cancel) {
+  ioFailure = false;
+  if (cancelled(cancel)) {
+    error = "检测源计算已取消";
+    return false;
+  }
+  if (!sourceCurrent(error)) return false;
+  if (!frequencySpool_ ||
+      !frequencySpool_->readDensity(index, densityDb, error)) {
+    ioFailure = true;
+    if (error.isEmpty()) error = "frequency-spool-frame-read-failed";
+    return false;
+  }
+  slotSamples = frameMapping(index).slotSamples;
+  ++replayedSpectrumFrames_;
+  return true;
+}
+
+void FixedDetectionSource::clearFrameCache() { frameCache_.reset(); }
+
+std::uint64_t FixedDetectionSource::frameCacheBudget() const {
+  constexpr std::uint64_t kMaximumFrameCacheBytes = 32ULL * 1024ULL * 1024ULL;
+  return std::min(kMaximumFrameCacheBytes,
+                  plan_.config.workingSetBudgetBytes / 8);
+}
+
+FixedDetectionSource::CachedFrameTake FixedDetectionSource::takeCachedFrame(
+    std::uint64_t index, DetectionSpectrumFrame& target, QString& error,
+    const DetectionSourceCancel& cancel) {
+  if (!frameCache_) return CachedFrameTake::Miss;
+  const auto found = frameCache_->index.find(index);
+  if (found == frameCache_->index.end()) return CachedFrameTake::Miss;
+  const auto& entry = found->second->second;
+  // Model-window reads suppress GPU and may use oneMKL. A later plain
+  // readFrame has to recompute so its spectrum matches that call.
+  if (entry.suppressGpu != suppressGpuFrame_ ||
+      entry.hostMkl != hostMklFrame_)
+    return CachedFrameTake::Miss;
+  if (cancelled(cancel)) {
+    error = "检测源计算已取消";
+    return CachedFrameTake::Rejected;
+  }
+  if (!sourceCurrent(error)) return CachedFrameTake::Rejected;
+  const auto it = found->second;
+  frameCache_->order.splice(frameCache_->order.begin(), frameCache_->order,
+                            it);
+  target = it->second.frame;
+  error.clear();
+  return CachedFrameTake::Hit;
+}
+
+void FixedDetectionSource::rememberFrame(std::uint64_t index,
+                                        const DetectionSpectrumFrame& frame) {
+  const auto budget = frameCacheBudget();
+  const auto bytes = cachedSpectrumBytes(frame);
+  if (frameCache_) {
+    const auto found = frameCache_->index.find(index);
+    if (found != frameCache_->index.end()) {
+      frameCache_->bytes -= found->second->second.bytes;
+      frameCache_->order.erase(found->second);
+      frameCache_->index.erase(found);
+    }
+  }
+  if (budget == 0 || bytes > budget) return;
+  if (!frameCache_) frameCache_ = std::make_unique<DetectionFrameCache>();
+  while (!frameCache_->order.empty() &&
+         frameCache_->bytes + bytes > budget) {
+    auto& oldest = frameCache_->order.back();
+    frameCache_->bytes -= oldest.second.bytes;
+    frameCache_->index.erase(oldest.first);
+    frameCache_->order.pop_back();
+  }
+  DetectionFrameCache::Entry entry;
+  entry.frame = frame;
+  entry.suppressGpu = suppressGpuFrame_;
+  entry.hostMkl = hostMklFrame_;
+  entry.bytes = bytes;
+  frameCache_->order.emplace_front(index, std::move(entry));
+  frameCache_->index[index] = frameCache_->order.begin();
+  frameCache_->bytes += bytes;
+}
+
 bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
                                 DetectionSourceConfig config, QString& error,
-                                std::uint64_t generation) {
+                                std::uint64_t generation,
+                                const DetectionSourceCancel& cancel,
+                                const DetectionSourcePlan* prepared) {
   reader_.reset();
+  gpu_.reset();
+  gpuCancel_ = {};
+  gpuCapabilities_ = {};
+  gpuFallback_.clear();
+  gpuFrames_ = gpuWindows_ = cpuFrames_ = cpuWindows_ = mklFrames_ = 0;
+  stftRoute_ = "unselected";
+  stftSuppressedReason_.clear();
+  modelWindowStftLocked_ = false;
   plan_ = {};
+  profiling_ = DetectionProfiler{};
+  clearFrequencySpool();
+  clearFrameCache();
+  if (cancelled(cancel)) {
+    error = QStringLiteral("Cancelled during source validation");
+    return false;
+  }
   try {
-    const bool planned = makeDetectionSourcePlan(
-        source, requested, std::move(config), plan_, error, generation);
-    require(planned, error);
+    if (prepared) {
+      if (!detectionPreparedSourcePlanMatches(source, requested, config,
+                                              generation, *prepared)) {
+        error = QStringLiteral(
+            "Prepared source plan no longer matches the source, channel, "
+            "prefix, grid, model, or config");
+        return false;
+      }
+      if (cancelled(cancel)) {
+        error = QStringLiteral("Cancelled during source validation");
+        return false;
+      }
+      plan_ = *prepared;
+    } else {
+      const bool planned = makeDetectionSourcePlan(
+          source, requested, config, plan_, error, generation, cancel);
+      require(planned, error);
+    }
     auto reader = std::make_unique<RawSampleReader>();
-    validateSource(source, requested, *reader, error, fingerprint_);
+    validateSource(source, requested, *reader, error, fingerprint_, cancel);
     path_ = canonicalPath(source.path);
     plan_.sourceIdentity.quickFingerprint = fingerprint_.toStdString();
     reader_ = std::move(reader);
@@ -606,10 +987,25 @@ bool FixedDetectionSource::open(const FileMetadata& source, ViewRange requested,
       hann_[i] = .5 - .5 * std::cos(2 * std::numbers::pi * i / hann_.size());
       hannEnergy_ += hann_[i] * hann_[i];
     }
+    if (plan_.config.preferGpu) {
+      const QDir deployed(QCoreApplication::applicationDirPath());
+      gpu_dsp::Config gpuConfig;
+      gpuConfig.moduleLibrary = deployed.filePath("SignalStudioGpuDspCuda.dll").toStdString();
+      gpuConfig.cufftLibrary = deployed.filePath("cufft64_11.dll").toStdString();
+      const auto jit = deployed.filePath("nvJitLink_120_0.dll");
+      if (QFileInfo::exists(jit)) gpuConfig.nvJitLinkLibrary = jit.toStdString();
+      gpuConfig.limits.hostBytes = std::min<std::uint64_t>(64ULL<<20,plan_.config.workingSetBudgetBytes/4);
+      gpuConfig.cancelled = [this] { return gpuCancel_ && gpuCancel_(); };
+      gpu_dsp::Error gpuError;
+      gpu_ = gpu_dsp::Session::create(gpuConfig,gpuCapabilities_,gpuError);
+      if (!gpu_) gpuFallback_ = gpuError.stage + ": " + gpuError.detail;
+    } else gpuFallback_ = "CPU reference explicitly requested";
     error.clear();
     return true;
   } catch (const std::exception& exception) {
     reader_.reset();
+    clearFrequencySpool();
+    clearFrameCache();
     error = QString::fromUtf8(exception.what());
     if (error.isEmpty()) error = "检测源校验失败";
     return false;
@@ -629,14 +1025,119 @@ bool FixedDetectionSource::sourceCurrent(QString& error) const {
   }
   return true;
 }
+void FixedDetectionSource::notePlainStftRoute(bool usedGpu) {
+  if (modelWindowStftLocked_) return;
+  if (usedGpu) {
+    stftRoute_ = "gpu-stft";
+    return;
+  }
+  if (hostMklFrame_) {
+    stftRoute_ = "host-onemkl";
+    return;
+  }
+  stftRoute_ = "handwritten-fft";
+  if (stftSuppressedReason_.empty() && !gpuFallback_.empty())
+    stftSuppressedReason_ = gpuFallback_;
+}
+QJsonObject FixedDetectionSource::gpuProfiling() const {
+  QJsonObject result{{"preferred",plan_.config.preferGpu},
+      {"ready",bool(gpu_)},{"device",QString::fromStdString(gpuCapabilities_.deviceName)},
+      {"fallbackReason",QString::fromStdString(gpuFallback_).left(1024)},
+      {"gpuFrames",qint64(gpuFrames_)},{"cpuFrames",qint64(cpuFrames_)},
+      {"gpuWindows",qint64(gpuWindows_)},{"cpuWindows",qint64(cpuWindows_)},
+      {"mklFrames",qint64(mklFrames_)},
+      {"stftRoute",QString::fromStdString(stftRoute_)},
+      {"stftSuppressedReason",QString::fromStdString(stftSuppressedReason_).left(1024)},
+      {"mklDetail",QString::fromStdString(mkl_.detail()).left(1024)}};
+  if (gpu_) {
+    const auto& m = gpu_->metrics();
+    result["metrics"] = QJsonObject{{"setupMs",m.setupMs},{"planMs",m.planMs},
+        {"h2dMs",m.h2dMs},{"fftMs",m.fftMs},{"kernelsMs",m.kernelsMs},
+        {"d2hMs",m.d2hMs},{"hostMs",m.totalHostMs},
+        {"h2dBytes",qint64(m.h2dBytes)},{"d2hBytes",qint64(m.d2hBytes)},
+        {"fftExecutions",qint64(m.fftExecutions)},
+        {"pointwiseKernelLaunches",qint64(m.kernelLaunches)},
+        {"sdkAlgorithmCalls",qint64(m.libraryAlgorithmCalls)},
+        {"devicePeakBytes",qint64(m.devicePeakBytes)},
+        {"workspaceBytes",qint64(m.workspaceBytes)},
+        {"pinnedBytes",qint64(m.pinnedBytes)},
+        {"timingMeaning",QString::fromStdString(m.timingMeaning)}};
+  }
+  return result;
+}
+bool FixedDetectionSource::withGpu(const DetectionSourceCancel& cancel,
+    const std::function<bool(gpu_dsp::Session*)>& operation) {
+  auto previous = std::move(gpuCancel_);
+  gpuCancel_ = cancel;
+  const auto restore = qScopeGuard([this,&previous] { gpuCancel_ = std::move(previous); });
+  return operation(gpu_.get());
+}
+bool FixedDetectionSource::readGpuFrame(DetectionSpectrumFrame& frame,
+    QString& error,const DetectionSourceCancel& cancel) {
+  const auto records = frame.mapping.fftSupports.size();
+  const auto elements = std::uint64_t(plan_.transformBins)*records;
+  // Tiny transforms cannot amortize upload/launch overhead. Preserve the exact
+  // existing CPU path and explicitly record why it was selected.
+  if (plan_.transformBins < 2048 || !records || elements > 8ULL*1024*1024 ||
+      plan_.estimatedPeakBytes > plan_.config.workingSetBudgetBytes ||
+      (elements+plan_.transformBins)*sizeof(std::complex<float>) >
+          plan_.config.workingSetBudgetBytes-plan_.estimatedPeakBytes) {
+    gpuFallback_ = "STFT size below GPU threshold or packed input exceeds working grant";
+    return false;
+  }
+  gpuCancel_ = cancel;
+  const auto clearCancel = qScopeGuard([this] { gpuCancel_ = {}; });
+  std::vector<std::complex<float>> packed;
+  packed.reserve(static_cast<std::size_t>(elements));
+  std::vector<std::complex<float>> work(plan_.transformBins);
+  QCryptographicHash hash(QCryptographicHash::Sha256);
+  hash.addData(QByteArray::fromStdString(sampleFormatKey(plan_.sourceIdentity.sampleFormat)));
+  for (const auto& support : frame.mapping.fftSupports) {
+    DetectionProfileScope reading(profiling_,"iq-read-and-input-hash");
+    if (!readTransformInput(*reader_,support,plan_,work,hash,error,cancel)) {
+      gpuFallback_ = "GPU input read failed: " + error.toStdString();
+      return false;
+    }
+    packed.insert(packed.end(),work.begin(),work.end());
+  }
+  gpu_dsp::StftInput input;
+  input.records = packed; input.hann = hann_;
+  input.transformBins = plan_.transformBins;
+  input.recordCount = static_cast<std::uint32_t>(records);
+  input.outputBins = plan_.config.fftSize;
+  input.sampleRateHz = plan_.sourceIdentity.sampleRateHz;
+  input.hannEnergy = hannEnergy_; input.recordDivisor = double(records);
+  std::vector<float> density(plan_.config.fftSize);
+  gpu_dsp::StftSummary summary;
+  gpu_dsp::Error failure;
+  DetectionProfileScope gpuProfile(profiling_,"gpu-stft");
+  if (!gpu_->stft(input,density,summary,failure)) {
+    gpuFallback_ = failure.stage + ": " + failure.detail;
+    return false;
+  }
+  frame.densityDb = std::move(density);
+  frame.mapping.powerFloorBins = summary.powerFloorBins;
+  frame.mapping.densityUnderflowGuardBins = summary.densityUnderflowGuardBins;
+  frame.mapping.inputHash = hash.result().toHex().toStdString();
+  error.clear(); return true;
+}
 bool FixedDetectionSource::readFrame(std::uint64_t index,
                                      DetectionSpectrumFrame& target,
                                      QString& error,
                                      const DetectionSourceCancel& cancel) {
+  DetectionProfileScope frameProfile(profiling_,"frame-total");
   if (!sourceCurrent(error)) return false;
   if (index >= plan_.realFrameCount) {
     error = "真实检测帧索引越界";
     return false;
+  }
+  switch (takeCachedFrame(index, target, error, cancel)) {
+    case CachedFrameTake::Hit:
+      return true;
+    case CachedFrameTake::Rejected:
+      return false;
+    case CachedFrameTake::Miss:
+      break;
   }
   DetectionSpectrumFrame frame;
   frame.mapping = frameMapping(index);
@@ -646,17 +1147,40 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
                         ComponentEncoding::Float32
                     ? "dBFS/Hz"
                     : "dB(unit^2/Hz)";
+  if (!suppressGpuFrame_ && gpu_ && readGpuFrame(frame,error,cancel)) {
+    if (!sourceCurrent(error)) return false;
+    ++gpuFrames_;
+    notePlainStftRoute(true);
+    rememberFrame(index, frame);
+    target = std::move(frame);
+    return true;
+  }
+  if (cancelled(cancel)) { error = "检测源计算已取消"; return false; }
+  // GPU output is unpublished on failure. Re-read the same physical support
+  // through the existing CPU reference, preserving hash and mapping semantics.
+  frame.mapping = frameMapping(index);
+  ++cpuFrames_;
   std::vector<std::complex<double>> work(plan_.transformBins);
   std::vector<double> power(plan_.transformBins, 0);
   QCryptographicHash inputHash(QCryptographicHash::Sha256);
   inputHash.addData(QByteArray::fromStdString(
       sampleFormatKey(plan_.sourceIdentity.sampleFormat)));
   for (const auto& support : frame.mapping.fftSupports) {
-    if (!readTransformInput(*reader_, support, plan_, work, inputHash, error,
-                            cancel))
-      return false;
+    {
+      DetectionProfileScope readProfile(profiling_,"iq-read-and-input-hash");
+      if (!readTransformInput(*reader_, support, plan_, work, inputHash, error,cancel))
+        return false;
+    }
+    DetectionProfileScope fftProfile(profiling_,"window-fft-power");
     for (std::size_t i = 0; i < work.size(); ++i) work[i] *= hann_[i];
-    if (!transform(work, cancel)) {
+    if (hostMklFrame_) {
+      std::string why;
+      if (!mkl_.forward(work.data(), static_cast<std::uint32_t>(work.size()), why)) {
+        error = QString::fromStdString(why);
+        return false;
+      }
+      ++mklFrames_;
+    } else if (!transform(work, cancel)) {
       error = "检测 FFT 已取消";
       return false;
     }
@@ -682,6 +1206,7 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
     power = std::move(resampled);
   }
   frame.densityDb.resize(power.size());
+  QElapsedTimer densityTimer;densityTimer.start();
   const double records = frame.mapping.fftSupports.size();
   const double densityScale = plan_.sourceIdentity.sampleRateHz * hannEnergy_;
   for (std::size_t i = 0; i < power.size(); ++i) {
@@ -700,7 +1225,10 @@ bool FixedDetectionSource::readFrame(std::uint64_t index,
         static_cast<float>(10 * std::log10(clampedPower / densityScale));
   }
   frame.mapping.inputHash = inputHash.result().toHex().toStdString();
+  profiling_.record("density-log",densityTimer.nsecsElapsed());
   if (!sourceCurrent(error)) return false;
+  notePlainStftRoute(false);
+  rememberFrame(index, frame);
   target = std::move(frame);
   error.clear();
   return true;
@@ -729,17 +1257,41 @@ bool FixedDetectionSource::readModelWindow(
   const auto values =
       std::size_t{plan_.config.fftSize} * plan_.actualWindowFrames;
   window.densityDb.reserve(values);
+  std::string mklError;
+  const bool hostCandidate = plan_.config.useHostMkl && plan_.transformBins >= 2048 &&
+                             std::has_single_bit(plan_.transformBins);
+  const bool hostMkl = hostCandidate && mkl_.prepare(plan_.transformBins, mklError);
+  if (hostCandidate && !hostMkl) gpuFallback_ = mklError;
+  const bool previousSuppress = suppressGpuFrame_;
+  const bool previousHost = hostMklFrame_;
+  // A missing oneMKL DLL stays on the handwritten transform. It does not
+  // upload the window frame by frame to recover a GPU STFT.
+  if (hostCandidate) {
+    modelWindowStftLocked_ = true;
+    if (hostMkl) {
+      stftRoute_ = "host-onemkl";
+      stftSuppressedReason_ =
+          "model-window STFT stays on host oneMKL; per-frame GPU STFT upload is suppressed";
+    } else {
+      stftRoute_ = "handwritten-fft";
+      stftSuppressedReason_ = mklError.empty()
+          ? "oneMKL unavailable; handwritten FFT retained; per-frame GPU STFT upload is suppressed"
+          : mklError + "; per-frame GPU STFT upload is suppressed";
+    }
+  }
+  suppressGpuFrame_ = hostCandidate;
+  hostMklFrame_ = hostMkl;
+  const auto restoreHost = qScopeGuard([&] {
+    suppressGpuFrame_ = previousSuppress;
+    hostMklFrame_ = previousHost;
+  });
   double mean = 0, squareDeviation = 0;
   std::uint64_t count = 0;
   for (std::uint32_t row = 0; row < plan_.actualWindowFrames; ++row) {
     DetectionSpectrumFrame frame;
     if (!readFrame(window.firstFrameIndex + row, frame, error, cancel))
       return false;
-    for (const float value : frame.densityDb) {
-      const double deviation = value - mean;
-      mean += deviation / ++count;
-      squareDeviation += deviation * (value - mean);
-    }
+    DetectionProfileScope normalizeProfile(profiling_,"window-statistics");
     window.densityDb.insert(window.densityDb.end(), frame.densityDb.begin(),
                             frame.densityDb.end());
     window.densityUnderflowGuardApplied |=
@@ -747,21 +1299,49 @@ bool FixedDetectionSource::readModelWindow(
     window.floorGuardApplied |= frame.mapping.powerFloorBins != 0;
     window.frames.push_back(std::move(frame.mapping));
   }
-  window.meanDb = mean;
-  window.sampleStdDb = std::sqrt(std::max(0.0, squareDeviation / (count - 1)));
-  window.normalizationStdDb =
-      std::max(window.sampleStdDb,
-               static_cast<double>(std::numeric_limits<float>::epsilon()));
-  window.epsilonGuardApplied =
-      window.sampleStdDb < std::numeric_limits<float>::epsilon();
-  window.normalizedTensor.reserve(values);
-  QCryptographicHash tensorHash(QCryptographicHash::Sha256);
-  for (const float value : window.densityDb) {
-    const float normalized =
-        static_cast<float>((value - mean) / window.normalizationStdDb);
-    window.normalizedTensor.push_back(normalized);
-    hashFloat(tensorHash, normalized);
+  bool gpuNormalized = false;
+  if (gpu_ && values >= 65536) {
+    gpuCancel_ = cancel;
+    const auto clearCancel = qScopeGuard([this] { gpuCancel_ = {}; });
+    gpu_dsp::NormalizationSummary summary;
+    gpu_dsp::Error failure;
+    std::vector<float> normalized(values);
+    DetectionProfileScope gpuProfile(profiling_,"gpu-normalize");
+    if (gpu_->normalize(window.densityDb,normalized,summary,failure)) {
+      window.normalizedTensor = std::move(normalized);
+      window.meanDb = summary.mean;
+      window.sampleStdDb = summary.sampleStd;
+      window.normalizationStdDb = summary.normalizationStd;
+      window.epsilonGuardApplied = summary.epsilonGuardApplied;
+      gpuNormalized = true;
+      ++gpuWindows_;
+    } else gpuFallback_ = failure.stage + ": " + failure.detail;
   }
+  if (!gpuNormalized) {
+    if (cancelled(cancel)) { error = "检测模型输入计算已取消"; return false; }
+    ++cpuWindows_;
+    for (const float value : window.densityDb) {
+      const double deviation = value - mean;
+      mean += deviation / ++count;
+      squareDeviation += deviation * (value - mean);
+    }
+    window.meanDb = mean;
+    window.sampleStdDb = std::sqrt(std::max(0.0, squareDeviation / (count - 1)));
+    window.normalizationStdDb =
+        std::max(window.sampleStdDb,
+                 static_cast<double>(std::numeric_limits<float>::epsilon()));
+    window.epsilonGuardApplied =
+        window.sampleStdDb < std::numeric_limits<float>::epsilon();
+    window.normalizedTensor.reserve(values);
+    DetectionProfileScope normalizeProfile(profiling_,"normalize-and-tensor-hash");
+    for (const float value : window.densityDb) {
+      const float normalized =
+          static_cast<float>((value - mean) / window.normalizationStdDb);
+      window.normalizedTensor.push_back(normalized);
+    }
+  }
+  QCryptographicHash tensorHash(QCryptographicHash::Sha256);
+  hashFloatBlock(tensorHash,window.normalizedTensor);
   window.tensorHash = tensorHash.result().toHex().toStdString();
   window.actualContextRange = {window.frames.front().actualSamples.begin,
                                window.frames.back().actualSamples.end};

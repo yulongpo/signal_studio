@@ -10,12 +10,40 @@
 #include <iostream>
 #include <numbers>
 #include "domain/constellation.h"
+#include "domain/constellation_observation.h"
 #include "infrastructure/narrowband_analysis/constellation_analysis.h"
 #include "infrastructure/narrowband_analysis/analysis_settings_json.h"
 using namespace signalstudio;
 namespace {
 void check(bool ok,const std::string& reason){if(!ok)throw std::runtime_error(reason);}
 QByteArray read(const QString& path){QFile f(path);check(f.open(QIODevice::ReadOnly),"Cannot read "+path.toStdString());return f.readAll();}
+void checkDecisionCells(const ConstellationDefinition& definition) {
+    check(constellationDecisionCells(definition,-3,3,[]{return true;}).empty(),"Reference geometry honors cancellation without publishing partial cells");
+    const auto cells=constellationDecisionCells(definition,-3,3);check(cells.size()==definition.points.size(),"All in-view template cells must exist");
+    double area=0;
+    for(const auto& cell:cells) {
+        const auto& polygon=cell.polygon;check(polygon.size()>=3,"Nonempty convex reference cell");
+        double twice=0;
+        for(std::size_t i=0;i<polygon.size();++i) {
+            const auto a=polygon[i],b=polygon[(i+1)%polygon.size()];twice+=std::imag(std::conj(a)*b);
+            const auto nearest=nearestConstellationPoint(a,definition);
+            check(std::norm(a-definition.points[cell.templateIndex])<=std::norm(a-definition.points[nearest])+1e-9,"Every cell vertex must satisfy actual nearest-neighbor inequalities, including cross-QAM missing corners");
+        }
+        area+=std::abs(twice)/2;
+    }
+    check(std::abs(area-36)<1e-7,"Reference cells cover the viewport with exact total area");
+    for(int probe=0;probe<127;++probe) {
+        const std::complex<double> z{2.9*std::sin(probe*1.337+.017),2.9*std::cos(probe*.773+.041)};
+        double best=1e30;std::size_t nearest=0;
+        for(std::size_t i=0;i<definition.points.size();++i)if(const auto d=std::norm(z-definition.points[i]);d<best){best=d;nearest=i;}
+        const auto it=std::find_if(cells.begin(),cells.end(),[&](const auto& cell){return cell.templateIndex==nearest;});
+        check(it!=cells.end(),"Brute-force nearest cell exists");
+        for(std::size_t i=0;i<it->polygon.size();++i) {
+            const auto a=it->polygon[i],b=it->polygon[(i+1)%it->polygon.size()];
+            check(std::imag(std::conj(b-a)*(z-a))>=-1e-9,"Independent exhaustive nearest point lies in the displayed decision polygon");
+        }
+    }
+}
 QJsonObject run(const QJsonObject& record) {
     const auto root=qEnvironmentVariable("SS_MODULATION_FIXTURES"),name=record["name"].toString();
     FileMetadata source;source.id="modulation";source.demo=false;source.path=(root+'/'+name+".raw").toStdString();source.sampleRateHz=20e6;source.centerFrequencyHz=100e6;
@@ -41,6 +69,18 @@ QJsonObject run(const QJsonObject& record) {
         check(std::abs(std::norm(z-geometry.points[nearestConstellationPoint(z,geometry)])-brute)<1e-10,"Fast decision equals independent exhaustive distance");
     }
     const auto result=analyzeNarrowband(data,settings);
+    checkDecisionCells(geometry);
+    const auto observation=observeConstellation(result,settings);
+    check(observation.decisionAvailable==result.carrierLocked,"Conditional decisions require actual carrier/timing success");
+    if(observation.decisionAvailable) {
+        check(observation.samples.size()==observation.decisions.size() && observation.samples.size()<=20000,"Bounded traceable decision projection");
+        for(std::size_t i=0;i<observation.decisions.size();++i) {
+            const auto& sample=observation.samples[i];const auto& decision=observation.decisions[i];
+            check(sample.output==decision.output && sample.source==decision.source,"Decision retains exact source/output positions");
+            const auto index=nearestConstellationPoint(std::complex<double>(sample.value)/observation.referenceScale,geometry);
+            check(index==observation.templateIndices[i] && std::abs(std::complex<double>(decision.value)-geometry.points[index]*observation.referenceScale)<1e-6*std::max(1.0,observation.referenceScale),"Actual samples project through the shared decision function");
+        }
+    }
     const auto bytes=read(root+'/'+name+".symbols");std::vector<std::complex<double>> truth;
     for(qsizetype i=0;i+8<=bytes.size();i+=8)truth.emplace_back(std::bit_cast<float>(qFromLittleEndian<quint32>(bytes.constData()+i)),std::bit_cast<float>(qFromLittleEndian<quint32>(bytes.constData()+i+4)));
     std::vector<std::complex<double>> observed,reference;double timing=0;
@@ -90,6 +130,7 @@ int main(int argc,char** argv) {
         for(const auto record:index["records"].toArray()){const auto r=run(record.toObject());pass=pass && r["pass"].toBool();reports.append(r);}
         {
             NarrowbandAnalysisSettings s;s.hypothesis=ModulationHypothesis::Apsk;s.modulationOrder=16;s.apskRings="4:1:45,12:3.15:15";
+            ConstellationDefinition custom;std::string customError;check(makeConstellation(s,custom,customError),customError);checkDecisionCells(custom);
             QString error;NarrowbandAnalysisSettings decoded;check(decodeAnalysisSettings(encodeAnalysisSettings(s),decoded,error) && decoded==s,"Custom APSK ring v6 round trip");
             auto invalid=encodeAnalysisSettings(s);invalid["modulationOrder"]=3;check(!decodeAnalysisSettings(invalid,decoded,error),"Reject nonbinary order");
             invalid=encodeAnalysisSettings(s);invalid["apskRings"]="4:2:45,12:1:15";check(!decodeAnalysisSettings(invalid,decoded,error),"Reject non-increasing radii");
@@ -109,6 +150,7 @@ int main(int argc,char** argv) {
                 NarrowbandAnalysisSettings s;s.hypothesis=entry.first;s.modulationOrder=entry.second;s.symbolRateMode=SymbolRateMode::Manual;s.symbolRateHz=625000;
                 s.cfoMode=CfoMode::Manual;s.matchedFilter=s.timingRecovery=s.carrierRecovery=true;s.constellationStage=AnalysisStage::CarrierRecovered;
                 const auto result=analyzeNarrowband(data,s);check(!result.carrierLocked && !result.constellation.empty(),"Noise must retain IQ without dense-template false lock");
+                const auto observation=observeConstellation(result,s);check(!observation.decisionAvailable && observation.decisions.empty() && !observation.samples.empty(),"Noise/failure must not publish conditional decided symbols");
             }
             std::cout<<"PASS six noise hypotheses and strict family/order/ring persistence"<<std::endl;
         }

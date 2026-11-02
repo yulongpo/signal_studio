@@ -1,0 +1,9 @@
+{
+  "sourceToolChunk": "b14ba4",
+  "recordKind": "agent transcription of observed tool failure, not a generated test report",
+  "phase": "unregister in first controlled association attempt",
+  "fix": "Open the exact current-user extension key with writable=true and dispose it; rerun registration, shell launch and unregister.",
+  "error": "Exception calling DeleteValue with 2 argument(s): Cannot write to the registry key.",
+  "subsequentReport": "deployment-release-v2/association-v2.json",
+  "subsequentPass": true
+}

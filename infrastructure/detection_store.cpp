@@ -1,10 +1,12 @@
 #include "infrastructure/detection_store.h"
+#include "infrastructure/runtime_log.h"
 
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QLockFile>
 #include <QRegularExpression>
 #include <QSaveFile>
 #include <QSet>
@@ -13,14 +15,30 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 
 #include "infrastructure/annotation_json.h"
+#include "infrastructure/project_file.h"
+#include "infrastructure/detection_resource_diagnostics.h"
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace signalstudio {
 namespace {
 constexpr qint64 kChunkBytes = 8 * 1024 * 1024;
 constexpr quint64 kStoreBytes = 256 * 1024 * 1024;
+quint64 jsonStoreLimit(const DetectionRequest& request) {
+  // Legacy combined manifests keep the historical chunk-file ceiling. A newer
+  // evidence budget can raise that ceiling; each shard stays at 8 MiB.
+  if (request.legacyCombinedEvidence) return kStoreBytes;
+  return std::max(kStoreBytes, request.evidenceBudgetBytes);
+}
 constexpr qsizetype kChunkRecords = 4096;
 constexpr qsizetype kMaximumRuns = 10000;
 
@@ -181,7 +199,7 @@ DetectionParameters parametersValue(const QJsonValue& value) {
   p.scoreThreshold = number(o, "scoreThreshold");
   p.nmsIou = number(o, "nmsIou");
   p.topK = smallInteger(o, "topK", 512);
-  p.batchSize = smallInteger(o, "batchSize", 2);
+  p.batchSize = smallInteger(o, "batchSize", 16);
   p.minHits = smallInteger(o, "minHits", 10000);
   p.maxMiss = smallInteger(o, "maxMiss", 10000);
   p.mergeFrequencyHz = number(o, "mergeFrequencyHz");
@@ -240,8 +258,10 @@ QString manifestPath(const DetectionRequest& request) {
 QString chunkPath(const DetectionRequest& request, const QString& hash) {
   return runDirectory(request.runId) + "/chunk-" + hash + ".json";
 }
-void validateRequest(const DetectionRequest& request) {
-  const auto valid = validateDetectionRequest(request);
+void validateRequest(const DetectionRequest& request,
+                     const QString& storagePath = {}) {
+  const auto valid =
+      validateDetectionRequest(request, storagePath.toStdString());
   require(valid.ok, text(valid.error));
   QString error;
   SourceIdentity source;
@@ -286,9 +306,9 @@ void validateRequest(const DetectionRequest& request) {
       request.sourceAnnotationId.empty() == request.sourceRevisionId.empty(),
       "Detection annotation ROI requires both source and revision identities");
 }
-void validateRun(const DetectionRun& run) {
-  validateRequest(run.request);
-  const auto valid = validateDetectionRun(run);
+void validateRun(const DetectionRun& run, const QString& storagePath = {}) {
+  validateRequest(run.request, storagePath);
+  const auto valid = validateDetectionRun(run, storagePath.toStdString());
   require(valid.ok, text(valid.error));
   enumText(static_cast<int>(run.lifecycle), kLifecycles);
   enumText(static_cast<int>(run.sourceValidity), kValidity);
@@ -519,9 +539,32 @@ quint64 verifyHeadEvidence(const QDir& root, const DetectionRequest& request,
   }
   return bytes;
 }
+void verifyEvidenceBudget(const DetectionRequest& request, quint64 mappingBytes,
+                          quint64 rawHeadBytes) {
+  if (request.legacyCombinedEvidence) {
+    require(rawHeadBytes <= request.evidenceBudgetBytes &&
+                mappingBytes <= request.evidenceBudgetBytes - rawHeadBytes,
+            QString("Detection mappings exceed evidence budget (legacy combined: JSON %1 + raw heads %2; limit %3)")
+                .arg(mappingBytes).arg(rawHeadBytes).arg(request.evidenceBudgetBytes));
+    return;
+  }
+  require(mappingBytes <= request.evidenceBudgetBytes,
+          QString("Detection mappings exceed JSON evidence budget (required %1; limit %2)")
+              .arg(mappingBytes).arg(request.evidenceBudgetBytes));
+  if (request.rawHeadBudgetBytes == 0) {
+    require(rawHeadBytes == 0,
+            QString("Per-window raw model output is not retained (found %1 bytes)")
+                .arg(rawHeadBytes));
+    return;
+  }
+  require(rawHeadBytes <= request.rawHeadBudgetBytes,
+          QString("Raw model heads exceed independent disk evidence budget (required %1; limit %2)")
+              .arg(rawHeadBytes).arg(request.rawHeadBudgetBytes));
+}
 QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
                         const DetectionChunkReference& reference,
-                        quint64& totalBytes, quint64& evidenceBytes) {
+                        quint64& totalBytes, quint64& evidenceBytes,
+                        quint64& rawHeadBytes) {
   const auto bytes = readBounded(root, text(reference.relativePath));
   require(static_cast<std::uint64_t>(bytes.size()) <=
               (run.request.workingSetBudgetBytes - 65536) / 8,
@@ -529,7 +572,8 @@ QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
   require(digest(bytes) == text(reference.sha256),
           "Detection chunk content hash mismatch");
   totalBytes += static_cast<quint64>(bytes.size());
-  require(totalBytes <= kStoreBytes, "Detection result store exceeds 256 MiB");
+  require(totalBytes <= jsonStoreLimit(run.request),
+          "Detection result store exceeds its evidence budget");
   const auto object = parseObject(bytes);
   onlyKeys(object, {"schema", "version", "runId", "projectGeneration", "fileId",
                     "sourceSha256", "sequence", "results", "mappings"});
@@ -550,15 +594,14 @@ QJsonObject verifyChunk(const QDir& root, const DetectionRun& run,
   validateRecords(mappings, run.request, true);
   evidenceBytes += static_cast<quint64>(
       QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
-  evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
-  require(evidenceBytes <= run.request.evidenceBudgetBytes,
-          "Detection mappings exceed evidence budget");
+  rawHeadBytes += verifyHeadEvidence(root, run.request, mappings);
+  verifyEvidenceBudget(run.request, evidenceBytes, rawHeadBytes);
   return object;
 }
 void verifyChunks(const QDir& root, const DetectionRun& run) {
-  quint64 bytes = 0, evidence = 0;
+  quint64 bytes = 0, evidence = 0, rawHeads = 0;
   for (const auto& chunk : run.chunks)
-    verifyChunk(root, run, chunk, bytes, evidence);
+    verifyChunk(root, run, chunk, bytes, evidence, rawHeads);
 }
 }  // namespace
 
@@ -584,16 +627,29 @@ QJsonObject encodeDetectionRequest(const DetectionRequest& r) {
       {"evidenceBudgetBytes", decimal(r.evidenceBudgetBytes)}};
   if (r.inputAdaptationVersion >= 2)
     value["spectrumMode"] = static_cast<int>(r.spectrumMode);
+  if (!r.legacyCombinedEvidence) {
+    value["retainRawModelOutput"] = r.retainRawModelOutput;
+    if (r.rawHeadBudgetBytes)
+      value["rawHeadBudgetBytes"] = decimal(r.rawHeadBudgetBytes);
+  }
+  if (r.gpuDspPreferred) value["gpuDspPreferred"] = true;
+  if(r.sampleEnergyMode!=DetectionSampleEnergyMode::LegacyExact ||
+      r.sampleScratchBudgetBytes!=kDetectionLegacySampleScratchBytes) {
+    value["sampleEnergyMode"]=static_cast<int>(r.sampleEnergyMode);
+    value["sampleScratchBudgetBytes"]=decimal(r.sampleScratchBudgetBytes);
+  }
   return value;
 }
 bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
-                            QString& error) {
+                            QString& error, const QString& storagePath) {
   return decodeSafely(o, target, error, [&] {
     onlyKeys(o, {"schemaVersion", "runId", "parentRunId", "sourceIdentity",
                  "profile", "parameters", "requestedRange", "contextRange",
                  "rangeOrigin", "sourceAnnotationId", "sourceRevisionId",
                  "modelManifestPath", "modelSha256", "workingSetBudgetBytes",
-                 "evidenceBudgetBytes", "spectrumMode"});
+                 "evidenceBudgetBytes", "spectrumMode", "rawHeadBudgetBytes",
+                 "retainRawModelOutput", "sampleEnergyMode",
+                 "sampleScratchBudgetBytes", "gpuDspPreferred"});
     require(o["schemaVersion"] == 1 || o["schemaVersion"] == 2,
             "Unsupported detection request version");
     DetectionRequest r;
@@ -641,9 +697,46 @@ bool decodeDetectionRequest(const QJsonObject& o, DetectionRequest& target,
         integer(o["workingSetBudgetBytes"], "workingSetBudgetBytes");
     r.evidenceBudgetBytes =
         integer(o["evidenceBudgetBytes"], "evidenceBudgetBytes");
-    validateRequest(r);
+    if (o.contains("retainRawModelOutput")) {
+      require(o["retainRawModelOutput"].isBool(),
+              "retainRawModelOutput must be a boolean");
+      r.retainRawModelOutput = o["retainRawModelOutput"].toBool();
+      r.legacyCombinedEvidence = false;
+      r.rawHeadBudgetBytes = o.contains("rawHeadBudgetBytes")
+          ? integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes") : 0;
+    } else if (o.contains("rawHeadBudgetBytes")) {
+      r.rawHeadBudgetBytes =
+          integer(o["rawHeadBudgetBytes"], "rawHeadBudgetBytes");
+      r.legacyCombinedEvidence = false;
+      r.retainRawModelOutput = r.rawHeadBudgetBytes > 0;
+    } else {
+      r.rawHeadBudgetBytes = 0;
+      r.retainRawModelOutput = false;
+      r.legacyCombinedEvidence = true;
+    }
+    r.sampleEnergyMode=o.contains("sampleEnergyMode")
+        ? static_cast<DetectionSampleEnergyMode>(smallInteger(o,"sampleEnergyMode",2))
+        : DetectionSampleEnergyMode::LegacyExact;
+    require(!o.contains("gpuDspPreferred") || o["gpuDspPreferred"].isBool(),
+            "Invalid GPU DSP preference");
+    r.gpuDspPreferred = o["gpuDspPreferred"].toBool(false);
+    r.sampleScratchBudgetBytes=o.contains("sampleScratchBudgetBytes")
+        ? integer(o["sampleScratchBudgetBytes"],"sampleScratchBudgetBytes")
+        : kDetectionLegacySampleScratchBytes;
+    validateRequest(r, storagePath);
     return r;
   });
+}
+QJsonObject detectionTensorRtInferenceTimings(const QJsonObject& performance) {
+  const auto named = performance.value(QStringLiteral("tensorRtInference"));
+  const auto events = named.isObject() ? named.toObject()
+                                       : performance.value(QStringLiteral("gpu")).toObject();
+  QJsonObject timings;
+  for (const auto* key : {"h2dMs", "gpuStreamMs", "d2hMs", "hostEnqueueMs",
+                          "inputAdaptationMs", "physicalEnqueueCalls",
+                          "cudaEventIntervals"})
+    if (events.contains(key)) timings.insert(key, events.value(key));
+  return timings;
 }
 QJsonObject encodeDetectionRun(const DetectionRun& run) {
   QJsonArray coverage, chunks;
@@ -658,7 +751,7 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
                     {"relativePath", text(chunk.relativePath)},
                     {"sha256", text(chunk.sha256)},
                     {"resultCount", static_cast<int>(chunk.resultCount)}});
-  return {{"schema", "signal-studio-detection-run"},
+  QJsonObject encoded{{"schema", "signal-studio-detection-run"},
           {"version", 2},
           {"request", encodeDetectionRequest(run.request)},
           {"lifecycle", enumText(static_cast<int>(run.lifecycle), kLifecycles)},
@@ -670,6 +763,9 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
           {"eligibleWindows", decimal(run.eligibleWindows)},
           {"completedWindows", decimal(run.completedWindows)},
           {"resultCount", decimal(run.resultCount)},
+          {"accountedChunkBytes", decimal(run.accountedChunkBytes)},
+          {"accountedEvidenceBytes", decimal(run.accountedEvidenceBytes)},
+          {"accountedRawHeadBytes", decimal(run.accountedRawHeadBytes)},
           {"computationPhase", text(run.computationPhase)},
           {"refinedCandidates", decimal(run.refinedCandidates)},
           {"totalRefinementCandidates", decimal(run.totalRefinementCandidates)},
@@ -680,9 +776,17 @@ QJsonObject encodeDetectionRun(const DetectionRun& run) {
           {"runtime", text(run.runtime)},
           {"manifestRelativePath", manifestPath(run.request)},
           {"recoverable", run.recoverable}};
+  if (!run.performanceJson.empty()) {
+    const auto document=QJsonDocument::fromJson(QByteArray::fromStdString(run.performanceJson));
+    require(run.performanceJson.size()<=65536 && document.isObject() &&
+        document.object()["schema"]=="signal-studio-detection-profile-v1",
+        "Invalid bounded detection performance diagnostics");
+    encoded["performance"]=document.object();
+  }
+  return encoded;
 }
 bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
-                        QString& error) {
+                        QString& error, const QString& storagePath) {
   return decodeSafely(o, target, error, [&] {
     onlyKeys(o, {"schema",
                  "version",
@@ -695,6 +799,9 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                  "eligibleWindows",
                  "completedWindows",
                  "resultCount",
+                 "accountedChunkBytes",
+                 "accountedEvidenceBytes",
+                 "accountedRawHeadBytes",
                  "startedAtMilliseconds",
                  "finishedAtMilliseconds",
                  "error",
@@ -704,14 +811,15 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
                  "recoverable",
                  "computationPhase",
                  "refinedCandidates",
-                 "totalRefinementCandidates"});
+                 "totalRefinementCandidates", "performance"});
     require(o["schema"] == "signal-studio-detection-run" &&
                 (o["version"] == 1 || o["version"] == 2),
             "Unsupported detection run manifest version");
     DetectionRun run;
     QString requestError;
     const bool requestDecoded = decodeDetectionRequest(
-        objectValue(o["request"], "request"), run.request, requestError);
+        objectValue(o["request"], "request"), run.request, requestError,
+        storagePath);
     require(requestDecoded, requestError);
     run.lifecycle =
         enumeration<DetectionLifecycle>(o, "lifecycle", kLifecycles);
@@ -738,10 +846,17 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.resultCount = integer(o["resultCount"], "resultCount");
     if (o["version"] == 2) {
       run.computationPhase = string(o, "computationPhase", 32, true);
-      require(QStringList{"none", "reading", "inference", "frequency", "refine",
+      require(QStringList{"none", "preflight", "reading", "inference", "decoding",
+                          "storing-heads", "tracking", "checkpoint", "frequency", "refine",
                           "publishing", "completed"}
                   .contains(text(run.computationPhase)),
               "Unknown detection computation phase");
+      run.accountedChunkBytes = o.contains("accountedChunkBytes")
+          ? integer(o["accountedChunkBytes"], "accountedChunkBytes") : 0;
+      run.accountedEvidenceBytes = o.contains("accountedEvidenceBytes")
+          ? integer(o["accountedEvidenceBytes"], "accountedEvidenceBytes") : 0;
+      run.accountedRawHeadBytes = o.contains("accountedRawHeadBytes")
+          ? integer(o["accountedRawHeadBytes"], "accountedRawHeadBytes") : 0;
       run.refinedCandidates =
           integer(o["refinedCandidates"], "refinedCandidates");
       run.totalRefinementCandidates =
@@ -752,7 +867,10 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     } else {
       require(!o.contains("computationPhase") &&
                   !o.contains("refinedCandidates") &&
-                  !o.contains("totalRefinementCandidates"),
+                  !o.contains("totalRefinementCandidates") && !o.contains("performance") &&
+                  !o.contains("accountedChunkBytes") &&
+                  !o.contains("accountedEvidenceBytes") &&
+                  !o.contains("accountedRawHeadBytes"),
               "Version 1 cannot contain version 2 progress fields");
     }
     run.startedAtMilliseconds =
@@ -764,9 +882,63 @@ bool decodeDetectionRun(const QJsonObject& o, DetectionRun& target,
     run.runtime = string(o, "runtime", 1024);
     run.manifestRelativePath = string(o, "manifestRelativePath", 1024, true);
     run.recoverable = boolean(o, "recoverable");
-    validateRun(run);
+    if(o.contains("performance")) {
+      const auto performance=objectValue(o["performance"],"performance");
+      const auto bytes=QJsonDocument(performance).toJson(QJsonDocument::Compact);
+      require(bytes.size()<=65536 && performance["schema"]=="signal-studio-detection-profile-v1",
+          "Invalid bounded detection performance diagnostics");
+      if (performance.contains("tensorRtInference"))
+        require(performance.value("tensorRtInference").isObject(),
+                "tensorRtInference timings must be an object");
+      // Legacy alias for the same TensorRT CUDA-event object. The stored
+      // document keeps whichever key the file used.
+      if (performance.contains("gpu"))
+        require(performance.value("gpu").isObject(),
+                "Legacy gpu timings alias must be an object");
+      run.performanceJson=bytes.toStdString();
+    }
+    validateRun(run, storagePath);
     return run;
   });
+}
+namespace {
+bool checkCheckpointSpace(const QString& directory, const DetectionRun& run,
+                          std::uint64_t payloadBytes, std::string& profile,
+                          QString& error) {
+  const auto snapshot = captureRuntimeResourceSnapshot(directory.toStdString(), nullptr);
+  DetectionDiskUsage usage;
+  usage.durableVolumeKey = snapshot.volume.volumeKey;
+  usage.storeRawHead = run.accountedRawHeadBytes != 0;
+  usage.rawHeadBytes = run.accountedRawHeadBytes;
+  usage.resultShardBytes = run.accountedChunkBytes;
+  // appendDetectionChunk enforces the cap for every immutable chunk.
+  usage.largestResultShardBytes = std::min(usage.resultShardBytes, kDetectionShardFileCapBytes);
+  usage.checkpointBytes = payloadBytes;
+  const QFileInfo previous(QDir(directory).filePath(manifestPath(run.request)));
+  usage.checkpointExistingBytes = previous.isFile() ? std::uint64_t(previous.size()) : 0;
+  std::uint64_t resident = 0;
+  if (!checkedAddU64(usage.rawHeadBytes, usage.resultShardBytes, resident) ||
+      !checkedAddU64(resident, usage.checkpointExistingBytes, resident)) {
+    error = "resource.disk-overflow: resident checkpoint ledger";
+    return false;
+  }
+  return assessDetectionResourceStage("checkpoint", usage,
+      kDiskFactRawHead | kDiskFactResultShards | kDiskFactCheckpoint,
+      snapshot, profile, error, nullptr, 0, DetectionStageResidentCredit{resident, 0});
+}
+}
+bool profileDetectionCheckpointResources(const QString& directory,
+                                         DetectionRun& run, QString& error) {
+  auto candidate = run;
+  for (int attempt = 0; attempt != 8; ++attempt) {
+    const auto size = QJsonDocument(encodeDetectionRun(candidate)).toJson(QJsonDocument::Compact).size();
+    if (!checkCheckpointSpace(directory, candidate, std::uint64_t(size), candidate.performanceJson, error))
+      return false;
+    const auto updatedSize = QJsonDocument(encodeDetectionRun(candidate)).toJson(QJsonDocument::Compact).size();
+    if (size == updatedSize) { run.performanceJson = std::move(candidate.performanceJson); return true; }
+  }
+  error = "resource.checkpoint-profile-did-not-converge";
+  return false;
 }
 bool writeDetectionRun(const QString& directory, const DetectionRun& run,
                        QString& error) {
@@ -797,14 +969,18 @@ bool writeDetectionRun(const QString& directory, const DetectionRun& run,
                 "Published detection chunks cannot be replaced or reordered");
       }
     }
-    verifyChunks(root, run);
+    // Append already checked the new shard. Historical hashes, including raw
+    // heads, are audited again when the run reaches a terminal lifecycle.
+    if (detectionIsTerminal(run.lifecycle)) verifyChunks(root, run);
     DetectionRun decoded;
     QString decodeError;
     const auto object = encodeDetectionRun(run);
     const bool runDecoded = decodeDetectionRun(object, decoded, decodeError);
     require(runDecoded, decodeError);
-    atomicWrite(root, manifestPath(run.request),
-                QJsonDocument(object).toJson(QJsonDocument::Compact));
+    const auto payload = QJsonDocument(object).toJson(QJsonDocument::Compact);
+    std::string resourceProfile = run.performanceJson;
+    require(checkCheckpointSpace(directory, run, std::uint64_t(payload.size()), resourceProfile, error), error);
+    atomicWrite(root, manifestPath(run.request), payload);
     error.clear();
     return true;
   } catch (const std::exception& exception) {
@@ -825,11 +1001,13 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
             "Detection run exceeds 100000 results");
     validateRecords(results, run.request, false);
     validateRecords(mappings, run.request, true);
+    require(run.chunks.empty() || run.accountedChunkBytes > 0,
+            "Detection append is missing its cumulative chunk byte ledger");
     const auto root = projectRoot(directory);
     prepareDirectory(root, runDirectory(run.request.runId));
-    quint64 totalBytes = 0, evidenceBytes = 0;
-    for (const auto& chunk : run.chunks)
-      verifyChunk(root, run, chunk, totalBytes, evidenceBytes);
+    quint64 totalBytes = run.accountedChunkBytes;
+    quint64 evidenceBytes = run.accountedEvidenceBytes;
+    quint64 rawHeadBytes = run.accountedRawHeadBytes;
     const auto object =
         QJsonObject{{"schema", "signal-studio-detection-chunk"},
                     {"version", 1},
@@ -843,13 +1021,13 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
                     {"mappings", mappings}};
     const auto bytes = QJsonDocument(object).toJson(QJsonDocument::Compact);
     require(bytes.size() <= kChunkBytes &&
-                totalBytes + static_cast<quint64>(bytes.size()) <= kStoreBytes,
+                totalBytes + static_cast<quint64>(bytes.size()) <=
+                    jsonStoreLimit(run.request),
             "Detection chunk/store exceeds its byte budget");
     evidenceBytes += static_cast<quint64>(
         QJsonDocument(mappings).toJson(QJsonDocument::Compact).size() - 2);
-    evidenceBytes += verifyHeadEvidence(root, run.request, mappings);
-    require(evidenceBytes <= run.request.evidenceBudgetBytes,
-            "Detection mappings exceed evidence budget");
+    rawHeadBytes += verifyHeadEvidence(root, run.request, mappings);
+    verifyEvidenceBudget(run.request, evidenceBytes, rawHeadBytes);
     const auto hash = digest(bytes);
     const auto relative = chunkPath(run.request, hash);
     if (QFileInfo::exists(root.filePath(relative)))
@@ -858,6 +1036,10 @@ bool appendDetectionChunk(const QString& directory, DetectionRun& run,
     else
       atomicWrite(root, relative, bytes);
     auto candidate = run;
+    candidate.accountedChunkBytes =
+        totalBytes + static_cast<quint64>(bytes.size());
+    candidate.accountedEvidenceBytes = evidenceBytes;
+    candidate.accountedRawHeadBytes = rawHeadBytes;
     candidate.chunks.push_back(
         {static_cast<std::uint64_t>(candidate.chunks.size()),
          relative.toStdString(), hash.toStdString(),
@@ -951,6 +1133,15 @@ bool loadDetectionRun(const QString& directory, const QString& id,
       candidate.error =
           "Interrupted execution; stored results can be reviewed. Restart "
           "creates a new run.";
+      RuntimeLog::write(
+          QStringLiteral("detection"),
+          QStringList{"run=" + QString::fromStdString(candidate.request.runId),
+                      "phase=" + QString::fromStdString(candidate.computationPhase),
+                      "windows=" + QString::number(candidate.completedWindows) + "/" +
+                          QString::number(candidate.eligibleWindows),
+                      "batch=0", "event=interrupted",
+                      "error=" + QString::fromStdString(candidate.error)}
+              .join(' '));
     }
     target = std::move(candidate);
     error.clear();
@@ -1047,7 +1238,7 @@ bool visitDetectionChunks(
   try {
     validateRun(run);
     const auto root = projectRoot(directory);
-    quint64 totalBytes = 0, evidenceBytes = 0;
+    quint64 totalBytes = 0, evidenceBytes = 0, rawHeadBytes = 0;
     for (const auto& reference : run.chunks) {
       const auto size =
           QFileInfo(root.filePath(text(reference.relativePath))).size();
@@ -1055,7 +1246,7 @@ bool visitDetectionChunks(
                               (run.request.workingSetBudgetBytes - 65536) / 8,
               "Detection shard parsing exceeds working set budget");
       const auto object =
-          verifyChunk(root, run, reference, totalBytes, evidenceBytes);
+          verifyChunk(root, run, reference, totalBytes, evidenceBytes, rawHeadBytes);
       if (!visitor(object, error)) return false;
     }
     error.clear();
@@ -1063,6 +1254,280 @@ bool visitDetectionChunks(
   } catch (const std::exception& exception) {
     error = QString::fromUtf8(exception.what());
     return false;
+  }
+}
+
+std::vector<DetectionRun> discoverDetectionRuns(const QString& directory,
+                                               const Project& project,
+                                               QString& error) {
+  std::vector<DetectionRun> result;
+  QSet<QString> ids;
+  for (const auto& file : project.files) {
+    if (!file.currentDetectionSlots) {
+      if (file.detectionRuns.empty() && std::none_of(file.sourceSets.begin(), file.sourceSets.end(),
+          [](const auto& set) { return set.sourceKind == AnnotationSource::Algorithm; })) continue;
+      error = "旧工程必须先完成检测 slot 裁决，再恢复任务";
+      return {};
+    }
+    for (const auto& slot : *file.currentDetectionSlots) {
+      for (const auto& id : {slot.committedRunId, slot.pendingRunId}) {
+        if (id.empty() || ids.contains(text(id))) continue;
+        if (std::find(slot.retiredRunIds.begin(), slot.retiredRunIds.end(), id) !=
+            slot.retiredRunIds.end()) {
+          error = "权威检测索引同时包含退役运行"; return {};
+        }
+        DetectionRun run;
+        if (!loadDetectionRun(directory, text(id), run, error)) return {};
+        if (run.request.sourceIdentity.fileId != file.metadata.id ||
+            run.request.sourceIdentity.selectedSampleChannel != slot.sampleChannel) {
+          error = "恢复运行与权威 slot 作用域不同"; return {};
+        }
+        ids.insert(text(id));
+        result.push_back(std::move(run));
+      }
+    }
+  }
+  error.clear();
+  return result;
+}
+
+bool detectionRunAssetPaths(const QString& directory, const DetectionRun& run,
+                            QStringList& target, QString& error) {
+  QStringList paths{manifestPath(run.request)};
+  QSet<QString> seen;
+  for (const auto& chunk : run.chunks) {
+    paths.push_back(text(chunk.relativePath));
+    seen.insert(text(chunk.relativePath));
+  }
+  const bool valid = visitDetectionChunks(directory, run,
+      [&](const QJsonObject& chunk, QString&) {
+        for (const auto& value : chunk["mappings"].toArray()) {
+          const auto reference = value.toObject()["headEvidence"].toObject();
+          const auto path = reference["path"].toString();
+          if (!path.isEmpty() && !seen.contains(path)) {
+            paths.push_back(path);
+            seen.insert(path);
+          }
+        }
+        return true;
+      }, error);
+  if (!valid) return false;
+  target = std::move(paths);
+  return true;
+}
+
+namespace {
+constexpr auto ownerFile = ".detection-owner.json";
+constexpr auto sharedFile = ".detection-shared.json";
+bool linkInPath(QString path) {
+  path = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+  for (;;) {
+    const QFileInfo info(path);
+    if (info.isSymLink()) return true;
+#ifdef Q_OS_WIN
+    const auto attributes = GetFileAttributesW(
+        reinterpret_cast<const wchar_t*>(path.utf16()));
+    if (attributes != INVALID_FILE_ATTRIBUTES &&
+        (attributes & FILE_ATTRIBUTE_REPARSE_POINT)) return true;
+#endif
+    const auto parent = info.absolutePath();
+    if (parent == path) break;
+    path = parent;
+  }
+  return false;
+}
+QString canonicalProject(const QString& path) {
+  require(!linkInPath(path), "工程或资产路径含链接/reparse point；禁止 GC");
+  const QFileInfo info(path);
+  const auto parent = info.absoluteDir().canonicalPath();
+  require(!parent.isEmpty(), "工程父目录不存在");
+  return QDir(parent).filePath(info.fileName());
+}
+QJsonObject readOwner(const QString& root) {
+  const auto path = QDir(root).filePath(ownerFile);
+  require(!linkInPath(path), "资产所有权文件不得为链接");
+  QFile input(path);
+  require(input.open(QIODevice::ReadOnly) && input.size() <= 16384,
+          "资产所有权文件不可用；延后 GC");
+  const auto object = parseObject(input.readAll());
+  require(input.error() == QFileDevice::NoError &&
+              object["schema"] == "signal-studio-private-detection-root-v1" &&
+              object["shared"].isBool(), "资产所有权文件无效");
+  return object;
+}
+void writeOwner(const QString& root, const QJsonObject& object) {
+  QSaveFile output(QDir(root).filePath(ownerFile));
+  const auto bytes = QJsonDocument(object).toJson(QJsonDocument::Compact);
+  require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() &&
+              output.commit(), "资产所有权记录无法原子保存");
+}
+bool sharedRoot(const QString& root) {
+  const auto path = QDir(root).filePath(sharedFile);
+  if (!QFileInfo::exists(path) && !QFileInfo(path).isSymLink()) return false;
+  require(!linkInPath(path), "资产共享声明不得为链接");
+  QFile input(path);
+  require(input.open(QIODevice::ReadOnly) && input.size() <= 16384,
+          "资产共享声明无法读取；禁止 GC");
+  const auto object = parseObject(input.readAll());
+  require(input.error() == QFileDevice::NoError &&
+              object["schema"] == "signal-studio-shared-detection-root-v1" &&
+              object["shared"].isBool() && object["shared"].toBool(),
+          "资产共享声明无效；禁止 GC");
+  return true;
+}
+void declareSharedRoot(const QString& root) {
+  if (sharedRoot(root)) return;
+  // Append one immutable safety sidecar. Never rewrite owner/container/state
+  // bytes when another project begins to reference this root.
+  const auto bytes = QJsonDocument(QJsonObject{
+      {"schema", "signal-studio-shared-detection-root-v1"}, {"shared", true}})
+      .toJson(QJsonDocument::Compact);
+  QSaveFile output(QDir(root).filePath(sharedFile));
+  output.setDirectWriteFallback(false);
+  require(output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() &&
+              output.commit(), "资产共享声明无法原子发布");
+}
+}  // namespace
+
+bool recordDetectionAssetOwnership(const QString& path, const QString& id,
+                                   const QString& assets, bool newlyCreated,
+                                   bool reference, QString& error,
+                                   bool rootLockHeld) {
+  try {
+    // An unproven pre-existing root stays unowned. Reference makes even an
+    // unowned root permanently shared before the referencing project commits.
+    const auto marker = QDir(assets).filePath(ownerFile);
+    if (!reference && (!newlyCreated || QFileInfo::exists(marker))) {
+      error.clear(); return true;
+    }
+    require(!linkInPath(assets), "资产根含链接/reparse point；无法声明所有权");
+    std::unique_ptr<QLockFile> lock;
+    if (!rootLockHeld) {
+      lock = std::make_unique<QLockFile>(QDir(assets).filePath(".detection-gc.lock"));
+      lock->setStaleLockTime(0);
+      require(lock->tryLock(0), "资产根正在清理；稍后重试保存");
+    }
+    if (reference) {
+      declareSharedRoot(assets);
+      error.clear(); return true;
+    }
+    QJsonObject owner;
+    if (QFileInfo::exists(marker)) owner = readOwner(assets);
+    else owner = {{"schema", "signal-studio-private-detection-root-v1"},
+                  {"projectId", id}, {"ownerPath", canonicalProject(path)},
+                  {"shared", false}};
+    {
+      const auto expected = canonicalProject(path) + ".assets/" + id;
+      require(QFileInfo(assets).canonicalFilePath().compare(
+                  QFileInfo(expected).canonicalFilePath(), Qt::CaseInsensitive) == 0,
+              "私有资产根不在本工程 canonical 目录");
+    }
+    writeOwner(assets, owner);
+    error.clear(); return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what()); return false;
+  }
+}
+
+bool collectRetiredDetectionAssets(const QString& path, DetectionGcReport& report,
+                                   QString& error, std::uint32_t maximumRuns,
+                                   std::uint32_t maximumFiles) {
+  report = {};
+  try {
+    require(maximumRuns > 0 && maximumRuns <= 64 && maximumFiles > 0 &&
+                maximumFiles <= 20000, "GC 预算无效");
+    const auto ownerPath = canonicalProject(path);
+    QFile input(ownerPath);
+    require(input.open(QIODevice::ReadOnly) && input.size() <= 32 * 1024 * 1024,
+            "GC 需要已提交的真实 .ssproj");
+    const auto container = parseObject(input.readAll());
+    require(container["magic"] == "SignalStudioProject" && container["schemaVersion"] == 1,
+            "GC 工程身份无效");
+    if (container["assetMode"] != "copy") { error.clear(); return true; }
+    const auto id = container["projectId"].toString();
+    const auto ref = container["assetDirectory"].toString();
+    const auto root = QDir::isAbsolutePath(ref) ? ref : QFileInfo(ownerPath).absoluteDir().filePath(ref);
+    const auto expected = ownerPath + ".assets/" + id;
+    require(!id.isEmpty() && !ref.isEmpty() && !linkInPath(root) &&
+                QFileInfo(root).canonicalFilePath() == QFileInfo(expected).canonicalFilePath() &&
+                !QFileInfo(root).canonicalFilePath().isEmpty(),
+            "GC 仅允许本工程自有 canonical 资产根");
+    if (!QFileInfo::exists(QDir(root).filePath(ownerFile))) { error.clear(); return true; }
+    QLockFile lock(QDir(root).filePath(".detection-gc.lock"));
+    lock.setStaleLockTime(0);
+    require(lock.tryLock(0), "GC 资产根正被引用/清理；稍后重试");
+    if (sharedRoot(root)) { error.clear(); return true; }
+    const auto owner = readOwner(root);
+    if (owner["shared"].toBool() || owner["projectId"] != id ||
+        owner["ownerPath"].toString() != ownerPath) { error.clear(); return true; }
+    Project project;
+    require(ProjectFileCodec::load(ownerPath, project, error), error);
+    // Detect a concurrent project/root switch before touching any old file.
+    require(project.projectId == id.toStdString() &&
+                QFileInfo(text(project.assetDirectory)).canonicalFilePath() == QFileInfo(root).canonicalFilePath(),
+            "GC 期间工程资产根已改变");
+    report.privateRoot = true;
+    QSet<QString> referenced, retired, declaredStorePaths;
+    for (const auto& value : container["assets"].toArray())
+      declaredStorePaths.insert(value.toObject()["path"].toString());
+    for (const auto& file : project.files) {
+      if (!file.currentDetectionSlots) {
+        require(file.detectionRuns.empty() && std::none_of(file.sourceSets.begin(), file.sourceSets.end(),
+            [](const auto& set) { return set.sourceKind == AnnotationSource::Algorithm; }),
+            "旧工程尚未提交 slot 迁移；延后 GC");
+        continue;
+      }
+      for (const auto& run : file.detectionRuns) referenced.insert(text(run.request.runId));
+      for (const auto& set : file.sourceSets)
+        if (!set.runId.empty()) referenced.insert(text(set.runId));
+      for (const auto& slot : *file.currentDetectionSlots) {
+        if (!slot.committedRunId.empty()) referenced.insert(text(slot.committedRunId));
+        if (!slot.pendingRunId.empty()) referenced.insert(text(slot.pendingRunId));
+        for (const auto& run : slot.retiredRunIds) retired.insert(text(run));
+      }
+    }
+    std::uint32_t visited = 0;
+    for (const auto& runId : retired) {
+      if (referenced.contains(runId)) { ++report.deferredRuns; continue; }
+      DetectionRequest key; key.runId = runId.toStdString();
+      const auto relative = manifestPath(key);
+      // A read-only legacy migration is not a durable retirement. The raw
+      // committed container may still anchor that run even if the decoded
+      // candidate has already selected a newer slot. Wait for an actual save.
+      if (declaredStorePaths.contains(relative)) { ++report.deferredRuns; continue; }
+      const auto manifest = QDir(root).filePath(relative);
+      if (!QFileInfo::exists(manifest)) continue;
+      if (visited++ >= maximumRuns) { ++report.deferredRuns; continue; }
+      require(!linkInPath(manifest), "GC run 路径含链接/reparse point");
+      DetectionRun run;
+      const auto store = projectRoot(root);
+      require(decodeDetectionRun(parseObject(readBounded(store, relative)), run, error), error);
+      if (run.request.runId != runId.toStdString() ||
+          (run.lifecycle != DetectionLifecycle::Completed &&
+           run.lifecycle != DetectionLifecycle::Failed &&
+           run.lifecycle != DetectionLifecycle::Cancelled) ||
+          run.chunks.size() >= maximumFiles) { ++report.deferredRuns; continue; }
+      QStringList paths;
+      if (!detectionRunAssetPaths(root, run, paths, error)) {
+        ++report.deferredRuns; continue;  // Already interrupted GC: keep garbage safely.
+      }
+      if (paths.size() > maximumFiles - report.removedFiles) { ++report.deferredRuns; continue; }
+      for (const auto& asset : paths) {
+        require(asset.startsWith(runDirectory(run.request.runId) + '/') &&
+                    !linkInPath(QDir(root).filePath(asset)), "GC 资产路径越界或含链接");
+      }
+      // The manifest is last. Only enumerated, validated store files are
+      // removed; IQ/TXT/model/scratch files are never deletion candidates.
+      for (qsizetype i = paths.size() - 1; i >= 0; --i) {
+        require(QFile::remove(QDir(root).filePath(paths[i])), "GC 文件删除失败；新工程仍已提交");
+        ++report.removedFiles;
+      }
+      QDir(root).rmdir(runDirectory(run.request.runId));
+      ++report.removedRuns;
+    }
+    error.clear(); return true;
+  } catch (const std::exception& e) {
+    error = QString::fromUtf8(e.what()); return false;
   }
 }
 }  // namespace signalstudio

@@ -1,0 +1,2727 @@
+{
+    "baseline": false,
+    "binary": "D:/project/signal_studio_rebuild/out/vs2026-qt611-release_bin/SignalStudioUiCapture.exe",
+    "error": "System clipboard did not publish the complete evidence after bounded retries",
+    "lastScene": "06-located",
+    "mode": "ux-r4",
+    "modelInferenceVerified": false,
+    "pass": false,
+    "scenes": [
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "ALG 01 · 交互夹具双活动段\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 48,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorLocate",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 173
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorCreateChannel",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 207
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 241
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 271
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 271
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 293
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 293
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 328
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 328
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 350
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 350
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationRangeSummary",
+                    "rect": {
+                        "height": 32,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 385
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 423
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 423
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 457
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 487
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 487
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 521
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 556
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 590
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 624
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 624
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 658
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 692
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 692
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 726
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 748
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceSummary",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 771
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceDetailsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 120,
+                        "x": 2190,
+                        "y": 794
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/01-default.png",
+            "propertyWidth": 390,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1854,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1870,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 1,
+                "committedGeneration": 7,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 2,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 1.2158,
+                        "maxMs": 1.2158,
+                        "samples": 1,
+                        "totalMs": 1.2158
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1870,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3638,
+                        "maxMs": 2.1333,
+                        "samples": 12,
+                        "totalMs": 7.7045
+                    },
+                    "overlayPainter": {
+                        "lastMs": 8.4007,
+                        "maxMs": 9.0839,
+                        "samples": 12,
+                        "totalMs": 37.745
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0072,
+                        "maxMs": 0.2204,
+                        "samples": 12,
+                        "totalMs": 0.7222000000000001
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 12.6337,
+                        "maxMs": 13.0337,
+                        "samples": 14,
+                        "totalMs": 91.1728
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0018,
+                        "maxMs": 10.4853,
+                        "samples": 15,
+                        "totalMs": 55.179300000000005
+                    },
+                    "render": {
+                        "lastMs": 0.0214,
+                        "maxMs": 10.5634,
+                        "samples": 15,
+                        "totalMs": 55.7544
+                    },
+                    "renderInvocations": 15,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 7,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 2,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 2,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 0,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 15,
+                "lastMatrixMs": 42.6828,
+                "matrixReductions": 0,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 12,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 7,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 1,
+                "workerIdle": true
+            },
+            "scene": "01-default"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 64,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorLocate",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 189
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorCreateChannel",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 223
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 257
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationRangeSummary",
+                    "rect": {
+                        "height": 32,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 401
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 473
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 537
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 572
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 606
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 674
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 742
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 764
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceSummary",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 787
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceDetailsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 120,
+                        "x": 2190,
+                        "y": 810
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1807,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/02-long-name.png",
+            "propertyWidth": 390,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1854,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1870,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1807,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 1,
+                "committedGeneration": 7,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 4,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 1.2158,
+                        "maxMs": 1.2158,
+                        "samples": 1,
+                        "totalMs": 1.2158
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1870,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3313,
+                        "maxMs": 2.1333,
+                        "samples": 13,
+                        "totalMs": 8.0358
+                    },
+                    "overlayPainter": {
+                        "lastMs": 9.0465,
+                        "maxMs": 9.0839,
+                        "samples": 13,
+                        "totalMs": 46.7915
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0043,
+                        "maxMs": 0.2204,
+                        "samples": 13,
+                        "totalMs": 0.7265
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 11.42,
+                        "maxMs": 13.0337,
+                        "samples": 15,
+                        "totalMs": 102.5928
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0022,
+                        "maxMs": 10.4853,
+                        "samples": 17,
+                        "totalMs": 64.92930000000001
+                    },
+                    "render": {
+                        "lastMs": 0.0233,
+                        "maxMs": 10.5634,
+                        "samples": 17,
+                        "totalMs": 65.5487
+                    },
+                    "renderInvocations": 17,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 7,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 4,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 4,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 0,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 17,
+                "lastMatrixMs": 42.6828,
+                "matrixReductions": 0,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 13,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 7,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 1,
+                "workerIdle": true
+            },
+            "scene": "02-long-name"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 64,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorLocate",
+                    "rect": {
+                        "height": 28,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 189
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorCreateChannel",
+                    "rect": {
+                        "height": 28,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 223
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 257
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationRangeSummary",
+                    "rect": {
+                        "height": 32,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 401
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 473
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 537
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 572
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 606
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 674
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2260,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 137,
+                        "x": 2403,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 742
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 764
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceSummary",
+                    "rect": {
+                        "height": 16,
+                        "width": 280,
+                        "x": 2260,
+                        "y": 787
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceDetailsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 120,
+                        "x": 2260,
+                        "y": 810
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1877,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/03-narrow-320-long-name.png",
+            "propertyWidth": 320,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1924,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1877,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1940,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1877,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1877,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 3,
+                "committedGeneration": 9,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 9,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 0.9579,
+                        "maxMs": 1.2158,
+                        "samples": 3,
+                        "totalMs": 2.3424
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1940,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3834,
+                        "maxMs": 2.1333,
+                        "samples": 17,
+                        "totalMs": 10.6547
+                    },
+                    "overlayPainter": {
+                        "lastMs": 8.7725,
+                        "maxMs": 9.6777,
+                        "samples": 17,
+                        "totalMs": 83.60210000000001
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0034,
+                        "maxMs": 0.2204,
+                        "samples": 17,
+                        "totalMs": 0.9434999999999999
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 12.5981,
+                        "maxMs": 15.5773,
+                        "samples": 19,
+                        "totalMs": 154.98909999999998
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0032,
+                        "maxMs": 12.9899,
+                        "samples": 22,
+                        "totalMs": 108.58220000000003
+                    },
+                    "render": {
+                        "lastMs": 0.0314,
+                        "maxMs": 13.0483,
+                        "samples": 22,
+                        "totalMs": 109.4068
+                    },
+                    "renderInvocations": 22,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 9,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 9,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 9,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 1,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 22,
+                "lastMatrixMs": 42.6828,
+                "matrixReductions": 1,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 17,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 9,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 3,
+                "workerIdle": true
+            },
+            "scene": "03-narrow-320-long-name"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 48,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorLocate",
+                    "rect": {
+                        "height": 28,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 173
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorCreateChannel",
+                    "rect": {
+                        "height": 28,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 207
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 241
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 271
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 271
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 293
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 293
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 328
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 328
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 350
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 350
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationRangeSummary",
+                    "rect": {
+                        "height": 32,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 385
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 423
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 423
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 457
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 487
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 487
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 521
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 556
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 590
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 624
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 624
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 658
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 1930,
+                        "y": 692
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 302,
+                        "x": 2238,
+                        "y": 692
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 726
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 748
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceSummary",
+                    "rect": {
+                        "height": 16,
+                        "width": 610,
+                        "x": 1930,
+                        "y": 771
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceDetailsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 120,
+                        "x": 1930,
+                        "y": 794
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1547,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/04-expanded-650.png",
+            "propertyWidth": 650,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1594,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1547,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1610,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1547,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1547,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 5,
+                "committedGeneration": 11,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 14,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 2.2949,
+                        "maxMs": 2.2949,
+                        "samples": 5,
+                        "totalMs": 4.8316
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1610,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3205,
+                        "maxMs": 2.2054,
+                        "samples": 21,
+                        "totalMs": 13.9189
+                    },
+                    "overlayPainter": {
+                        "lastMs": 11.339,
+                        "maxMs": 12.3079,
+                        "samples": 21,
+                        "totalMs": 130.3848
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0061,
+                        "maxMs": 0.4072,
+                        "samples": 21,
+                        "totalMs": 1.3672
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 17.0237,
+                        "maxMs": 19.1166,
+                        "samples": 23,
+                        "totalMs": 221.87619999999998
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0027,
+                        "maxMs": 16.2565,
+                        "samples": 27,
+                        "totalMs": 165.27450000000002
+                    },
+                    "render": {
+                        "lastMs": 0.0228,
+                        "maxMs": 16.3436,
+                        "samples": 27,
+                        "totalMs": 166.3917
+                    },
+                    "renderInvocations": 27,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 11,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 14,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 14,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 3,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 27,
+                "lastMatrixMs": 42.6828,
+                "matrixReductions": 1,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 21,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 11,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 5,
+                "workerIdle": true
+            },
+            "scene": "04-expanded-650"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 2164,
+                "x": 41,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/05-hidden.png",
+            "propertyWidth": 38,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "2048",
+                "actualSpectralFrames": 194,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 2211,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 (MHz)",
+                    "leftGainFrom88": 47,
+                    "localBottom": 32,
+                    "localLeft": 41,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 2164,
+                        "x": 41,
+                        "y": 12
+                    },
+                    "sharedLeft": 41,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 26,
+                    "widgetHeight": 667,
+                    "widgetWidth": 2227,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 2164,
+                        "x": 41,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "0",
+                        "2",
+                        "4",
+                        "6",
+                        "8",
+                        "10"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 2164,
+                        "x": 41,
+                        "y": 666
+                    },
+                    "yOrigin": "",
+                    "yTicks": [
+                        "2490",
+                        "2495",
+                        "2500",
+                        "2505",
+                        "2510"
+                    ],
+                    "yTitle": "频率 (MHz)",
+                    "yUnit": "MHz"
+                },
+                "binHz": 9765.625,
+                "colorTransformGenerations": 9,
+                "committedGeneration": 15,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 22,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 2.0136,
+                        "maxMs": 2.2949,
+                        "samples": 9,
+                        "totalMs": 8.762
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 2227,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.5831,
+                        "maxMs": 2.5835,
+                        "samples": 28,
+                        "totalMs": 20.874200000000002
+                    },
+                    "overlayPainter": {
+                        "lastMs": 14.8323,
+                        "maxMs": 15.7117,
+                        "samples": 28,
+                        "totalMs": 221.97210000000004
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0054,
+                        "maxMs": 0.4744,
+                        "samples": 28,
+                        "totalMs": 2.1623
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 20.4464,
+                        "maxMs": 27.2904,
+                        "samples": 30,
+                        "totalMs": 352.8691999999999
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0028,
+                        "maxMs": 21.9868,
+                        "samples": 35,
+                        "totalMs": 276.2503
+                    },
+                    "render": {
+                        "lastMs": 0.029,
+                        "maxMs": 22.0761,
+                        "samples": 35,
+                        "totalMs": 277.86889999999994
+                    },
+                    "renderInvocations": 35,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 15,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 22,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 22,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 7,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 35,
+                "lastMatrixMs": 42.6828,
+                "matrixReductions": 1,
+                "noiseBandwidthHz": 14655.593551538814,
+                "overlayUploads": 28,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 4,
+                "quality": "settled",
+                "requestedGeneration": 15,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0001024,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 397312,
+                "staleDrops": 3,
+                "textureUploads": 9,
+                "workerIdle": true
+            },
+            "scene": "05-hidden"
+        },
+        {
+            "backend": "QRhi D3D11 | NVIDIA GeForce RTX 5060 Laptop GPU | vendor=0x10de device=0x2d19",
+            "captureMethod": "native QWidget grab with QRhi readback",
+            "identityText": "超长标记名称 · Long signal name / QPSK / 中文 English / 0123456789 / 现场样本\n算法 · 待判断 · 类别未知\n当前第 1/2 段",
+            "inspectorControls": [
+                {
+                    "enabled": true,
+                    "objectName": "annotationIdentity",
+                    "rect": {
+                        "height": 64,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 119
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorLocate",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 189
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationInspectorCreateChannel",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 223
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 257
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 287
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationStartMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEndMilliseconds",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 309
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 344
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationLowerMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationUpperMHz",
+                    "rect": {
+                        "height": 29,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 366
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationRangeSummary",
+                    "rect": {
+                        "height": 32,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 401
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationRange",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "cancelAnnotationGeometry",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 439
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 24,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 473
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "annotationPreviousSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationNextSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 503
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationSegment",
+                    "rect": {
+                        "height": 29,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 537
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "restoreAnnotationOrigin",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 572
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "addAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 606
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "splitAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "mergeAnnotationSegments",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 640
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "deleteAnnotationSegment",
+                    "rect": {
+                        "height": 28,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 674
+                    }
+                },
+                {
+                    "enabled": false,
+                    "objectName": "adoptAnnotationObservation",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2190,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "editAnnotationNote",
+                    "rect": {
+                        "height": 28,
+                        "width": 172,
+                        "x": 2368,
+                        "y": 708
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 742
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceTitle",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 764
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceSummary",
+                    "rect": {
+                        "height": 16,
+                        "width": 350,
+                        "x": 2190,
+                        "y": 787
+                    }
+                },
+                {
+                    "enabled": true,
+                    "objectName": "annotationEvidenceDetailsToggle",
+                    "rect": {
+                        "height": 31,
+                        "width": 120,
+                        "x": 2190,
+                        "y": 810
+                    }
+                }
+            ],
+            "pixelSize": {
+                "height": 2160,
+                "width": 3840
+            },
+            "plotRect": {
+                "height": 623,
+                "width": 1812,
+                "x": 36,
+                "y": 12
+            },
+            "png": "D:/project/signal_studio_rebuild/out/tasks/wideband-detection/UX-R4/diagnostics/review-fix-direct/06-located.png",
+            "propertyWidth": 390,
+            "render": {
+                "acceptedHeatmapPreview": false,
+                "actualFrameInputSamples": "86064",
+                "actualSpectralFrames": 1,
+                "analysisError": "",
+                "analysisPoints": 2048,
+                "axisLayout": {
+                    "dpr": 1.5,
+                    "font": "Segoe UI,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+                    "header": {
+                        "height": 0,
+                        "width": 1854,
+                        "x": 8,
+                        "y": 4
+                    },
+                    "headerText": "X 时间 (ms) · Y RF频率 Δ (kHz) · F₀ = 2.501932 GHz",
+                    "leftGainFrom88": 52,
+                    "localBottom": 32,
+                    "localLeft": 36,
+                    "localTop": 12,
+                    "logicalDpiX": 96,
+                    "logicalDpiY": 96,
+                    "mode": "CompactHeader",
+                    "plot": {
+                        "height": 623,
+                        "width": 1812,
+                        "x": 36,
+                        "y": 12
+                    },
+                    "sharedLeft": 36,
+                    "tickHeight": 16,
+                    "tickLabelWidth": 20,
+                    "widgetHeight": 667,
+                    "widgetWidth": 1870,
+                    "xOrigin": "",
+                    "xTickBand": {
+                        "height": 16,
+                        "width": 1812,
+                        "x": 36,
+                        "y": 647
+                    },
+                    "xTicks": [
+                        "2.06",
+                        "3.24",
+                        "4.41",
+                        "5.59",
+                        "6.76",
+                        "7.94"
+                    ],
+                    "xTitle": "时间 (ms)",
+                    "xTitleBand": {
+                        "height": 0,
+                        "width": 1812,
+                        "x": 36,
+                        "y": 666
+                    },
+                    "yOrigin": "F₀ = 2.501932 GHz",
+                    "yTicks": [
+                        "0",
+                        "119",
+                        "238",
+                        "357",
+                        "476"
+                    ],
+                    "yTitle": "频率 Δ (kHz)",
+                    "yUnit": "Δ kHz"
+                },
+                "binHz": 232.421875,
+                "colorTransformGenerations": 13,
+                "committedGeneration": 19,
+                "cpuWallTimings": {
+                    "chartDrawCalls": 0,
+                    "chartDrawCallsSkipped": 0,
+                    "chartPaletteUploads": 2,
+                    "chartVertexUploads": 0,
+                    "gpuTimestamps": false,
+                    "heatmapDrawCalls": 31,
+                    "heatmapUploadPreparation": {
+                        "lastMs": 1.7439,
+                        "maxMs": 2.2949,
+                        "samples": 13,
+                        "totalMs": 13.047600000000001
+                    },
+                    "lastChartDrawLoopIterations": 0,
+                    "lastChartDrawRecordCount": 0,
+                    "lastChartDrawStage": 0,
+                    "lastChartVertexCount": 0,
+                    "lastRenderHeight": 667,
+                    "lastRenderWidth": 1870,
+                    "measurement": "GUI-thread wall time measured with QElapsedTimer",
+                    "overlayImagePreparation": {
+                        "lastMs": 0.3494,
+                        "maxMs": 2.5835,
+                        "samples": 36,
+                        "totalMs": 25.8594
+                    },
+                    "overlayPainter": {
+                        "lastMs": 8.0729,
+                        "maxMs": 15.7117,
+                        "samples": 36,
+                        "totalMs": 306.9475000000001
+                    },
+                    "overlayUploadEnqueue": {
+                        "lastMs": 0.0064,
+                        "maxMs": 0.4744,
+                        "samples": 36,
+                        "totalMs": 2.3127999999999997
+                    },
+                    "paintEventIncludingQtSubmit": {
+                        "lastMs": 12.826,
+                        "maxMs": 27.2904,
+                        "samples": 38,
+                        "totalMs": 470.0012
+                    },
+                    "paletteUploads": 2,
+                    "prepareUploads": {
+                        "lastMs": 0.0025,
+                        "maxMs": 21.9868,
+                        "samples": 44,
+                        "totalMs": 375.6374
+                    },
+                    "render": {
+                        "lastMs": 0.0265,
+                        "maxMs": 22.0761,
+                        "samples": 44,
+                        "totalMs": 377.771
+                    },
+                    "renderInvocations": 44,
+                    "unit": "ms"
+                },
+                "cursorPinned": false,
+                "curveCacheHits": 0,
+                "curvePathElements": 0,
+                "curveRasterMethod": "QRhi heatmap texture",
+                "curveReductions": 0,
+                "curveSourceGenerations": 0,
+                "drawnLineSegments": 0,
+                "drawnPoints": 322500,
+                "effectiveOverlap": 0.5,
+                "framePsd": false,
+                "generation": 19,
+                "gpuChartDrawCalls": 0,
+                "gpuDataDrawCalls": 31,
+                "gpuDataRenderer": "QRhi shader / vertex buffer",
+                "gpuHeatmapDrawCalls": 31,
+                "gpuPaletteUploads": 2,
+                "gpuUploadsPending": false,
+                "gpuVertexUploads": 0,
+                "heatmapCacheHits": 9,
+                "heatmapColorMapping": "QRhi fragment shader + LUT texture",
+                "heatmapHeight": 430,
+                "heatmapWidth": 750,
+                "inverseCursorDrawCalls": 44,
+                "lastMatrixMs": 21.0201,
+                "matrixReductions": 1,
+                "noiseBandwidthHz": 348.6426180736329,
+                "overlayUploads": 36,
+                "paddedFrames": 0,
+                "pinnedFrequencyHz": 0,
+                "pinnedSourceSample": "0",
+                "powerGenerations": 6,
+                "quality": "settled",
+                "requestedGeneration": 19,
+                "requestedHeatmapHeight": 430,
+                "requestedHeatmapWidth": 750,
+                "requestedPixels": 322500,
+                "requiredSeconds": 0.0043032,
+                "samplePointCount": 0,
+                "samplePointsVisible": false,
+                "settled": true,
+                "sourcePoints": 2048,
+                "staleDrops": 3,
+                "textureUploads": 13,
+                "workerIdle": true
+            },
+            "scene": "06-located"
+        }
+    ],
+    "screen": {
+        "availableLogicalGeometry": {
+            "height": 1392,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "connectedIndex": 1,
+        "deviceName": "\\\\.\\DISPLAY6",
+        "devicePath": "\\\\.\\DISPLAY6",
+        "devicePixelRatio": 1.5,
+        "friendlyName": "Redmi 27 NU",
+        "identityMethod": "Windows active DisplayConfig source/target",
+        "logicalDpi": 96,
+        "logicalGeometry": {
+            "height": 1440,
+            "width": 2560,
+            "x": 0,
+            "y": 0
+        },
+        "monitorDevicePath": "\\\\?\\DISPLAY#XMIB005#5&326bf1a6&0&UID409856#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+        "name": "Redmi 27 NU",
+        "outputTechnology": 5,
+        "physicalDpi": 109.05000625015624,
+        "pixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "preferredPixelSize": {
+            "height": 2160,
+            "width": 3840
+        },
+        "primary": true
+    },
+    "softwareRenderer": false,
+    "source": {
+        "centerFrequencyHz": 2500000000,
+        "decodedCompleteFrames": "400000",
+        "format": "CF32",
+        "formatKey": "CF32/1/1/1/0/0/0/0/0",
+        "metadataProvenance": "SigMF 1.0.0",
+        "navigationEnvelopePoints": 1563,
+        "physicalSamples": "400000",
+        "sampleRateHz": 20000000
+    },
+    "syntheticAnnotations": true
+}

@@ -60,6 +60,162 @@ std::string defaultManualSourceId(const FileState& file) {
          std::to_string(file.metadata.sampleFormat.selectedChannel);
 }
 bool validId(const std::string& id) { return !id.empty() && id.size() <= 128; }
+bool currentIdentity(const FileState& file, const Annotation& annotation) {
+  const auto* set = findSourceSet(file, annotation.sourceSetId);
+  return validId(annotation.id) && validId(annotation.fileId) &&
+         validId(annotation.sourceSetId) && validId(annotation.originRecordId) &&
+         validId(annotation.revisionId) && set && validId(set->id) &&
+         !set->deleted && set->fileId == file.metadata.id &&
+         annotation.fileId == file.metadata.id &&
+         set->sourceKind == annotation.sourceKind &&
+         set->sampleChannel < file.metadata.sampleFormat.channels &&
+         set->sampleChannel == file.metadata.sampleFormat.selectedChannel &&
+         set->sourceIdentity.selectedSampleChannel == set->sampleChannel &&
+         !sourceChanged(set->sourceIdentity, file.metadata) &&
+         std::any_of(annotation.revisions.begin(), annotation.revisions.end(),
+                     [&](const auto& revision) {
+                       return revision.id == annotation.revisionId;
+                     });
+}
+
+// Bound retained memory and JSON metadata before copying potentially large
+// evidence. Fixed JSON costs conservatively include field names, numeric text,
+// optional ranges and punctuation; strings count their actual escaping cost.
+// The codec remains authoritative for the complete project's 32 MiB limit.
+struct StorageCost {
+  std::size_t memory = 0, metadata = 0;
+  StorageCost& operator+=(StorageCost other) {
+    const auto add = [](std::size_t a, std::size_t b) {
+      constexpr auto cap = annotationCommandByteBudget + 1;
+      return a >= cap || b >= cap - a ? cap : a + b;
+    };
+    memory = add(memory, other.memory);
+    metadata = add(metadata, other.metadata);
+    return *this;
+  }
+};
+StorageCost textCost(std::string_view text) {
+  StorageCost cost{text.size(), 2};
+  for (const unsigned char c : text)
+    cost += {0, c < 0x20 ? 6u : (c == '"' || c == '\\' ? 2u : 1u)};
+  return cost;
+}
+StorageCost identityCost(const SourceIdentity& identity) {
+  StorageCost cost{sizeof(SourceIdentity), 2048};
+  for (const auto* text : {&identity.fileId, &identity.path,
+                            &identity.quickFingerprint, &identity.contentHash})
+    cost += textCost(*text);
+  return cost;
+}
+StorageCost sourceSetCost(const AnnotationSourceSet& set) {
+  StorageCost cost{sizeof(AnnotationSourceSet), 1024};
+  for (const auto* text :
+       {&set.id, &set.fileId, &set.formatId, &set.parserId, &set.parserVersion,
+        &set.profileId, &set.profileVersion, &set.originalPath,
+        &set.originalText, &set.sourceHash, &set.supplementalOriginalText,
+        &set.supplementalHash, &set.coordinateInterpretation, &set.runId})
+    cost += textCost(*text);
+  cost += identityCost(set.sourceIdentity);
+  for (const auto& diagnostic : set.diagnostics) {
+    cost += {sizeof(AnnotationDiagnostic), 256};
+    cost += textCost(diagnostic.code);
+    cost += textCost(diagnostic.message);
+    cost += textCost(diagnostic.originRecordId);
+  }
+  return cost;
+}
+StorageCost segmentCost(const Segment& segment) {
+  StorageCost cost{sizeof(Segment), 512};
+  cost += textCost(segment.id);
+  return cost;
+}
+StorageCost originCost(const OriginEvidence& origin) {
+  StorageCost cost{sizeof(OriginEvidence), 1024};
+  for (const auto* text : {&origin.formatId, &origin.originRef,
+                            &origin.originalFieldsJson,
+                            &origin.coordinateInterpretation, &origin.runId,
+                            &origin.parentCandidateId, &origin.fallbackReason})
+    cost += textCost(*text);
+  for (const auto& segment : origin.originalSegments) cost += segmentCost(segment);
+  for ([[maybe_unused]] const auto window : origin.windowIds)
+    cost += {sizeof(std::uint64_t), 32};
+  for (const auto& ref : origin.evidenceRefs) {
+    cost += {sizeof(std::string), 0};
+    cost += textCost(ref);
+  }
+  return cost;
+}
+StorageCost conversionSnapshotCost(const Annotation& source,
+                                    const AnnotationSourceSet& set) {
+  StorageCost cost{sizeof(ManualConversionSnapshot), 1024};
+  cost += sourceSetCost(set);
+  for (const auto* text : {&source.id, &source.revisionId, &source.originRecordId,
+                            &source.name, &source.note, &source.activeSegmentId})
+    cost += textCost(*text);
+  if (source.classLabel) cost += textCost(*source.classLabel);
+  for (const auto& segment : source.segments) cost += segmentCost(segment);
+  cost += originCost(*source.originEvidence);
+  return cost;
+}
+StorageCost annotationCost(const Annotation& annotation) {
+  StorageCost cost{sizeof(Annotation), 1024};
+  for (const auto* text :
+       {&annotation.id, &annotation.name, &annotation.fileId,
+        &annotation.sourceSetId, &annotation.originRecordId, &annotation.note,
+        &annotation.activeSegmentId, &annotation.revisionId,
+        &annotation.reviewRevisionId})
+    cost += textCost(*text);
+  if (annotation.classLabel) cost += textCost(*annotation.classLabel);
+  for (const auto& id : annotation.derivedFrom) {
+    cost += {sizeof(std::string), 0};
+    cost += textCost(id);
+  }
+  for (const auto& segment : annotation.segments) cost += segmentCost(segment);
+  if (annotation.originEvidence) cost += originCost(*annotation.originEvidence);
+  if (annotation.conversionSnapshot) {
+    const auto& snapshot = *annotation.conversionSnapshot;
+    cost += {sizeof(ManualConversionSnapshot), 1024};
+    cost += sourceSetCost(snapshot.sourceSet);
+    for (const auto* text :
+         {&snapshot.sourceAnnotationId, &snapshot.sourceRevisionId,
+          &snapshot.sourceOriginRecordId, &snapshot.sourceName,
+          &snapshot.sourceNote, &snapshot.sourceActiveSegmentId,
+          &snapshot.convertedSegmentId})
+      cost += textCost(*text);
+    if (snapshot.sourceClassLabel) cost += textCost(*snapshot.sourceClassLabel);
+    for (const auto& segment : snapshot.sourceSegments) cost += segmentCost(segment);
+    cost += originCost(snapshot.sourceOriginEvidence);
+  }
+  for (const auto& revision : annotation.revisions) {
+    cost += {sizeof(AnnotationRevision), 1024};
+    for (const auto* text : {&revision.id, &revision.parentRevisionId,
+                              &revision.action, &revision.actor,
+                              &revision.timestamp, &revision.note})
+      cost += textCost(*text);
+    for (const auto* text : {&revision.nameBefore, &revision.nameAfter,
+                              &revision.noteBefore, &revision.noteAfter})
+      if (*text) cost += textCost(**text);
+    for (const auto& change : revision.segmentChanges) {
+      cost += {sizeof(SegmentChange), 256};
+      cost += textCost(change.id);
+      if (change.before) cost += segmentCost(*change.before);
+      if (change.after) cost += segmentCost(*change.after);
+    }
+  }
+  for (const auto& review : annotation.reviewHistory) {
+    cost += {sizeof(ReviewDecision), 256};
+    for (const auto* text : {&review.revisionId, &review.actor,
+                              &review.timestamp, &review.note})
+      cost += textCost(*text);
+  }
+  return cost;
+}
+StorageCost fileAnnotationCost(const FileState& file) {
+  StorageCost cost;
+  for (const auto& set : file.sourceSets) cost += sourceSetCost(set);
+  for (const auto& annotation : file.marks) cost += annotationCost(annotation);
+  return cost;
+}
 ViewRange physicalRange(ViewRange range, FrequencyFrame frame, double center) {
   if (frame == FrequencyFrame::Baseband) {
     range.frequency.lowerHz += center;
@@ -77,7 +233,173 @@ bool sameCommandState(const auto& a, const auto& b) {
   return a.name == b.name && a.note == b.note && a.revisionId == b.revisionId &&
          a.reviewRevisionId == b.reviewRevisionId &&
          a.reviewStatus == b.reviewStatus && a.deleted == b.deleted &&
-         a.observation == b.observation;
+         a.plotHidden == b.plotHidden && a.observation == b.observation;
+}
+
+// Read-only image of reconcileSelection. Applying it is the only write.
+struct SelectionNormalization {
+  std::vector<std::string> selectedMarkIds;
+  std::string activeMarkId, activeSegmentId, selectionAnchorId;
+  std::string hoveredMarkId, hoveredSegmentId;
+  std::optional<std::uint32_t> selectionSampleChannel;
+  bool psdFromSelection = false;
+  bool clearRevision = false;
+  bool projectActive = false;
+  std::string projectId, projectSegment;
+  ViewRange projectRange{};
+};
+
+bool annotationVisibleForSelection(const FileState& file, const std::string& id) {
+  const auto* annotation = findAnnotation(file, id);
+  return annotation && annotationSelectable(file, *annotation);
+}
+
+SelectionNormalization planNormalization(const FileState& file) {
+  SelectionNormalization plan;
+  plan.selectedMarkIds = file.selectedMarkIds;
+  plan.activeMarkId = file.activeMarkId;
+  plan.activeSegmentId = file.activeSegmentId;
+  plan.selectionAnchorId = file.selectionAnchorId;
+  plan.hoveredMarkId = file.hoveredMarkId;
+  plan.hoveredSegmentId = file.hoveredSegmentId;
+  plan.psdFromSelection = file.display.psdFromSelection;
+  const auto channel = file.metadata.sampleFormat.selectedChannel;
+  plan.selectionSampleChannel = channel;
+  if (file.selectionSampleChannel && *file.selectionSampleChannel != channel) {
+    plan.selectedMarkIds.clear();
+    plan.activeMarkId.clear();
+    plan.activeSegmentId.clear();
+    plan.selectionAnchorId.clear();
+    plan.hoveredMarkId.clear();
+    plan.hoveredSegmentId.clear();
+    plan.clearRevision = true;
+  }
+  std::unordered_set<std::string> selected;
+  std::erase_if(plan.selectedMarkIds, [&](const auto& id) {
+    return !annotationVisibleForSelection(file, id) || !selected.insert(id).second;
+  });
+  if (!selected.contains(plan.activeMarkId)) {
+    plan.activeMarkId = plan.selectedMarkIds.empty() ? std::string{}
+                                                     : plan.selectedMarkIds.back();
+    plan.clearRevision = true;
+  }
+  if (!annotationVisibleForSelection(file, plan.selectionAnchorId))
+    plan.selectionAnchorId = plan.activeMarkId;
+  if (const auto* active = findAnnotation(file, plan.activeMarkId)) {
+    if (!findSegment(*active, active->activeSegmentId)) {
+      plan.projectActive = true;
+      plan.projectId = active->id;
+      if (const auto* segment = activeSegment(*active)) {
+        plan.projectSegment = segment->id;
+        plan.projectRange = segment->range;
+      }
+      plan.activeSegmentId = plan.projectSegment;
+    } else {
+      plan.activeSegmentId = active->activeSegmentId;
+    }
+  } else {
+    plan.activeSegmentId.clear();
+  }
+  if (plan.activeSegmentId.empty()) plan.psdFromSelection = false;
+  if (!annotationVisibleForSelection(file, plan.hoveredMarkId)) {
+    plan.hoveredMarkId.clear();
+    plan.hoveredSegmentId.clear();
+  } else if (const auto* hovered = findAnnotation(file, plan.hoveredMarkId);
+             !hovered || !findSegment(*hovered, plan.hoveredSegmentId)) {
+    plan.hoveredSegmentId.clear();
+  }
+  return plan;
+}
+
+bool guardedNormalizationDiffers(const FileState& file,
+                                 const SelectionNormalization& plan) {
+  if (plan.selectedMarkIds != file.selectedMarkIds ||
+      plan.activeMarkId != file.activeMarkId ||
+      plan.activeSegmentId != file.activeSegmentId ||
+      plan.selectionAnchorId != file.selectionAnchorId ||
+      plan.selectionSampleChannel != file.selectionSampleChannel ||
+      plan.psdFromSelection != file.display.psdFromSelection)
+    return true;
+  if (plan.clearRevision && (!file.revisionEditingAnnotationId.empty() ||
+                             !file.revisionEditingBaseRevisionId.empty()))
+    return true;
+  if (!plan.projectActive) return false;
+  const auto* active = findAnnotation(file, plan.projectId);
+  return !active || active->activeSegmentId != plan.projectSegment ||
+         active->range != plan.projectRange;
+}
+
+void applyNormalization(FileState& file, const SelectionNormalization& plan) {
+  file.selectedMarkIds = plan.selectedMarkIds;
+  file.activeMarkId = plan.activeMarkId;
+  file.activeSegmentId = plan.activeSegmentId;
+  file.selectionAnchorId = plan.selectionAnchorId;
+  file.hoveredMarkId = plan.hoveredMarkId;
+  file.hoveredSegmentId = plan.hoveredSegmentId;
+  file.selectionSampleChannel = plan.selectionSampleChannel;
+  file.display.psdFromSelection = plan.psdFromSelection;
+  if (plan.clearRevision) {
+    file.revisionEditingAnnotationId.clear();
+    file.revisionEditingBaseRevisionId.clear();
+  }
+  if (plan.projectActive) {
+    if (auto* active = findAnnotation(file, plan.projectId)) {
+      active->activeSegmentId = plan.projectSegment;
+      active->range = plan.projectRange;
+    }
+  }
+}
+
+void normalizeSelection(FileState& file) {
+  applyNormalization(file, planNormalization(file));
+}
+
+std::optional<AnnotationResult> rejectSelectionRequest(
+    const FileState& file, const std::vector<std::string>& ids,
+    const std::string& activeId, const std::string& segmentId) {
+  std::unordered_set<std::string> selected;
+  std::string resolved = activeId;
+  if (resolved.empty()) {
+    for (const auto& id : ids) {
+      if (const auto* annotation = findAnnotation(file, id);
+          annotation && annotationSelectable(file, *annotation) &&
+          selected.insert(id).second)
+        resolved = id;
+    }
+  } else {
+    for (const auto& id : ids) {
+      if (const auto* annotation = findAnnotation(file, id);
+          annotation && annotationSelectable(file, *annotation))
+        selected.insert(id);
+    }
+    if (!selected.contains(activeId))
+      return fail("Active annotation is not in the selected set");
+  }
+  if (const auto* annotation = findAnnotation(file, resolved);
+      annotation && !segmentId.empty() && !findSegment(*annotation, segmentId))
+    return fail("Active segment does not belong to the annotation");
+  return std::nullopt;
+}
+
+std::optional<AnnotationResult> rejectChooseRequest(
+    const FileState& file, const std::string& id, const std::string& segmentId,
+    const std::vector<std::string>& orderedIds) {
+  const auto* target = findAnnotation(file, id);
+  if (!target || !annotationSelectable(file, *target))
+    return fail("Annotation is not in the current matching results");
+  if (!segmentId.empty() && !findSegment(*target, segmentId))
+    return fail("Active segment does not belong to the annotation");
+  std::unordered_set<std::string> visible;
+  for (const auto& annotation : file.marks)
+    if (annotationSelectable(file, annotation)) visible.insert(annotation.id);
+  std::unordered_set<std::string> ordered;
+  bool found = false;
+  for (const auto& value : orderedIds) {
+    if (!visible.contains(value) || !ordered.insert(value).second) continue;
+    if (value == id) found = true;
+  }
+  if (!found) return fail("Annotation is missing from the initiating view order");
+  return std::nullopt;
 }
 }  // namespace
 
@@ -159,8 +481,19 @@ ChannelSourceRelation channelSourceRelation(const FileState& file,
       channel.revisionId.empty())
     return ChannelSourceRelation::LegacyNeedsReview;
   const auto& snapshot = *channel.sourceSnapshot;
+  auto channelMetadata = file.metadata;
+  channelMetadata.sampleFormat.selectedChannel = snapshot.sourceIdentity.selectedSampleChannel;
   const auto* annotation = findAnnotation(file, channel.annotationId);
-  if (!annotation || annotation->deleted) return ChannelSourceRelation::Missing;
+  if (!annotation || annotation->deleted) {
+    if (snapshot.sourceKind == AnnotationSource::Algorithm && file.currentDetectionSlots)
+      for (const auto& slot : *file.currentDetectionSlots)
+        if (slot.sampleChannel == snapshot.sourceIdentity.selectedSampleChannel &&
+            std::find(slot.retiredAnnotationIds.begin(), slot.retiredAnnotationIds.end(),
+                      snapshot.annotationId) != slot.retiredAnnotationIds.end())
+          return sourceChanged(snapshot.sourceIdentity, channelMetadata)
+                     ? ChannelSourceRelation::Changed : ChannelSourceRelation::Retired;
+    return ChannelSourceRelation::Missing;
+  }
   const auto* sourceSet = findSourceSet(file, annotation->sourceSetId);
   if (!sourceSet || sourceSet->deleted) return ChannelSourceRelation::Missing;
   const auto binding = snapshot.boundRange.value_or(snapshot.range);
@@ -182,20 +515,36 @@ ChannelSourceRelation channelSourceRelation(const FileState& file,
     return ChannelSourceRelation::Changed;
   }
   if (annotation->sourceKind != snapshot.sourceKind ||
-      !annotationSourceCurrent(file, *annotation) ||
-      sourceChanged(snapshot.sourceIdentity, file.metadata))
+      sourceSet->fileId != file.metadata.id || annotation->fileId != file.metadata.id ||
+      sourceSet->sourceKind != annotation->sourceKind ||
+      sourceChanged(sourceSet->sourceIdentity, channelMetadata) ||
+      sourceChanged(snapshot.sourceIdentity, channelMetadata))
     return ChannelSourceRelation::Changed;
   return ChannelSourceRelation::Current;
 }
 bool annotationSourceCurrent(const FileState& file,
                              const Annotation& annotation) {
-  const auto* set = findSourceSet(file, annotation.sourceSetId);
-  return set && !set->deleted && !annotation.deleted &&
-         set->fileId == file.metadata.id &&
-         annotation.fileId == file.metadata.id &&
-         set->sourceKind == annotation.sourceKind &&
-         set->sampleChannel == file.metadata.sampleFormat.selectedChannel &&
-         !sourceChanged(set->sourceIdentity, file.metadata);
+  return !annotation.deleted && currentIdentity(file, annotation);
+}
+AnnotationCapabilities annotationCapabilities(const FileState& file,
+                                               const Annotation& annotation) {
+  AnnotationCapabilities result;
+  if (annotation.deleted || !validId(annotation.id) ||
+      annotation.fileId != file.metadata.id || !annotationInContext(file, annotation))
+    return result;
+  result.view = result.select = result.locate = result.exportData = true;
+  if (!annotationSourceCurrent(file, annotation)) return result;
+  switch (annotation.sourceKind) {
+    case AnnotationSource::Manual:
+      result.editGeometry = result.editMetadata = result.manageSegments = true;
+      result.review = result.deleteAnnotation = result.createChannelDirectly = true;
+      break;
+    case AnnotationSource::ImportedLabel:
+    case AnnotationSource::Algorithm:
+      result.convertToManual = true;
+      break;
+  }
+  return result;
 }
 
 AnnotationChannelRequest annotationChannelRequest(
@@ -243,6 +592,9 @@ AnnotationResult prepareAnnotationChannel(
   const auto* annotation = findAnnotation(file, request.annotationId);
   if (!annotation || annotation->deleted)
     return fail("来源标记已删除或不存在，请选择一个来源对象。", "annotationId");
+  if (!annotationCapabilities(file, *annotation).createChannelDirectly)
+    return fail("只有身份有效的人工标记可以直接创建通道，请先转换为人工标记。",
+                "annotationId");
   if (!annotationSourceCurrent(file, *annotation) ||
       request.sourceIdentity.fileId.empty() ||
       sourceChanged(request.sourceIdentity, file.metadata))
@@ -383,8 +735,12 @@ AnnotationValidation validateFileAnnotations(const FileState& file) {
         snapshot.sourceIdentity.fileId != file.metadata.id)
       return {false, "Channel source snapshot IDs disagree"};
     const auto* annotation = findAnnotation(file, channel.annotationId);
-    if (!annotation) return {false, "Channel references a missing annotation"};
-    if (snapshot.sourceKind != annotation->sourceKind ||
+    const bool retired = snapshot.sourceKind == AnnotationSource::Algorithm &&
+        file.currentDetectionSlots && std::any_of(file.currentDetectionSlots->begin(), file.currentDetectionSlots->end(),
+          [&](const auto& slot) { return slot.sampleChannel == snapshot.sourceIdentity.selectedSampleChannel &&
+            std::find(slot.retiredAnnotationIds.begin(), slot.retiredAnnotationIds.end(), snapshot.annotationId) != slot.retiredAnnotationIds.end(); });
+    if (!annotation && !retired) return {false, "Channel references a missing annotation"};
+    if ((annotation && snapshot.sourceKind != annotation->sourceKind) ||
         (snapshot.bindingKind == ChannelBindingKind::LocatedSegment
              ? snapshot.segmentId.empty()
              : snapshot.bindingKind != ChannelBindingKind::UserRange ||
@@ -421,7 +777,7 @@ AnnotationValidation validateFileAnnotations(const FileState& file) {
     if (snapshot.bindingKind == ChannelBindingKind::LocatedSegment &&
         !rangeInside(snapshot.range, captured.range))
       return {false, "Channel extraction is outside its captured binding"};
-    if (std::none_of(annotation->revisions.begin(), annotation->revisions.end(),
+    if (annotation && std::none_of(annotation->revisions.begin(), annotation->revisions.end(),
                      [&](const auto& revision) {
                        return revision.id == channel.revisionId;
                      }))
@@ -531,6 +887,7 @@ AnnotationService::State AnnotationService::state(const Annotation& a) {
           a.reviewRevisionId,
           a.reviewStatus,
           a.deleted,
+          a.plotHidden,
           a.observation};
 }
 void AnnotationService::installState(Annotation& a, const State& s) {
@@ -541,6 +898,7 @@ void AnnotationService::installState(Annotation& a, const State& s) {
   a.reviewRevisionId = s.reviewRevisionId;
   a.reviewStatus = s.reviewStatus;
   a.deleted = s.deleted;
+  a.plotHidden = s.plotHidden;
   a.observation = s.observation;
   refreshAnnotationProjection(a);
 }
@@ -570,26 +928,72 @@ AnnotationService::Patch AnnotationService::difference(
 }
 
 std::size_t AnnotationService::commandBytes(const Command& command) {
-  std::size_t bytes = sizeof(Command);
+  StorageCost cost{sizeof(Command), 0};
   for (const auto& patch : command.patches) {
-    bytes += sizeof(Patch) + patch.annotationId.size() +
-             patch.before.name.size() + patch.after.name.size() +
-             patch.before.note.size() + patch.after.note.size();
-    for (const auto& change : patch.segments)
-      bytes += sizeof(SegmentChange) + change.id.size() +
-               (change.before ? change.before->id.size() : 0) +
-               (change.after ? change.after->id.size() : 0);
-    if (patch.createdAnnotation)
-      bytes += sizeof(Annotation) +
-               patch.createdAnnotation->segments.size() * sizeof(Segment) +
-               patch.createdAnnotation->name.size() +
-               patch.createdAnnotation->note.size();
+    cost += {sizeof(Patch), 0};
+    cost += textCost(patch.annotationId);
+    for (const auto* value : {&patch.before, &patch.after})
+      for (const auto* text : {&value->name, &value->note,
+                                &value->activeSegmentId, &value->revisionId,
+                                &value->reviewRevisionId})
+        cost += textCost(*text);
+    for (const auto& change : patch.segments) {
+      cost += {sizeof(SegmentChange), 0};
+      cost += textCost(change.id);
+      if (change.before) cost += segmentCost(*change.before);
+      if (change.after) cost += segmentCost(*change.after);
+    }
+    if (patch.createdAnnotation) cost += annotationCost(*patch.createdAnnotation);
   }
-  if (command.createdSourceSet)
-    bytes += sizeof(AnnotationSourceSet) +
-             command.createdSourceSet->originalText.size() +
-             command.createdSourceSet->supplementalOriginalText.size();
-  return bytes;
+  if (command.createdSourceSet) cost += sourceSetCost(*command.createdSourceSet);
+  return cost.memory;
+}
+std::optional<AnnotationResult> AnnotationService::blockedWrite() const {
+  if (!writeGuard_) return std::nullopt;
+  std::string error;
+  if (writeGuard_(error)) return std::nullopt;
+  if (error.empty()) error = "检测结果正在提交，请稍后再试";
+  return fail(std::move(error));
+}
+void AnnotationService::notifyWrote() {
+  if (suppressWrote_ || notifying_ || !wrote_) return;
+  notifying_ = true;
+  wrote_();
+  notifying_ = false;
+}
+AnnotationService::WroteSuppression::WroteSuppression(AnnotationService& service)
+    : service_(&service), previous_(service.suppressWrote_) {
+  service.suppressWrote_ = true;
+}
+AnnotationService::WroteSuppression::~WroteSuppression() {
+  if (service_) service_->suppressWrote_ = previous_;
+}
+AnnotationService::GuardedSelection AnnotationService::captureGuarded(
+    const FileState& file) const {
+  GuardedSelection value;
+  value.selectedMarkIds = file.selectedMarkIds;
+  value.activeMarkId = file.activeMarkId;
+  value.activeSegmentId = file.activeSegmentId;
+  value.selectionAnchorId = file.selectionAnchorId;
+  value.selectionSampleChannel = file.selectionSampleChannel;
+  value.psdFromSelection = file.display.psdFromSelection;
+  value.revisionEditingAnnotationId = file.revisionEditingAnnotationId;
+  value.revisionEditingBaseRevisionId = file.revisionEditingBaseRevisionId;
+  value.markProjection.reserve(file.marks.size());
+  for (const auto& mark : file.marks) {
+    value.markProjection.push_back(
+        mark.id + "\n" + mark.activeSegmentId + "\n" + mark.revisionId + "\n" +
+        std::to_string(mark.revisions.size()) + "\n" +
+        std::to_string(mark.range.time.begin) + "\n" +
+        std::to_string(mark.range.time.end) + "\n" +
+        std::to_string(mark.range.frequency.lowerHz) + "\n" +
+        std::to_string(mark.range.frequency.upperHz));
+  }
+  return value;
+}
+void AnnotationService::notifyGuardedChange(const GuardedSelection& before,
+                                            const FileState& file) {
+  if (captureGuarded(file) != before) notifyWrote();
 }
 void AnnotationService::record(FileState& file, Command command) {
   auto& history = histories_[file.metadata.id];
@@ -603,12 +1007,14 @@ void AnnotationService::record(FileState& file, Command command) {
     history.bytes -= history.past.front().bytes;
     history.past.erase(history.past.begin());
   }
+  notifyWrote();
 }
 
 AnnotationResult AnnotationService::createManual(FileState& file,
                                                  std::string name,
                                                  ViewRange range,
                                                  std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   Segment segment;
   segment.id = nextId(file, "segment-");
   segment.range = range;
@@ -679,13 +1085,16 @@ AnnotationResult AnnotationService::createManual(FileState& file,
   command.patches.push_back(std::move(patch));
   file.marks.push_back(annotation);
   record(file, std::move(command));
-  select(file, {annotation.id}, annotation.id, segment.id);
+  // The command notification already covers this selection. A second callback
+  // would inflate the project epoch for one create.
+  applySelection(file, {annotation.id}, annotation.id, segment.id);
   return success(annotation.id, true);
 }
 
 AnnotationResult AnnotationService::publishSourceSet(
     FileState& file, AnnotationSourceSet set,
     std::vector<Annotation> annotations) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (!validId(set.id) || set.fileId != file.metadata.id ||
       set.sourceIdentity.fileId != file.metadata.id ||
       set.sampleChannel >= file.metadata.sampleFormat.channels ||
@@ -745,35 +1154,270 @@ AnnotationResult AnnotationService::publishSourceSet(
       return fail("File activity segment budget exceeded (100000)");
     count += annotation.segments.size();
   }
-  Command command;
-  command.createdSourceSet = set;
-  for (const auto& annotation : annotations) {
-    Patch patch;
-    patch.annotationId = annotation.id;
-    patch.created = true;
-    patch.createdAnnotation = annotation;
-    patch.after = state(annotation);
-    command.patches.push_back(std::move(patch));
-  }
   const auto id = set.id;
   const auto source = set.sourceKind;
-  if (source != AnnotationSource::Algorithm &&
-      commandBytes(command) > annotationCommandByteBudget)
-    return fail(
-        "Atomic import exceeds the annotation command memory budget (128 MiB)");
+  Command command;
+  // Algorithm publication is not undoable and skips the command budget, so it
+  // does not copy each annotation into command.patches. Manual undo is unchanged.
+  if (source != AnnotationSource::Algorithm) {
+    command.createdSourceSet = set;
+    for (const auto& annotation : annotations) {
+      Patch patch;
+      patch.annotationId = annotation.id;
+      patch.created = true;
+      patch.createdAnnotation = annotation;
+      patch.after = state(annotation);
+      command.patches.push_back(std::move(patch));
+    }
+    if (commandBytes(command) > annotationCommandByteBudget)
+      return fail(
+          "Atomic import exceeds the annotation command memory budget (128 MiB)");
+  }
+  // Allocate publication/history storage before making any object visible.
+  file.sourceSets.reserve(file.sourceSets.size() + 1);
+  file.marks.reserve(file.marks.size() + annotations.size());
+  if (source == AnnotationSource::Manual) {
+    auto& history = histories_[file.metadata.id];
+    history.past.reserve(history.past.size() + 1);
+  }
   file.sourceSets.push_back(std::move(set));
   file.marks.insert(file.marks.end(),
                     std::make_move_iterator(annotations.begin()),
                     std::make_move_iterator(annotations.end()));
-  // Worker publication is independent of user commands, preserving old
-  // undo/redo.
-  if (source != AnnotationSource::Algorithm) record(file, std::move(command));
+  // Source imports and worker publications are source-management operations,
+  // outside the manual undo stack. Conversion publishes a new Manual set.
+  if (source == AnnotationSource::Manual) record(file, std::move(command));
+  else notifyWrote();
   refreshChannelSourceRelations(file);
   return success(id, true);
 }
 
+AnnotationResult AnnotationService::convertToManual(
+    FileState& file, const std::vector<std::string>& sourceIds,
+    const ManualConversionOptions& options,
+    std::vector<std::string>& createdIds) {
+  createdIds.clear();
+  if (sourceIds.empty()) return success();
+  if (const auto blocked = blockedWrite()) return *blocked;
+  std::string formatError;
+  if (!validateSampleFormat(file.metadata.sampleFormat, formatError))
+    return fail("Conversion source format is invalid: " + formatError, "source");
+  const auto bounds = annotationBounds(file.metadata);
+  const auto index = annotationIndex(file);
+  if (index.size() != file.marks.size())
+    return fail("Conversion source IDs are ambiguous", "annotationId");
+  std::unordered_set<std::string> sourceSetIds;
+  for (const auto& set : file.sourceSets)
+    if (!sourceSetIds.insert(set.id).second)
+      return fail("Conversion source-set IDs are ambiguous", "source");
+  std::unordered_set<std::string> selected;
+  struct Input {
+    const Annotation* annotation;
+    const AnnotationSourceSet* sourceSet;
+    const Segment* segment;
+  };
+  std::vector<Input> inputs;
+  auto cost = fileAnnotationCost(file);
+  StorageCost commandCost{sizeof(Command) + sizeof(AnnotationSourceSet), 4096};
+  std::size_t count = segmentCount(file);
+  if (count > annotationSegmentBudget ||
+      file.marks.size() > annotationSegmentBudget ||
+      file.sourceSets.size() >= annotationSegmentBudget)
+    return fail("Conversion exceeds the file object/segment budget (100000)");
+
+  // Index existing conversion keys once; a 100-item selection must not rescan
+  // a large result collection once per selected ID.
+  const auto key = [](const std::string& id, const std::string& revision,
+                      const std::string& setId, AnnotationSource kind,
+                      bool currentOnly, const std::string& segmentId) {
+    std::string value;
+    for (const auto* part : {&id, &revision, &setId, &segmentId})
+      value += std::to_string(part->size()) + ":" + *part;
+    return value + ":" + std::to_string(static_cast<int>(kind)) +
+           (currentOnly ? ":current" : ":all");
+  };
+  std::unordered_set<std::string> converted;
+  if (!options.allowExplicitDuplicate)
+    for (const auto& existing : file.marks) {
+      if (existing.deleted || existing.sourceKind != AnnotationSource::Manual ||
+          !existing.conversionSnapshot)
+        continue;
+      const auto& snapshot = *existing.conversionSnapshot;
+      converted.insert(key(snapshot.sourceAnnotationId, snapshot.sourceRevisionId,
+                            snapshot.sourceSet.id, snapshot.sourceKind,
+                            snapshot.currentSegmentOnly,
+                            snapshot.convertedSegmentId));
+    }
+  for (const auto& id : sourceIds) {
+    if (!selected.insert(id).second) continue;
+    const auto found = index.find(id);
+    const auto* source = found == index.end() ? nullptr : found->second;
+    if (!source || !annotationCapabilities(file, *source).convertToManual)
+      return fail("Conversion requires a current, valid imported/algorithm source: " +
+                      id,
+                  "annotationId");
+    if (const auto checked = validateAnnotation(*source, bounds); !checked)
+      return fail("Conversion source " + id + ": " + checked.error, "source");
+    const auto* set = findSourceSet(file, source->sourceSetId);
+    const auto* segment = options.currentSegmentOnly ? activeSegment(*source) : nullptr;
+    if (options.currentSegmentOnly && !segment)
+      return fail("Current-segment conversion requires a located segment: " + id,
+                  "segmentId");
+    const std::string segmentId = segment ? segment->id : std::string{};
+    if (!options.allowExplicitDuplicate &&
+        converted.contains(key(source->id, source->revisionId, set->id,
+                                source->sourceKind, options.currentSegmentOnly,
+                                segmentId)))
+      continue;
+    const auto added = segment ? 1 : source->segments.size();
+    if (added > annotationSegmentBudget - count ||
+        inputs.size() >= annotationSegmentBudget - file.marks.size())
+      return fail("Conversion exceeds the file object/segment budget (100000); "
+                  "select a smaller batch");
+    count += added;
+    // This estimate includes the complete source snapshot and two copies of
+    // the selected geometry (live geometry and the Manual restore baseline).
+    auto addedCost = conversionSnapshotCost(*source, *set);
+    addedCost += {sizeof(Annotation) + sizeof(OriginEvidence) +
+                      sizeof(AnnotationRevision) + sizeof(ReviewDecision) +
+                      sizeof(Patch) + 4096,
+                  8192};
+    addedCost += textCost(source->name);
+    addedCost += textCost(source->note);
+    if (source->classLabel) addedCost += textCost(*source->classLabel);
+    for (const auto& part : source->segments) {
+      if (segment && part.id != segment->id) continue;
+      addedCost += segmentCost(part);
+      addedCost += segmentCost(part);
+    }
+    commandCost += addedCost;
+    cost += addedCost;
+    if (commandCost.memory > annotationCommandByteBudget)
+      return fail("Atomic conversion exceeds the command memory budget (128 MiB); "
+                  "select a smaller batch");
+    if (cost.metadata > annotationMetadataByteBudget)
+      return fail("Conversion exceeds the annotation metadata budget (32 MiB); "
+                  "select a smaller batch");
+    inputs.push_back({source, set, segment});
+  }
+  if (inputs.empty()) return success();
+
+  // Build the occupied identity set once for the whole transaction. Calling
+  // nextId for each copied segment would rescan all existing segments for
+  // every new ID and turn a multi-segment batch into quadratic work.
+  std::unordered_set<std::string> identities;
+  for (const auto& set : file.sourceSets) identities.insert(set.id);
+  for (const auto& value : file.marks) {
+    identities.insert(value.id);
+    for (const auto& segment : value.segments) identities.insert(segment.id);
+    for (const auto& revision : value.revisions) identities.insert(revision.id);
+  }
+  const auto freshId = [&](const std::string& prefix) {
+    for (;;) {
+      auto id = prefix + std::to_string(nextIdentifier_++);
+      if (identities.insert(id).second) return id;
+    }
+  };
+  AnnotationSourceSet manualSet;
+  manualSet.id = freshId("manual-conversion-");
+  manualSet.fileId = file.metadata.id;
+  manualSet.sampleChannel = file.metadata.sampleFormat.selectedChannel;
+  manualSet.sourceKind = AnnotationSource::Manual;
+  manualSet.formatId = "manual-v1";
+  manualSet.parserId = "signal-studio-manual-conversion";
+  manualSet.parserVersion = "1";
+  manualSet.coordinateInterpretation = "Per-segment original frequency frame; half-open samples";
+  manualSet.sourceIdentity = annotationSourceIdentity(file.metadata);
+  std::vector<Annotation> copies;
+  std::vector<std::string> ids;
+  copies.reserve(inputs.size());
+  ids.reserve(inputs.size());
+  const auto timestamp = now();
+  auto finalCost = fileAnnotationCost(file);
+  finalCost += sourceSetCost(manualSet);
+  for (const auto& input : inputs) {
+    const auto& source = *input.annotation;
+    auto snapshot = std::make_shared<ManualConversionSnapshot>();
+    snapshot->sourceAnnotationId = source.id;
+    snapshot->sourceRevisionId = source.revisionId;
+    snapshot->sourceOriginRecordId = source.originRecordId;
+    snapshot->sourceKind = source.sourceKind;
+    snapshot->sourceSet = *input.sourceSet;
+    snapshot->sourceName = source.name;
+    snapshot->sourceNote = source.note;
+    snapshot->sourceClassLabel = source.classLabel;
+    snapshot->sourceSegments = source.segments;
+    snapshot->sourceObservation = source.observation;
+    snapshot->sourceObservationFrequencyFrame = source.observationFrequencyFrame;
+    snapshot->sourceObservationTimeQuality = source.observationTimeQuality;
+    snapshot->sourceActiveSegmentId = source.activeSegmentId;
+    snapshot->sourceReviewStatus = source.reviewStatus;
+    snapshot->sourceOriginEvidence = *source.originEvidence;
+    snapshot->currentSegmentOnly = options.currentSegmentOnly;
+    if (input.segment) snapshot->convertedSegmentId = input.segment->id;
+
+    Annotation copy;
+    copy.id = freshId("annotation-");
+    copy.fileId = file.metadata.id;
+    copy.sourceSetId = manualSet.id;
+    copy.sourceKind = AnnotationSource::Manual;
+    copy.originRecordId = source.originRecordId;
+    copy.revisionId = freshId("revision-");
+    copy.name = source.name;
+    copy.note = source.note;
+    copy.classLabel = source.classLabel;
+    copy.observation = source.observation;
+    copy.observationFrequencyFrame = source.observationFrequencyFrame;
+    copy.observationTimeQuality = source.observationTimeQuality;
+    copy.reviewStatus = source.reviewStatus;
+    copy.reviewRevisionId = copy.revisionId;
+    copy.derivedFrom = {source.id};
+    copy.conversionSnapshot = std::move(snapshot);
+    for (const auto& original : source.segments) {
+      if (input.segment && original.id != input.segment->id) continue;
+      auto part = original;
+      part.id = freshId("segment-");
+      if (original.id == source.activeSegmentId || input.segment)
+        copy.activeSegmentId = part.id;
+      copy.segments.push_back(std::move(part));
+    }
+    auto baseline = std::make_shared<OriginEvidence>();
+    baseline->formatId = "manual-v1";
+    baseline->originRef = copy.id;
+    baseline->coordinateInterpretation = input.sourceSet->coordinateInterpretation;
+    baseline->originalSegments = copy.segments;
+    baseline->originalObservation = copy.observation;
+    baseline->observationFrequencyFrame = copy.observationFrequencyFrame;
+    copy.originEvidence = std::move(baseline);
+    copy.revisions.push_back(
+        {copy.revisionId, {}, "convert-to-manual", "user", timestamp, {}});
+    copy.reviewHistory.push_back({copy.reviewStatus, copy.revisionId, "user",
+                                  timestamp, "Copied source quality at conversion"});
+    refreshAnnotationProjection(copy);
+    if (const auto checked = validateAnnotation(copy, bounds); !checked)
+      return fail(checked.error);
+    finalCost += annotationCost(copy);
+    if (finalCost.metadata > annotationMetadataByteBudget)
+      return fail("Conversion exceeds the annotation metadata budget (32 MiB); "
+                  "select a smaller batch");
+    ids.push_back(copy.id);
+    copies.push_back(std::move(copy));
+  }
+  // publishSourceSet performs the final batch validation and records exactly
+  // one Manual command with this batch's new source set. Selection stays with
+  // the caller, which can switch its source tab before selecting createdIds.
+  auto result = publishSourceSet(file, std::move(manualSet), std::move(copies));
+  if (!result) return result;
+  createdIds = std::move(ids);
+  result.id = createdIds.front();
+  return result;
+}
+
 AnnotationResult AnnotationService::beginRevision(FileState& file,
                                                   const std::string& id) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  if (!canEdit(file, id))
+    return fail("Only a Manual annotation with a current identity can be edited");
   const auto* annotation = findAnnotation(file, id);
   if (!annotation || annotation->deleted)
     return fail("Annotation is unavailable");
@@ -782,25 +1426,28 @@ AnnotationResult AnnotationService::beginRevision(FileState& file,
   return success(id);
 }
 void AnnotationService::endRevision(FileState& file) {
+  if (blockedWrite()) return;
   file.revisionEditingAnnotationId.clear();
   file.revisionEditingBaseRevisionId.clear();
 }
 bool AnnotationService::canEdit(const FileState& file,
                                 const std::string& id) const {
+  return capabilities(file, id).editGeometry;
+}
+AnnotationCapabilities AnnotationService::capabilities(
+    const FileState& file, const std::string& id) const {
   const auto* annotation = findAnnotation(file, id);
-  const auto* set =
-      annotation ? findSourceSet(file, annotation->sourceSetId) : nullptr;
-  if (!set || set->deleted ||
-      set->sampleChannel != file.metadata.sampleFormat.selectedChannel ||
-      sourceChanged(set->sourceIdentity, file.metadata))
-    return false;
-  return annotation && annotationSourceCurrent(file, *annotation);
+  return annotation ? annotationCapabilities(file, *annotation)
+                    : AnnotationCapabilities{};
 }
 
 AnnotationResult AnnotationService::commit(FileState& file,
                                            const Annotation& before,
                                            Annotation after, std::string action,
                                            std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  if (!canEdit(file, before.id) || after.sourceKind != AnnotationSource::Manual)
+    return fail("Only a Manual annotation with a current identity can be edited");
   auto initial = difference(before, after);
   if (initial.before == initial.after && initial.segments.empty())
     return success(before.id);
@@ -1144,6 +1791,9 @@ AnnotationResult AnnotationService::confirmSegment(FileState& file,
                                                    const std::string& id,
                                                    const std::string& segmentId,
                                                    std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  if (!capabilities(file, id).review)
+    return fail("Only a Manual annotation with a current identity can be reviewed");
   auto* annotation = findAnnotation(file, id);
   if (!annotation || annotation->deleted)
     return fail("Annotation is unavailable");
@@ -1193,7 +1843,11 @@ AnnotationResult AnnotationService::confirmSegment(FileState& file,
 AnnotationResult AnnotationService::reviewBatch(
     FileState& file, const std::vector<std::string>& ids, ReviewStatus status,
     std::string actor, std::string note) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   if (note.size() > 4096) return fail("Review note exceeds its budget");
+  if (status != ReviewStatus::Pending && status != ReviewStatus::Accepted &&
+      status != ReviewStatus::Rejected)
+    return fail("Invalid review status");
   std::unordered_set<std::string> selected;
   std::vector<Annotation> afters;
   Command command;
@@ -1204,6 +1858,8 @@ AnnotationResult AnnotationService::reviewBatch(
     const auto* before = found == index.end() ? nullptr : found->second;
     if (!before || before->deleted)
       return fail("Batch review contains an unavailable annotation");
+    if (!annotationCapabilities(file, *before).review)
+      return fail("Batch review requires only Manual annotations with current identities");
     if (const auto result =
             validateAnnotation(*before, annotationBounds(file.metadata));
         !result)
@@ -1232,6 +1888,7 @@ AnnotationResult AnnotationService::reviewBatch(
 }
 AnnotationResult AnnotationService::deleteBatch(
     FileState& file, const std::vector<std::string>& ids, std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   std::unordered_set<std::string> selected;
   std::vector<Annotation> after;
   Command command;
@@ -1242,7 +1899,12 @@ AnnotationResult AnnotationService::deleteBatch(
     const auto* annotation = found == index.end() ? nullptr : found->second;
     if (!annotation)
       return fail("Batch delete contains an unavailable annotation");
+    if (annotation->sourceKind != AnnotationSource::Manual ||
+        !currentIdentity(file, *annotation))
+      return fail("Batch delete requires only Manual annotations with current identities");
     if (annotation->deleted) continue;
+    if (!annotationCapabilities(file, *annotation).deleteAnnotation)
+      return fail("This annotation cannot be deleted");
     auto changed = *annotation;
     changed.deleted = true;
     changed.revisionId = nextId(file, "revision-");
@@ -1278,22 +1940,109 @@ AnnotationResult AnnotationService::deleteBatch(
     file.activeSegmentId.clear();
   }
   if (selected.contains(file.revisionEditingAnnotationId)) endRevision(file);
-  reconcileSelection(file);
+  normalizeSelection(file);
   refreshChannelSourceRelations(file);
   return success({}, true);
 }
+AnnotationResult AnnotationService::deleteAlgorithmBatch(
+    FileState& file, const std::vector<std::string>& ids, std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  std::unordered_set<std::string> selected;
+  std::vector<Annotation> after;
+  Command command;
+  const auto index = annotationIndex(file);
+  for (const auto& id : ids) {
+    if (!selected.insert(id).second) continue;
+    const auto found = index.find(id);
+    const auto* annotation = found == index.end() ? nullptr : found->second;
+    if (!annotation) return fail("批量删除含有不存在的检测结果");
+    if (annotation->sourceKind != AnnotationSource::Algorithm)
+      return fail("只能软删除检测结果；原始标签和人工标记不能从这里删除");
+    if (annotation->deleted) continue;
+    if (!currentIdentity(file, *annotation) ||
+        !annotationInContext(file, *annotation))
+      return fail("只能软删除当前通道上身份有效的正式检测结果");
+    auto changed = *annotation;
+    changed.deleted = true;
+    changed.revisionId = nextId(file, "revision-");
+    changed.reviewRevisionId = changed.revisionId;
+    changed.reviewStatus = ReviewStatus::Pending;
+    for (auto& segment : changed.segments) segment.confirmed = false;
+    changed.revisions.push_back({changed.revisionId, annotation->revisionId,
+                                 "delete", actor, now(), {}});
+    changed.reviewHistory.push_back({ReviewStatus::Pending, changed.revisionId,
+                                     actor, now(), "Soft deletion"});
+    if (const auto result =
+            validateAnnotation(changed, annotationBounds(file.metadata));
+        !result)
+      return fail(result.error);
+    command.patches.push_back(difference(*annotation, changed));
+    after.push_back(std::move(changed));
+  }
+  if (after.empty()) return success();
+  if (commandBytes(command) > annotationCommandByteBudget)
+    return fail("一次删除超过标记命令内存预算（128 MiB）");
+  for (auto& changed : after) *index.at(changed.id) = std::move(changed);
+  record(file, std::move(command));
+  std::erase_if(file.selectedMarkIds,
+                [&](const auto& id) { return selected.contains(id); });
+  if (selected.contains(file.activeMarkId)) {
+    file.activeMarkId.clear();
+    file.activeSegmentId.clear();
+  }
+  if (selected.contains(file.revisionEditingAnnotationId)) endRevision(file);
+  normalizeSelection(file);
+  refreshChannelSourceRelations(file);
+  return success({}, true);
+}
+AnnotationResult AnnotationService::setAlgorithmPlotHidden(
+    FileState& file, const std::vector<std::string>& ids, bool hidden,
+    std::string actor) {
+  if (const auto blocked = blockedWrite()) return *blocked;
+  static_cast<void>(actor);
+  std::unordered_set<std::string> selected;
+  std::vector<Annotation> after;
+  Command command;
+  const auto index = annotationIndex(file);
+  for (const auto& id : ids) {
+    if (!selected.insert(id).second) continue;
+    const auto found = index.find(id);
+    const auto* annotation = found == index.end() ? nullptr : found->second;
+    if (!annotation) return fail("批量隐藏含有不存在的检测结果");
+    if (annotation->deleted) return fail("已删除的检测结果不能隐藏或显示");
+    if (annotation->sourceKind != AnnotationSource::Algorithm ||
+        !currentIdentity(file, *annotation) ||
+        !annotationInContext(file, *annotation))
+      return fail("只能隐藏或显示当前通道上身份有效的正式检测结果");
+    if (annotation->plotHidden == hidden) continue;
+    auto changed = *annotation;
+    changed.plotHidden = hidden;
+    if (const auto result =
+            validateAnnotation(changed, annotationBounds(file.metadata));
+        !result)
+      return fail(result.error);
+    command.patches.push_back(difference(*annotation, changed));
+    after.push_back(std::move(changed));
+  }
+  if (after.empty()) return success();
+  if (commandBytes(command) > annotationCommandByteBudget)
+    return fail("一次隐藏超过标记命令内存预算（128 MiB）");
+  for (auto& changed : after) *index.at(changed.id) = std::move(changed);
+  record(file, std::move(command));
+  return success({}, true);
+}
 
-AnnotationResult AnnotationService::select(FileState& file,
-                                           std::vector<std::string> ids,
-                                           std::string activeId,
-                                           std::string segmentId) {
-  reconcileSelection(file);
+AnnotationResult AnnotationService::applySelection(FileState& file,
+                                                   std::vector<std::string> ids,
+                                                   std::string activeId,
+                                                   std::string segmentId) {
+  normalizeSelection(file);
   auto index = annotationIndex(file);
   std::unordered_set<std::string> selected;
   std::vector<std::string> legal;
   for (auto& id : ids) {
     const auto found = index.find(id);
-    if (found != index.end() && annotationVisible(file, *found->second) &&
+    if (found != index.end() && annotationSelectable(file, *found->second) &&
         selected.insert(id).second)
       legal.push_back(std::move(id));
   }
@@ -1319,69 +2068,54 @@ AnnotationResult AnnotationService::select(FileState& file,
   } else
     file.activeSegmentId.clear();
   if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
-  if (old != file.activeMarkId) endRevision(file);
+  if (old != file.activeMarkId) {
+    file.revisionEditingAnnotationId.clear();
+    file.revisionEditingBaseRevisionId.clear();
+  }
   return success(file.activeMarkId, changed);
 }
 
-void AnnotationService::reconcileSelection(FileState& file) {
-  const auto channel = file.metadata.sampleFormat.selectedChannel;
-  if (file.selectionSampleChannel && *file.selectionSampleChannel != channel) {
-    file.selectedMarkIds.clear();
-    file.activeMarkId.clear();
-    file.activeSegmentId.clear();
-    file.selectionAnchorId.clear();
-    file.hoveredMarkId.clear();
-    file.hoveredSegmentId.clear();
-    endRevision(file);
-  }
-  file.selectionSampleChannel = channel;
-  const auto index = annotationIndex(file);
-  const auto visible = [&](const std::string& id) {
-    const auto found = index.find(id);
-    return found != index.end() && annotationVisible(file, *found->second);
-  };
-  std::unordered_set<std::string> selected;
-  std::erase_if(file.selectedMarkIds, [&](const auto& id) {
-    return !visible(id) || !selected.insert(id).second;
-  });
-  if (!selected.contains(file.activeMarkId)) {
-    file.activeMarkId = file.selectedMarkIds.empty()
-                            ? std::string{}
-                            : file.selectedMarkIds.back();
-    endRevision(file);
-  }
-  if (!visible(file.selectionAnchorId))
-    file.selectionAnchorId = file.activeMarkId;
-  if (const auto found = index.find(file.activeMarkId); found != index.end()) {
-    auto& active = *found->second;
-    if (!findSegment(active, active.activeSegmentId))
-      refreshAnnotationProjection(active);
-    file.activeSegmentId = active.activeSegmentId;
-  } else {
-    file.activeSegmentId.clear();
-  }
-  if (file.activeSegmentId.empty()) file.display.psdFromSelection = false;
-  if (!visible(file.hoveredMarkId)) {
-    file.hoveredMarkId.clear();
-    file.hoveredSegmentId.clear();
-  } else if (!findSegment(*index.at(file.hoveredMarkId),
-                          file.hoveredSegmentId)) {
-    file.hoveredSegmentId.clear();
-  }
+AnnotationResult AnnotationService::select(FileState& file,
+                                           std::vector<std::string> ids,
+                                           std::string activeId,
+                                           std::string segmentId) {
+  if (const auto rejected =
+          rejectSelectionRequest(file, ids, activeId, segmentId))
+    return *rejected;
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  const auto result = applySelection(file, std::move(ids), std::move(activeId),
+                                     std::move(segmentId));
+  notifyGuardedChange(before, file);
+  return result;
 }
 
-AnnotationResult AnnotationService::chooseSelection(
+AnnotationResult AnnotationService::reconcileSelection(FileState& file) {
+  const auto plan = planNormalization(file);
+  if (!guardedNormalizationDiffers(file, plan)) {
+    file.hoveredMarkId = plan.hoveredMarkId;
+    file.hoveredSegmentId = plan.hoveredSegmentId;
+    return success();
+  }
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  applyNormalization(file, plan);
+  notifyGuardedChange(before, file);
+  return success({}, true);
+}
+
+AnnotationResult AnnotationService::applyChoose(
     FileState& file, const std::string& id, AnnotationSelectionMode mode,
     const std::vector<std::string>& orderedIds, const std::string& segmentId) {
-  reconcileSelection(file);
+  normalizeSelection(file);
   const auto* target = findAnnotation(file, id);
-  if (!target || !annotationVisible(file, *target))
+  if (!target || !annotationSelectable(file, *target))
     return fail("Annotation is not in the current matching results");
   if (!segmentId.empty() && !findSegment(*target, segmentId))
     return fail("Active segment does not belong to the annotation");
   std::unordered_set<std::string> visible;
   for (const auto& annotation : file.marks)
-    if (annotationVisible(file, annotation)) visible.insert(annotation.id);
+    if (annotationSelectable(file, annotation)) visible.insert(annotation.id);
   std::vector<std::string> order;
   std::unordered_set<std::string> ordered;
   for (const auto& value : orderedIds)
@@ -1415,16 +2149,28 @@ AnnotationResult AnnotationService::chooseSelection(
     ids = {id};
     anchor = id;
   }
-  const auto result = select(file, std::move(ids), active,
-                             active == id ? segmentId : std::string{});
+  const auto result = applySelection(file, std::move(ids), active,
+                                     active == id ? segmentId : std::string{});
   if (result.ok) file.selectionAnchorId = std::move(anchor);
+  return result;
+}
+
+AnnotationResult AnnotationService::chooseSelection(
+    FileState& file, const std::string& id, AnnotationSelectionMode mode,
+    const std::vector<std::string>& orderedIds, const std::string& segmentId) {
+  if (const auto rejected = rejectChooseRequest(file, id, segmentId, orderedIds))
+    return *rejected;
+  if (const auto blocked = blockedWrite()) return *blocked;
+  const auto before = captureGuarded(file);
+  const auto result = applyChoose(file, id, mode, orderedIds, segmentId);
+  notifyGuardedChange(before, file);
   return result;
 }
 
 bool AnnotationService::hover(FileState& file, std::string id,
                               std::string segmentId) {
   const auto* annotation = findAnnotation(file, id);
-  if (!annotation || !annotationVisible(file, *annotation)) {
+  if (!annotation || !annotationOverlayVisible(file, *annotation)) {
     id.clear();
     segmentId.clear();
   } else if (!findSegment(*annotation, segmentId)) {
@@ -1440,6 +2186,9 @@ AnnotationResult AnnotationService::bindChannelSource(
     FileState& file, Channel& channel, const std::string& id,
     const std::string& segmentId) const {
   const auto* annotation = findAnnotation(file, id);
+  if (!capabilities(file, id).createChannelDirectly)
+    return fail("Only a Manual annotation with a current identity can create a channel",
+                "annotationId");
   if (!annotation || !segmentCanCreateChannel(*annotation, segmentId))
     return fail("Channel creation requires an explicit located segment");
   if (!annotationSourceCurrent(file, *annotation))
@@ -1531,12 +2280,39 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
                                                  bool forward) {
   // Validate every touched value first. Unrelated worker additions stay intact.
   const auto index = annotationIndex(file);
+  auto count = segmentCount(file);
+  auto cost = forward ? fileAnnotationCost(file) : StorageCost{};
   for (const auto& patch : command.patches) {
     const auto found = index.find(patch.annotationId);
     const auto* annotation = found == index.end() ? nullptr : found->second;
     if (patch.created) {
+      if (!patch.createdAnnotation ||
+          patch.createdAnnotation->sourceKind != AnnotationSource::Manual ||
+          (annotation && (annotation->sourceKind != AnnotationSource::Manual ||
+                          !currentIdentity(file, *annotation))))
+        return fail("Only Manual commands can be undone or redone");
       if (forward && annotation)
         return fail("Redo identity conflicts with an existing annotation");
+      if (forward) {
+        const auto& created = *patch.createdAnnotation;
+        const auto* set = command.createdSourceSet
+                              ? &*command.createdSourceSet
+                              : findSourceSet(file, created.sourceSetId);
+        if (!set || set->deleted || set->sourceKind != AnnotationSource::Manual ||
+            set->id != created.sourceSetId || set->fileId != file.metadata.id ||
+            set->sampleChannel != file.metadata.sampleFormat.selectedChannel ||
+            sourceChanged(set->sourceIdentity, file.metadata))
+          return fail("Redo source identity changed");
+        if (const auto checked =
+                validateAnnotation(created, annotationBounds(file.metadata));
+            !checked)
+          return fail(checked.error);
+        if (created.segments.size() > annotationSegmentBudget ||
+            count > annotationSegmentBudget - created.segments.size())
+          return fail("Redo exceeds the file segment budget (100000)");
+        count += created.segments.size();
+        cost += annotationCost(created);
+      }
       if (!forward &&
           (!annotation || !sameCommandState(state(*annotation), patch.after)))
         return fail("Undo target changed after its creation");
@@ -1547,6 +2323,11 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
             return fail("Created annotation is now referenced by a channel");
       continue;
     }
+    if (!annotation ||
+        (annotation->sourceKind != AnnotationSource::Manual &&
+         annotation->sourceKind != AnnotationSource::Algorithm) ||
+        !currentIdentity(file, *annotation))
+      return fail("Only Manual commands with current identities can be undone or redone");
     if (!annotation || !sameCommandState(state(*annotation),
                                          forward ? patch.before : patch.after))
       return fail("Command target changed since this revision");
@@ -1556,11 +2337,21 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
       if ((expected && (!segment || *segment != *expected)) ||
           (!expected && segment))
         return fail("Command segment changed since this revision");
+      const auto& replacement = forward ? change.after : change.before;
+      if (expected) --count;
+      if (replacement) {
+        if (count >= annotationSegmentBudget)
+          return fail("Command exceeds the file segment budget (100000)");
+        ++count;
+      }
     }
   }
   if (command.createdSourceSet) {
+    if (command.createdSourceSet->sourceKind != AnnotationSource::Manual)
+      return fail("Source management is outside the Manual command history");
     const auto* source = findSourceSet(file, command.createdSourceSet->id);
     if (forward && source) return fail("Redo source-set identity conflicts");
+    if (forward) cost += sourceSetCost(*command.createdSourceSet);
     if (!forward) {
       if (!source || *source != *command.createdSourceSet)
         return fail("Undo source-set changed after publication");
@@ -1576,6 +2367,21 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
             created.contains(channel.sourceMarkId))
           return fail("Created annotation is now referenced by a channel");
     }
+  }
+  if (forward && command.createdSourceSet &&
+      cost.metadata > annotationMetadataByteBudget)
+    return fail("Redo exceeds the annotation metadata budget (32 MiB)");
+  const auto createdCount = static_cast<std::size_t>(std::count_if(
+      command.patches.begin(), command.patches.end(),
+      [](const auto& patch) { return patch.created; }));
+  if (forward &&
+      (file.marks.size() > annotationSegmentBudget ||
+       createdCount > annotationSegmentBudget - file.marks.size()))
+    return fail("Redo exceeds the annotation object budget (100000)");
+  if (forward) {
+    file.marks.reserve(file.marks.size() + createdCount);
+    if (command.createdSourceSet)
+      file.sourceSets.reserve(file.sourceSets.size() + 1);
   }
   for (const auto& patch : command.patches) {
     if (patch.created) {
@@ -1622,15 +2428,17 @@ AnnotationResult AnnotationService::applyCommand(FileState& file,
     file.activeSegmentId.clear();
   }
   endRevision(file);
-  reconcileSelection(file);
+  normalizeSelection(file);
   refreshChannelSourceRelations(file);
   return success({}, true);
 }
 AnnotationResult AnnotationService::undo(FileState& file) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   auto found = histories_.find(file.metadata.id);
   if (found == histories_.end() || found->second.past.empty())
     return fail("No annotation command to undo");
   auto& history = found->second;
+  history.future.reserve(history.future.size() + 1);
   const auto result = applyCommand(file, history.past.back(), false);
   if (!result) return result;
   history.future.push_back(std::move(history.past.back()));
@@ -1638,10 +2446,12 @@ AnnotationResult AnnotationService::undo(FileState& file) {
   return result;
 }
 AnnotationResult AnnotationService::redo(FileState& file) {
+  if (const auto blocked = blockedWrite()) return *blocked;
   auto found = histories_.find(file.metadata.id);
   if (found == histories_.end() || found->second.future.empty())
     return fail("No annotation command to redo");
   auto& history = found->second;
+  history.past.reserve(history.past.size() + 1);
   const auto result = applyCommand(file, history.future.back(), true);
   if (!result) return result;
   history.past.push_back(std::move(history.future.back()));

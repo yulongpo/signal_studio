@@ -1,0 +1,21 @@
+{
+  "schema": "signal-studio-sample-native-launch-v1",
+  "configuration": "Release",
+  "executable": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-release_bin\\SignalStudioDetectionSampleStreamTests.exe",
+  "executableLastWriteUtc": "2026-10-26T15:31:54.7847538Z",
+  "arguments": [
+    "--golden",
+    "--long",
+    "--run-budget",
+    "--scratch-root",
+    "\"D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r6\\diagnostics\\r6-3-native-golden-release-01\\scratch\"",
+    "--golden-report",
+    "\"D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r6\\diagnostics\\r6-3-native-golden-release-01\\native-golden.json\""
+  ],
+  "exitCode": 0,
+  "pass": true,
+  "elapsedMs": 8796,
+  "systemOnlyPath": true,
+  "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r6\\diagnostics\\r6-3-native-golden-release-01\\native-golden.json",
+  "boundary": "Native bounded DSP/Legacy Golden and failure cleanup; reduced-Fs long fixtures do not substitute for actual-Fs resource benchmarks."
+}

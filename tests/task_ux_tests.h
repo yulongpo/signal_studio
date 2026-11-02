@@ -1,69 +1,113 @@
 #pragma once
 
+#include <algorithm>
+#include <atomic>
+#include <QElapsedTimer>
+#include <QCheckBox>
 #include <QDialog>
+#include <QLabel>
+#include <QtEndian>
+#include <QWheelEvent>
+#include <QFileDialog>
+#include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QPlainTextEdit>
 #include <QPersistentModelIndex>
 #include <QScopeGuard>
 #include <QTextBrowser>
 #include <QTimer>
+#include <QtEndian>
+#include <cmath>
 #include "infrastructure/detection_store.h"
 
 inline void UxTests::uxR01_lateRunFilterPopupAndRefresh() {
+  // UX-R5 removes the historical run-filter popup. Preserve this regression's
+  // late-publication/refresh purpose on the authoritative current-result page.
   QTemporaryDir directory;
   MainWindow window;
   QString issue;
-  QVERIFY(window.createProject(directory.path(), "run-filter", &issue));
-  issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
-  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  QVERIFY(window.createProject(directory.path(), "current-publication", &issue));
+  // A tone gives the synthetic pipeline worker nonempty results. Silence
+  // would make the result-preservation assertions pass with zero old rows.
+  QFile iq(directory.filePath("IQ_A_FS1Msps_FC100MHz.dat"));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)), samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)), samples.data() + sample * 4 + 2);
+  }
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(iq.fileName(), &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(window.session().activeFile()->metadata.availability.status, LoadStatus::Ready, 10000);
   expose(window);
-  QTest::mouseClick(window.findChild<QAbstractButton*>("resultTab"), Qt::LeftButton);
-  auto* filter = window.findChild<QComboBox*>("annotationRunFilter");
-  QVERIFY(filter && filter->isVisible());
-  QCOMPARE(filter->count(), 2);
-  const auto open = [&] {
-    QTest::mouseClick(filter, Qt::LeftButton, Qt::NoModifier, QPoint(filter->width() - 8, filter->height() / 2));
-  };
-  open();
-  QTRY_VERIFY(filter->view()->isVisible());
-  QTest::keyClick(filter->view(), Qt::Key_Escape);
-  QTRY_VERIFY(!filter->view()->isVisible());
-  auto* source = window.session().activeFile();
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
+  QVERIFY(!window.findChild<QWidget*>("annotationRunFilter"));
+  const auto source = window.session().activeFile()->metadata;
   DetectionRequest request;
-  // Wider than the first-show editor, while fitting the offscreen plugin's
-  // small virtual popup screen. Native capture also checks full UUID IDs.
-  request.runId = "ux-filter-run-0123456789";
-  request.sourceIdentity = annotationSourceIdentity(source->metadata, window.session().projectGeneration());
+  request.runId = "ux-current-run-0123456789";
+  request.sourceIdentity = annotationSourceIdentity(source, window.session().projectGeneration());
   request.profile = *findDetectionProfile("pipeline-fixture-v1");
-  request.requestedRange = fullRange(source->metadata);
+  request.requestedRange = fullRange(source);
   request.contextRange = request.requestedRange;
   request.rangeOrigin = "available-file";
   auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
   QVERIFY2(panel->startRequest(request, issue), qPrintable(issue));
-  QTRY_VERIFY_WITH_TIMEOUT(filter->findData(QString::fromStdString(request.runId)) >= 2, 15000);
-  open();
-  auto* view = filter->view();
-  QTRY_VERIFY(view->isVisible());
-  const QPersistentModelIndex row(filter->model()->index(filter->findData(QString::fromStdString(request.runId)), 0));
-  view->scrollTo(row);
-  QTRY_VERIFY2(view->viewport()->rect().contains(view->visualRect(row)),
-      qPrintable(QString("row %1x%2; viewport %3x%4; view min %5; popup %6x%7")
-          .arg(view->visualRect(row).width()).arg(view->visualRect(row).height())
-          .arg(view->viewport()->width()).arg(view->viewport()->height())
-          .arg(view->minimumWidth()).arg(view->window()->width()).arg(view->window()->height())));
-  const auto tooltip = row.data(Qt::ToolTipRole).toString();
-  QCOMPARE(tooltip, QString::fromStdString(request.runId));
-  QTest::keyClick(view, Qt::Key_End);
-  QCOMPARE(view->currentIndex(), QModelIndex(row));
+  QTRY_VERIFY_WITH_TIMEOUT(currentDetectionSlot(*window.session().activeFile(), 0) &&
+      currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId == request.runId, 30000);
+  auto* table = window.findChild<QTableView*>("detectionResultTable");
+  const auto rows = table->model()->rowCount();
+  QVERIFY(rows > 0);
+  const auto firstId = table->model()->index(0,1).data(Qt::UserRole);
   for (int refresh = 0; refresh < 5; ++refresh) window.refresh();
-  QVERIFY(row.isValid() && view->isVisible());
-  QCOMPARE(view->currentIndex(), QModelIndex(row));
-  QCOMPARE(row.data(Qt::UserRole).toString(), QString::fromStdString(request.runId));
-  QVERIFY(view->viewport()->rect().contains(view->visualRect(row)));
-  QTest::qWait(QApplication::doubleClickInterval() + 50);
-  QTest::mouseClick(view->viewport(), Qt::LeftButton, Qt::NoModifier, view->visualRect(row).center());
-  QTRY_VERIFY(!view->isVisible());
-  QCOMPARE(source->annotationFilter.runId, request.runId);
+  QCOMPARE(table->model()->rowCount(), rows);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QCOMPARE(window.session().activeFile()->detectionRuns.size(), std::size_t(1));
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  auto* score = card->findChild<AdaptiveValueEdit*>("detectionScoreThreshold");
+  QVERIFY(uxDetectionReveal(window, score));
+  window.session().selectMarks({firstId.toString().toStdString()});
+  window.refresh();
+  const auto selected = window.session().activeFile()->selectedMarkIds;
+  const auto oldResult = encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString()));
+  score->setFocus(); score->selectAll(); QTest::keyClicks(score, "0.55");
+  QVERIFY(score->property("parameterDraft").toBool());
+  window.refresh();
+  QCOMPARE(table->model()->rowCount(), rows);
+  QVERIFY(!currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QTest::keyClick(score, Qt::Key_Escape);
+  QVERIFY(!score->property("parameterDraft").toBool());
+  QCOMPARE(table->model()->rowCount(), rows);
+  score->selectAll(); QTest::keyClicks(score, "0.55");
+  QTest::keyClick(score, Qt::Key_Return);
+  QVERIFY(currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QCOMPARE(table->model()->rowCount(), rows);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QCOMPARE(window.session().activeFile()->selectedMarkIds, selected);
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  model->setCurrentIndex(model->findData("scn-max-psd-v1"));
+  QCOMPARE(card->request().profile.id, std::string("scn-max-psd-v1"));
+  QCOMPARE(table->model()->rowCount(), rows);
+  panel->markConfigurationStale();
+  QCOMPARE(table->model()->rowCount(), rows);
+  const auto status = window.findChild<QLabel*>("currentDetectionStatus")->text();
+  QVERIFY(status.contains("待更新") && status.contains("当前显示上次检测结果"));
+  QCOMPARE(currentDetectionSlot(*window.session().activeFile(), 0)->committedRunId, request.runId);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())), oldResult);
+  QVERIFY(annotationOverlayVisible(*window.session().activeFile(), *findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())));
+  for (const auto* tab : {"manualAnnotationsTab", "taskTab", "logTab", "detectionResultsTab"})
+    QTest::mouseClick(window.findChild<QAbstractButton*>(tab), Qt::LeftButton);
+  QCOMPARE(table->model()->rowCount(), rows);
+  const auto projectPath = directory.filePath("current-publication.ssproj");
+  QVERIFY(window.saveProject(projectPath));
+  QVERIFY(window.openProject(projectPath));
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"), Qt::LeftButton);
+  window.refresh();
+  QCOMPARE(table->model()->rowCount(), rows);
+  QCOMPARE(table->model()->index(0,1).data(Qt::UserRole), firstId);
+  QVERIFY(currentDetectionSlot(*window.session().activeFile(), 0)->stale);
+  QCOMPARE(encodeAnnotation(*findAnnotation(*window.session().activeFile(), firstId.toString().toStdString())), oldResult);
 }
 
 inline void UxTests::uxD01_topDerivationDiscardsCrossFileDraft() {
@@ -260,6 +304,11 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   const auto secondId = window.session().activeFile()->metadata.id;
   auto completedB = historyFor(window);
   completedB.request.runId = "terminal-b";
+  completedB.request.contextRange = fullRange(window.session().activeFile()->metadata);
+  // historyFor may carry its original manifest identity. This renamed history
+  // must be real durable evidence before exercising the ordinary save path.
+  completedB.manifestRelativePath.clear();
+  QVERIFY2(writeDetectionRun(QString::fromStdString(window.session().project().assetDirectory), completedB, issue), qPrintable(issue));
   window.session().activeFile()->detectionRuns.push_back(completedB);
   QVERIFY(window.session().activateFile(firstId));
   expose(window);
@@ -277,6 +326,9 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   configuration.request.requestedRange = fullRange(window.session().activeFile()->metadata);
   configuration.request.contextRange = configuration.request.requestedRange;
   configuration.request.rangeOrigin = "custom";
+  // The full 1 s file is about 9991 fixture windows. The default 32 MiB JSON
+  // evidence ledger rejects that before a worker starts.
+  configuration.request.evidenceBudgetBytes = 128ULL * 1024 * 1024;
   card->configure(&configuration);
   auto* run = window.findChild<QPushButton*>("runWidebandDetection");
   QVERIFY(run && run->isVisible() && run->isEnabled());
@@ -290,16 +342,106 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
         if (value.request.runId == runId) return value;
     return {};
   };
-  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->completedWindows > 0 && !detectionIsTerminal(find()->lifecycle), 15000);
+  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->completedWindows > 0 && find()->lifecycle == DetectionLifecycle::Running, 15000);
+  // The actual modal dialogs are driven below. A broken save/open path must
+  // unwind its dialog rather than hanging this regression's nested event loop.
+  const auto boundedDialogCall = [&](const auto& operation) {
+    QElapsedTimer deadline;deadline.start();
+    QTimer watchdog;watchdog.setInterval(10);bool timedOut=false;
+    QObject::connect(&watchdog,&QTimer::timeout,&window,[&] {
+      if(deadline.elapsed()<10000)return;
+      timedOut=true;
+      if(auto* dialog=qobject_cast<QDialog*>(QApplication::activeModalWidget()))dialog->reject();
+    });
+    watchdog.start();const bool result=operation();watchdog.stop();
+    return result && !timedOut;
+  };
+  // A copied Save As must not switch the live worker away from the asset
+  // directory to which its frozen job continues publishing chunks.
+  const auto originalAssets = window.session().project().assetDirectory;
+  const auto copiedProject = directory.filePath("running-copy.ssproj");
+  bool assetCopyWarning = false;
+  QTimer::singleShot(0, &window, [&] {
+    if (auto* warning = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      assetCopyWarning = warning->windowTitle() == "暂不能复制工程资产";
+      warning->accept();
+    }
+  });
+  QVERIFY(!boundedDialogCall([&]{return window.saveProject(copiedProject);}));
+  QVERIFY(assetCopyWarning && !QFileInfo::exists(copiedProject));
+  QCOMPARE(window.session().project().assetDirectory, originalAssets);
   const auto frozen = encodeDetectionRequest(find()->request);
   const auto firstChunks = find()->chunks.size();
   QVERIFY(firstChunks > 0);
   const auto firstChunk = find()->chunks.front();
-  QFile durablePrefix(directory.filePath("active-task/") + QString::fromStdString(firstChunk.relativePath));
+  const QDir assets(QString::fromStdString(window.session().project().assetDirectory));
+  QVERIFY(assets.exists());
+  QFile durablePrefix(assets.filePath(QString::fromStdString(firstChunk.relativePath)));
   QVERIFY(durablePrefix.open(QIODevice::ReadOnly));
   const auto prefixBytes = durablePrefix.readAll();
   durablePrefix.close();
   QVERIFY(!prefixBytes.isEmpty());
+  const auto originalProject=directory.filePath("active-task.ssproj");
+  QVERIFY(boundedDialogCall([&]{return window.saveProject(originalProject);}));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QVERIFY(find() && find()->lifecycle==DetectionLifecycle::Running);
+
+  const auto referenceProject=directory.filePath("running-reference.ssproj");
+  auto* saveAs=window.findChild<QAction*>("saveProjectAsAction");QVERIFY(saveAs && saveAs->isEnabled());
+  const bool nativeDialogsDisabled=QCoreApplication::testAttribute(Qt::AA_DontUseNativeDialogs);
+  QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,true);
+  const auto restoreDialogs=qScopeGuard([&]{QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs,nativeDialogsDisabled);});
+  bool fileDialogSeen=false,referenceChoiceSeen=false,unexpectedDialog=false;
+  QTimer saveAsDriver;saveAsDriver.setInterval(10);
+  QObject::connect(&saveAsDriver,&QTimer::timeout,&window,[&] {
+    if(auto* dialog=qobject_cast<QFileDialog*>(QApplication::activeModalWidget())) {
+      if(fileDialogSeen)return;
+      fileDialogSeen=dialog->windowTitle()=="工程另存为" && dialog->acceptMode()==QFileDialog::AcceptSave;
+      if(!fileDialogSeen){unexpectedDialog=true;dialog->reject();return;}
+      dialog->setDirectory(directory.path());dialog->selectFile(QFileInfo(referenceProject).fileName());
+      QMetaObject::invokeMethod(dialog,"accept",Qt::QueuedConnection);
+    } else if(auto* question=qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) {
+      if(question->windowTitle()=="伴随资产" && question->standardButtons().testFlag(QMessageBox::No)) {
+        referenceChoiceSeen=true;QTest::mouseClick(question->button(QMessageBox::No),Qt::LeftButton);
+      } else {unexpectedDialog=true;question->reject();}
+    }
+  });
+  saveAsDriver.start();
+  const bool saveAsReturned=boundedDialogCall([&]{saveAs->trigger();return true;});
+  saveAsDriver.stop();
+  QVERIFY(saveAsReturned && fileDialogSeen && referenceChoiceSeen && !unexpectedDialog);
+  QVERIFY(QFileInfo::exists(referenceProject));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QVERIFY(find() && find()->lifecycle==DetectionLifecycle::Running);
+  const auto readContainer=[&](const QString& projectPath) {
+    QFile file(projectPath);return file.open(QIODevice::ReadOnly)?file.readAll():QByteArray{};
+  };
+  const auto referenceBeforeSave=QJsonDocument::fromJson(readContainer(referenceProject)).object();
+  QCOMPARE(referenceBeforeSave["assetMode"].toString(),QString("reference"));
+  QCOMPARE(QDir(referenceBeforeSave["assetDirectory"].toString()).absolutePath(),QDir(QString::fromStdString(originalAssets)).absolutePath());
+  // This is the current Reference path: ordinary Save must use Preserve,
+  // neither converting it to Copy nor moving the active worker's asset root.
+  QVERIFY(boundedDialogCall([&]{return window.saveProject(referenceProject);}));
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  const auto savedWhileRunning=readContainer(referenceProject);QVERIFY(!savedWhileRunning.isEmpty());
+  const auto referenceAfterSave=QJsonDocument::fromJson(savedWhileRunning).object();
+  QCOMPARE(referenceAfterSave["assetMode"].toString(),QString("reference"));
+  QCOMPARE(referenceAfterSave["assetDirectory"],referenceBeforeSave["assetDirectory"]);
+  QVERIFY(!QFileInfo::exists(referenceProject+".assets"));
+  QJsonObject savedLiveIndex;
+  for(const auto entry:referenceAfterSave["assets"].toArray()) {
+    const auto object=entry.toObject();
+    if(object["runId"].toString()==QString::fromStdString(runId))savedLiveIndex=object;
+  }
+  QCOMPARE(savedLiveIndex["integrity"].toString(),QString("detection-live-v1"));
+  QCOMPARE(savedLiveIndex["requestSha256"].toString(),QString::fromLatin1(QCryptographicHash::hash(QJsonDocument(frozen).toJson(QJsonDocument::Compact),QCryptographicHash::Sha256).toHex()));
+  const auto savedMinimumChunks=savedLiveIndex["minimumChunks"].toArray();
+  QVERIFY(savedMinimumChunks.size()>=static_cast<qsizetype>(firstChunks));
+  const auto savedCompleted=find()->completedWindows;const auto savedChunks=find()->chunks.size();
+  QTRY_VERIFY_WITH_TIMEOUT(find() && find()->lifecycle==DetectionLifecycle::Running && find()->completedWindows>savedCompleted && find()->chunks.size()>savedChunks,15000);
+  QCOMPARE(window.session().project().assetDirectory,originalAssets);
+  QCOMPARE(encodeDetectionRequest(find()->request),frozen);
+  window.activateWindow();
   auto* palette = window.findChild<QComboBox*>("colormap");
   palette->setFocus(); QTest::keyClick(palette, Qt::Key_Down);
   for (const auto* name : {"stftFft", "psdFft"}) {
@@ -343,7 +485,7 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   QVERIFY(find()->chunks.size() >= firstChunks);
   QCOMPARE(window.session().activeFile()->detectionRuns.front().lifecycle, DetectionLifecycle::Completed);
   DetectionRun reopened;
-  QVERIFY2(loadDetectionRun(directory.filePath("active-task"), QString::fromStdString(runId), reopened, issue), qPrintable(issue));
+  QVERIFY2(loadDetectionRun(assets.absolutePath(), QString::fromStdString(runId), reopened, issue), qPrintable(issue));
   QCOMPARE(reopened.lifecycle, DetectionLifecycle::Cancelled);
   QCOMPARE(encodeDetectionRequest(reopened.request), frozen);
   QCOMPARE(reopened.chunks.size(), find()->chunks.size());
@@ -351,4 +493,808 @@ inline void UxTests::uxD03_activeTaskCancellationAndFrozenDisplay() {
   QVERIFY(durablePrefix.open(QIODevice::ReadOnly));
   QCOMPARE(durablePrefix.readAll(), prefixBytes);
   QVERIFY(std::any_of(reopened.coverage.begin(), reopened.coverage.end(), [](const auto& part) { return part.kind == DetectionCoverageKind::Unread; }));
+  durablePrefix.close();
+  // The container still has its Running-time request and minimum prefix. Its
+  // bytes must not be refreshed to make the later Cancelled manifest load.
+  QCOMPARE(readContainer(referenceProject),savedWhileRunning);
+  const auto latestChunks=encodeDetectionRun(reopened)["chunks"].toArray();
+  QVERIFY(latestChunks.size()>savedMinimumChunks.size());
+  for(qsizetype i=0;i<savedMinimumChunks.size();++i)QCOMPARE(latestChunks[i],savedMinimumChunks[i]);
+  MainWindow restoredWindow;
+  QVERIFY(boundedDialogCall([&]{return restoredWindow.openProject(referenceProject);}));
+  QCOMPARE(restoredWindow.session().project().assetDirectory,originalAssets);
+  const auto findRestored=[&]() -> std::optional<DetectionRun> {
+    for(const auto& source:restoredWindow.session().project().files)
+      for(const auto& value:source.detectionRuns)if(value.request.runId==runId)return value;
+    return {};
+  };
+  QVERIFY(findRestored());const auto restoredRun=*findRestored();
+  QCOMPARE(restoredRun.lifecycle,DetectionLifecycle::Cancelled);
+  QCOMPARE(restoredRun.completedWindows,reopened.completedWindows);
+  QCOMPARE(restoredRun.chunks.size(),reopened.chunks.size());
+  QCOMPARE(encodeDetectionRequest(restoredRun.request),frozen);
+  QCOMPARE(encodeDetectionRun(restoredRun)["chunks"].toArray(),latestChunks);
+  QVERIFY(std::any_of(restoredRun.coverage.begin(),restoredRun.coverage.end(),[](const auto& part){return part.kind==DetectionCoverageKind::Unread;}));
+  // After reopening, an idle ordinary Save must still preserve Reference.
+  QVERIFY(boundedDialogCall([&]{return restoredWindow.saveProject(referenceProject);}));
+  QCOMPARE(restoredWindow.session().project().assetDirectory,originalAssets);
+  const auto idleContainer=QJsonDocument::fromJson(readContainer(referenceProject)).object();
+  QCOMPARE(idleContainer["assetMode"].toString(),QString("reference"));
+  QCOMPARE(idleContainer["assetDirectory"],referenceBeforeSave["assetDirectory"]);
+  QVERIFY(!QFileInfo::exists(referenceProject+".assets"));
+}
+
+inline void UxTests::uxD09_intermediatePreviewAndRedetectClear() {
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restore = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "preview-clear", &issue));
+  const auto path = directory.filePath("IQ_A_FS1Msps_FC100MHz.dat");
+  QFile iq(path);
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)),
+                            samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)),
+                            samples.data() + sample * 4 + 2);
+  }
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(path, &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status, LoadStatus::Ready,
+      10000);
+  expose(window);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* status = window.findChild<QLabel*>("currentDetectionStatus");
+  auto* card = window.findChild<DetectionCard*>("detectionCard");
+  QVERIFY(panel && plot && status && card);
+  QVERIFY(uxDetectionPage(window));
+  DetectionRequest request;
+  request.runId = "preview-clear-initial";
+  request.sourceIdentity = annotationSourceIdentity(
+      window.session().activeFile()->metadata, window.session().projectGeneration());
+  request.profile = *findDetectionProfile("pipeline-fixture-v1");
+  request.requestedRange = fullRange(window.session().activeFile()->metadata);
+  request.contextRange = request.requestedRange;
+  request.rangeOrigin = "available-file";
+  QVERIFY2(panel->startRequest(request, issue), qPrintable(issue));
+  const auto committed = [&](const std::string& runId) {
+    const auto* current = window.session().activeFile();
+    const auto* slot = current ? currentDetectionSlot(
+        *current, current->metadata.sampleFormat.selectedChannel) : nullptr;
+    return slot && !slot->stale && slot->committedRunId == runId;
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(committed(request.runId), 20000);
+  auto* file = window.session().activeFile();
+  std::vector<std::string> formalIds;
+  for (const auto& mark : file->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm &&
+        annotationInContext(*file, mark))
+      formalIds.push_back(mark.id);
+  QVERIFY(!formalIds.empty());
+  const auto manualId = window.session().addMark(
+      {{100, 400}, {99.9e6, 100.05e6}});
+  QVERIFY(findAnnotation(*file, manualId) &&
+          findAnnotation(*file, manualId)->sourceKind == AnnotationSource::Manual);
+  const auto manualBefore = encodeAnnotation(*findAnnotation(*file, manualId));
+  auto* timer = panel->findChild<QTimer*>("detectionTaskPoll");
+  QVERIFY(timer);
+  timer->stop();
+  const auto generations = plot->powerGenerationCount();
+  DetectionPreviewSnapshot preview;
+  preview.runId = "preview-run";
+  preview.fileId = file->metadata.id;
+  preview.events.push_back({});
+  preview.events.back().trackId = "preview-track";
+  preview.events.back().sequence = 1;
+  preview.events.back().observedSupport = {1000, 5000};
+  preview.events.back().frequency = {99.9e6, 100.1e6};
+  preview.dropped = 2;
+  file->selectedMarkIds = {formalIds.front(), "preview-track"};
+  file->activeMarkId = "preview-track";
+  file->hoveredMarkId = "preview-track";
+  panel->presentLivePreview(preview, false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(status->text().contains("预览"));
+  plot->selectDetectionPreview("preview-track");
+  QCOMPARE(plot->selectedDetectionPreview(), QString("preview-track"));
+  panel->presentLivePreview(preview, true);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(plot->selectedDetectionPreview(), QString());
+  QVERIFY(!status->text().contains("预览"));
+  QCOMPARE(file->activeMarkId, formalIds.front());
+  QCOMPARE(file->hoveredMarkId, std::string{});
+  QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                    "preview-track") == file->selectedMarkIds.end());
+  QVERIFY(std::find(file->selectedMarkIds.begin(), file->selectedMarkIds.end(),
+                    formalIds.front()) != file->selectedMarkIds.end());
+  QVERIFY(findAnnotation(*file, formalIds.front()));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(plot->powerGenerationCount(), generations);
+  panel->presentLivePreview(preview, false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(uxDetectionFold(window, "detectionResourceParametersToggle"));
+  auto* box = window.findChild<QCheckBox*>("showIntermediateDetectionResults");
+  QVERIFY(uxDetectionReveal(window, box));
+  QCOMPARE(box->text(), QString("显示中间结果"));
+  QVERIFY(box->isChecked());
+  const QPointF center(box->rect().center());
+  QWheelEvent wheel(center, box->mapToGlobal(center.toPoint()), QPoint(),
+                    QPoint(0, 120), Qt::NoButton, Qt::NoModifier,
+                    Qt::NoScrollPhase, false);
+  QCoreApplication::sendEvent(box, &wheel);
+  QVERIFY(box->isChecked());
+  box->setChecked(false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QVERIFY(status->text().contains("已隐藏中间预览，检测继续"));
+  box->setChecked(true);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(status->text().contains("预览"));
+  auto* model = card->findChild<QComboBox*>("detectionModel");
+  QVERIFY(model);
+  model->setCurrentIndex(model->findData("scn-max-psd-v1"));
+  file = window.session().activeFile();
+  QVERIFY(findAnnotation(*file, formalIds.front()));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  model->setCurrentIndex(model->findData("pipeline-fixture-v1"));
+  QVERIFY(findAnnotation(*window.session().activeFile(), formalIds.front()));
+  auto* run = window.findChild<QPushButton*>("runWidebandDetection");
+  QVERIFY2(run && run->isVisible() && run->isEnabled(),
+           run ? qPrintable(run->text()) : "missing run button");
+  QVERIFY(run->text().contains("重新检测"));
+  file = window.session().activeFile();
+  const auto* beforeSlot = currentDetectionSlot(
+      *file, file->metadata.sampleFormat.selectedChannel);
+  QVERIFY(beforeSlot && !beforeSlot->committedRunId.empty());
+  const auto previousCommitted = beforeSlot->committedRunId;
+  // The approved SS-DE-RPO contract discards this channel's old formal result
+  // when the new start commits. Editing model/parameters above preserves it.
+  QTest::mouseClick(run, Qt::LeftButton);
+  QTRY_VERIFY_WITH_TIMEOUT([&] {
+    file = window.session().activeFile();
+    const auto* now = currentDetectionSlot(
+        *file, file->metadata.sampleFormat.selectedChannel);
+    return now && now->committedRunId.empty() && !now->pendingRunId.empty() &&
+           status->text().contains("已丢弃上次正式结果");
+  }(), 20000);
+  file = window.session().activeFile();
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(plot->powerGenerationCount(), generations);
+  const auto pendingId = currentDetectionSlot(
+      *file, file->metadata.sampleFormat.selectedChannel)->pendingRunId;
+  QVERIFY(pendingId != previousCommitted);
+  panel->cancelRun(QString::fromStdString(pendingId));
+  timer->start();
+  QTRY_VERIFY_WITH_TIMEOUT([&] {
+    file = window.session().activeFile();
+    const auto* now = currentDetectionSlot(
+        *file, file->metadata.sampleFormat.selectedChannel);
+    return now && now->pendingRunId.empty() && now->committedRunId.empty();
+  }(), 20000);
+  file = window.session().activeFile();
+  for (const auto& id : formalIds) QVERIFY(!findAnnotation(*file, id));
+  std::size_t algorithm = 0;
+  for (const auto& mark : file->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm) ++algorithm;
+  QCOMPARE(algorithm, std::size_t{0});
+  QVERIFY(findAnnotation(*file, manualId));
+  QCOMPARE(encodeAnnotation(*findAnnotation(*file, manualId)), manualBefore);
+  QTRY_VERIFY_WITH_TIMEOUT(status->text().contains("尚未成功发布") ||
+                            status->text().contains("预览 · 未发布"), 3000);
+  QVERIFY(!status->text().contains("当前显示上次检测结果"));
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+
+}
+
+inline int uxR6VisiblePieces(const FileState& file, bool outside) {
+  int count = 0;
+  const auto& view = file.view;
+  for (const auto& mark : file.marks) {
+    if (!annotationVisible(file, mark)) continue;
+    const auto take = [&](const ViewRange& range) {
+      const bool out = range.time.end <= view.time.begin ||
+                       range.time.begin >= view.time.end ||
+                       range.frequency.upperHz <= view.frequency.lowerHz ||
+                       range.frequency.lowerHz >= view.frequency.upperHz;
+      if (out == outside) ++count;
+    };
+    if (mark.segments.empty()) {
+      if (mark.observation) take(*mark.observation);
+    } else {
+      for (const auto& segment : mark.segments) take(segment.range);
+    }
+  }
+  return count;
+}
+
+inline void UxTests::uxR6_commitOverlaySkipsHeatmap() {
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restore = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "overlay-commit", &issue));
+  QFile iq(directory.filePath("IQ_A_FS1Msps_FC100MHz.dat"));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::cos(angle)),
+                            samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(12000 * std::sin(angle)),
+                            samples.data() + sample * 4 + 2);
+  }
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(iq.fileName(), &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status, LoadStatus::Ready,
+      10000);
+  expose(window);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  QVERIFY(panel && plot);
+  QString stableKey;
+  quint64 stablePowers = 0;
+  QTRY_VERIFY_WITH_TIMEOUT([&] {
+    const auto key = plot->cachedPowerKey();
+    const auto powers = plot->powerGenerationCount();
+    const bool unchanged = !key.isEmpty() && key == stableKey && powers == stablePowers;
+    stableKey = key;
+    stablePowers = powers;
+    if (!unchanged) return false;
+    QTest::qWait(250);
+    return plot->cachedPowerKey() == key && plot->powerGenerationCount() == powers;
+  }(), 15000);
+  QVERIFY(!stableKey.isEmpty());
+
+  const auto requestFor = [&](const char* id) {
+    DetectionRequest request;
+    request.runId = id;
+    request.sourceIdentity = annotationSourceIdentity(
+        window.session().activeFile()->metadata,
+        window.session().projectGeneration());
+    request.profile = *findDetectionProfile("pipeline-fixture-v1");
+    request.requestedRange = fullRange(window.session().activeFile()->metadata);
+    request.contextRange = request.requestedRange;
+    request.rangeOrigin = "overlay-commit";
+    return request;
+  };
+  const auto committed = [&](const std::string& runId) {
+    const auto* current = window.session().activeFile();
+    const auto* slot = current ? currentDetectionSlot(
+        *current, current->metadata.sampleFormat.selectedChannel) : nullptr;
+    return slot && !slot->stale && slot->committedRunId == runId;
+  };
+  QVERIFY2(panel->startRequest(requestFor("overlay-seed"), issue), qPrintable(issue));
+  QTRY_VERIFY_WITH_TIMEOUT(committed("overlay-seed"), 20000);
+  QTRY_COMPARE_WITH_TIMEOUT(plot->cachedPowerKey(), stableKey, 5000);
+  QCOMPARE(plot->powerGenerationCount(), stablePowers);
+
+  struct HeatSample {
+    quint64 powers = 0;
+    quint64 uploads = 0;
+    qint64 heat = 0;
+    qint64 overlay = 0;
+    qint64 overlayUploads = 0;
+    QString key;
+  };
+  const auto sampleOf = [](PlotWidget* chart) {
+    HeatSample sample;
+    sample.powers = chart->powerGenerationCount();
+    sample.uploads = chart->textureUploadCount();
+    sample.key = chart->cachedPowerKey();
+    const auto stats = chart->renderStatistics();
+    const auto wall = stats.value("cpuWallTimings").toObject();
+    sample.heat = wall.value("heatmapUploadPreparation").toObject()
+                      .value("samples").toInteger();
+    sample.overlay = wall.value("overlayPainter").toObject()
+                         .value("samples").toInteger();
+    sample.overlayUploads = stats.value("overlayUploads").toInteger();
+    return sample;
+  };
+  struct Measured {
+    bool seen = false;
+    HeatSample before, after;
+    int rects = 0;
+    bool previewEmpty = false;
+  };
+  Measured clearMeasured, publishMeasured;
+  connect(panel, &DetectionPanel::commitSettled, &window,
+          [&](bool publication, bool installed) {
+            if (!installed) return;
+            auto& target = publication ? publishMeasured : clearMeasured;
+            if (target.seen) return;
+            target.before = sampleOf(plot);
+            if (!plot->gpuReady()) plot->repaint();
+            target.after = sampleOf(plot);
+            target.rects = plot->visibleAnnotationRectCount();
+            target.previewEmpty = panel->livePreview().events.empty();
+            target.seen = true;
+          });
+  QVERIFY2(panel->startRequest(requestFor("overlay-measured"), issue),
+           qPrintable(issue));
+  QTRY_VERIFY_WITH_TIMEOUT(clearMeasured.seen, 20000);
+  if (plot->gpuReady()) {
+    QTRY_COMPARE_WITH_TIMEOUT(plot->powerGenerationCount(),
+                              clearMeasured.before.powers, 3000);
+  }
+  const auto expectUnchanged = [](const Measured& measured, bool publish) {
+    QCOMPARE(measured.after.powers, measured.before.powers);
+    QCOMPARE(measured.after.key, measured.before.key);
+    QCOMPARE(measured.after.uploads, measured.before.uploads);
+    if (measured.before.key.isEmpty()) QFAIL("热图功率键尚未建立");
+    if (publish) {
+      QVERIFY(measured.after.powers == measured.before.powers);
+    }
+  };
+  expectUnchanged(clearMeasured, false);
+  if (plot->gpuReady()) {
+    QCOMPARE(clearMeasured.after.heat, clearMeasured.before.heat);
+  }
+  QTRY_VERIFY_WITH_TIMEOUT(committed("overlay-measured"), 20000);
+  QTRY_VERIFY_WITH_TIMEOUT(publishMeasured.seen, 5000);
+  if (plot->gpuReady()) {
+    QTRY_VERIFY_WITH_TIMEOUT(
+        plot->renderStatistics().value("overlayUploads").toInteger() ==
+                publishMeasured.before.overlayUploads + 1 ||
+            plot->renderStatistics()
+                    .value("cpuWallTimings").toObject()
+                    .value("overlayPainter").toObject()
+                    .value("samples").toInteger() ==
+                publishMeasured.before.overlay + 1,
+        3000);
+    const auto rendered = sampleOf(plot);
+    QCOMPARE(rendered.powers, publishMeasured.before.powers);
+    QCOMPARE(rendered.key, publishMeasured.before.key);
+    QCOMPARE(rendered.uploads, publishMeasured.before.uploads);
+    QCOMPARE(rendered.heat, publishMeasured.before.heat);
+    QVERIFY(rendered.overlayUploads == publishMeasured.before.overlayUploads + 1 ||
+            rendered.overlay == publishMeasured.before.overlay + 1);
+  } else {
+    expectUnchanged(publishMeasured, true);
+    QCOMPARE(publishMeasured.after.key, publishMeasured.before.key);
+  }
+  const auto* file = window.session().activeFile();
+  const int inside = uxR6VisiblePieces(*file, false);
+  const int outside = uxR6VisiblePieces(*file, true);
+  QCOMPARE(plot->visibleAnnotationRectCount(), inside);
+  QVERIFY2(outside > 0, "视窗外应有正式段，用于确认它们不会被绘制");
+  QVERIFY(publishMeasured.previewEmpty);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+
+  auto gate = std::make_shared<std::atomic<bool>>(false);
+  panel->setPublicationGate(gate);
+  QStringList holdMessages;
+  connect(panel, &DetectionPanel::message, &window, [&](const QString& text) {
+    holdMessages << text;
+  });
+  connect(panel, &DetectionPanel::commitSettled, &window,
+          [&](bool publication, bool installed) {
+            holdMessages << QString("settled %1 %2").arg(publication).arg(installed);
+          });
+  QVERIFY2(panel->startRequest(requestFor("overlay-hold"), issue), qPrintable(issue));
+  if (!QTest::qWaitFor([&] { return panel->publicationCommitInProgress(); }, 20000)) {
+    const auto* slot = currentDetectionSlot(
+        *window.session().activeFile(),
+        window.session().activeFile()->metadata.sampleFormat.selectedChannel);
+    qWarning().noquote() << holdMessages.join(" | ");
+    qWarning().noquote() << "hold slot"
+                         << (slot ? QString::fromStdString(slot->pendingRunId) : QString("none"))
+                         << (slot ? QString::fromStdString(slot->committedRunId) : QString())
+                         << "epoch" << window.session().contentEpoch();
+    for (const auto& run : panel->tasks().snapshots())
+      qWarning().noquote() << "hold-run" << QString::fromStdString(run.request.runId)
+                           << int(run.lifecycle) << QString::fromStdString(run.error);
+    QFAIL("publication commit did not stay in progress");
+  }
+  auto* timer = panel->findChild<QTimer*>("detectionTaskPoll");
+  QVERIFY(timer);
+  timer->stop();
+  DetectionPreviewSnapshot injected;
+  injected.runId = "overlay-hold";
+  injected.fileId = window.session().activeFile()->metadata.id;
+  injected.events.push_back({});
+  injected.events.back().trackId = "hold-track";
+  injected.events.back().sequence = 7;
+  injected.events.back().observedSupport = {100, 400};
+  injected.events.back().frequency = {99.9e6, 100.05e6};
+  panel->presentLivePreview(injected, true);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{1});
+  gate->store(true);
+  timer->start();
+  QTRY_VERIFY_WITH_TIMEOUT(committed("overlay-hold"), 20000);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+}
+
+inline void UxTests::uxR6_commitFailureKeepsPreviousResult() {
+  const auto previousFixture = qApp->property("enableDetectionTestFixture");
+  qApp->setProperty("enableDetectionTestFixture", true);
+  const auto restore = qScopeGuard([&] {
+    qApp->setProperty("enableDetectionTestFixture", previousFixture);
+  });
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "commit-failure", &issue));
+  QFile iq(directory.filePath("IQ_A_FS1Msps_FC100MHz.dat"));
+  QByteArray samples(20000 * 4, '\0');
+  for (int sample = 0; sample < 20000; ++sample) {
+    const double angle = 2 * 3.14159265358979323846 * .125 * sample;
+    qToLittleEndian<qint16>(static_cast<qint16>(8000 * std::cos(angle)),
+                            samples.data() + sample * 4);
+    qToLittleEndian<qint16>(static_cast<qint16>(8000 * std::sin(angle)),
+                            samples.data() + sample * 4 + 2);
+  }
+  QVERIFY(iq.open(QIODevice::WriteOnly));
+  QCOMPARE(iq.write(samples), qint64(samples.size()));
+  iq.close();
+  QVERIFY2(window.addIqFile(iq.fileName(), &issue), qPrintable(issue));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      window.session().activeFile()->metadata.availability.status, LoadStatus::Ready,
+      10000);
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  QVERIFY(panel);
+  const auto requestFor = [&](const char* id) {
+    DetectionRequest request;
+    request.runId = id;
+    request.sourceIdentity = annotationSourceIdentity(
+        window.session().activeFile()->metadata,
+        window.session().projectGeneration());
+    request.profile = *findDetectionProfile("pipeline-fixture-v1");
+    request.requestedRange = fullRange(window.session().activeFile()->metadata);
+    request.contextRange = request.requestedRange;
+    request.rangeOrigin = "commit-failure";
+    return request;
+  };
+  const auto slotOf = [&] {
+    const auto* current = window.session().activeFile();
+    return current ? currentDetectionSlot(
+               *current, current->metadata.sampleFormat.selectedChannel)
+                   : nullptr;
+  };
+  QVERIFY2(panel->startRequest(requestFor("failure-seed"), issue), qPrintable(issue));
+  if (!QTest::qWaitFor([&] {
+        return slotOf() && slotOf()->committedRunId == "failure-seed" &&
+               !slotOf()->stale;
+      }, 20000)) {
+    const auto* slot = slotOf();
+    qWarning().noquote() << "slot committed"
+                         << (slot ? QString::fromStdString(slot->committedRunId) : QString("none"))
+                         << "pending"
+                         << (slot ? QString::fromStdString(slot->pendingRunId) : QString("none"))
+                         << "epoch" << window.session().contentEpoch();
+    for (const auto& run : panel->tasks().snapshots())
+      qWarning().noquote() << "run" << QString::fromStdString(run.request.runId)
+                           << "life" << int(run.lifecycle)
+                           << QString::fromStdString(run.error);
+    QFAIL("failure-seed did not commit");
+  }
+  std::vector<QByteArray> formal;
+  for (const auto& mark : window.session().activeFile()->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm &&
+        mark.originEvidence && mark.originEvidence->runId == "failure-seed")
+      formal.push_back(QJsonDocument(encodeAnnotation(mark)).toJson(QJsonDocument::Compact));
+  QVERIFY(!formal.empty());
+  const auto committedBefore = slotOf()->committedRunId;
+
+  bool saveFailed = false;
+  connect(panel, &DetectionPanel::commitSettled, &window,
+          [&](bool publication, bool installed) {
+            if (!publication && !installed) saveFailed = true;
+          });
+  panel->setStartSaveFault(true);
+  QVERIFY2(panel->startRequest(requestFor("failure-save"), issue), qPrintable(issue));
+  QTRY_VERIFY_WITH_TIMEOUT(saveFailed, 20000);
+  panel->setStartSaveFault(false);
+  QCOMPARE(slotOf()->committedRunId, committedBefore);
+  std::vector<QByteArray> formalAfterSave;
+  for (const auto& mark : window.session().activeFile()->marks)
+    if (mark.sourceKind == AnnotationSource::Algorithm &&
+        mark.originEvidence && mark.originEvidence->runId == "failure-seed")
+      formalAfterSave.push_back(
+          QJsonDocument(encodeAnnotation(mark)).toJson(QJsonDocument::Compact));
+  QCOMPARE(formalAfterSave, formal);
+  const auto snaps = panel->tasks().snapshots();
+  QVERIFY(std::none_of(snaps.begin(), snaps.end(), [](const DetectionRun& run) {
+    return run.request.runId == "failure-save";
+  }));
+
+  std::string committedAtPublication;
+  bool publishFailed = false;
+  connect(panel, &DetectionPanel::commitSettled, &window,
+          [&](bool publication, bool installed) {
+            if (!publication && installed && committedAtPublication.empty())
+              committedAtPublication = slotOf() ? slotOf()->committedRunId : std::string{};
+            if (publication && !installed) publishFailed = true;
+          });
+  DetectionTransactionOptions fault;
+  fault.failAt = [](DetectionTransactionPoint point) {
+    return point == DetectionTransactionPoint::Commit;
+  };
+  panel->setPublicationFault(fault);
+  QVERIFY2(panel->startRequest(requestFor("failure-publish"), issue),
+           qPrintable(issue));
+  QTRY_VERIFY_WITH_TIMEOUT(publishFailed, 20000);
+  QCOMPARE(slotOf()->committedRunId, committedAtPublication);
+  QVERIFY(slotOf()->committedRunId != "failure-publish");
+  for (const auto& mark : window.session().activeFile()->marks)
+    if (mark.originEvidence)
+      QVERIFY(mark.originEvidence->runId != "failure-publish");
+}
+
+inline void UxTests::uxR6_previewChannelScope() {
+  QTemporaryDir directory;
+  MainWindow window;
+  QString issue;
+  QVERIFY(window.createProject(directory.path(), "preview-scope", &issue));
+  issue = addSource(window, directory.path(), "IQ_A_FS1Msps_FC100MHz.dat");
+  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  auto* panel = window.findChild<DetectionPanel*>("detectionPanel");
+  auto* timer = panel->findChild<QTimer*>("detectionTaskPoll");
+  QVERIFY(panel && timer);
+  timer->stop();
+  expose(window);
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  auto* plot = window.findChild<PlotWidget*>("mainPlot");
+  auto* status = window.findChild<QLabel*>("currentDetectionStatus");
+  auto* box = window.findChild<QCheckBox*>("showIntermediateDetectionResults");
+  QVERIFY(plot && status && box && box->isChecked());
+  auto* file = window.session().activeFile();
+  const auto powers = plot->powerGenerationCount();
+  const auto marksBefore = file->marks.size();
+
+  const auto identityFor = [&](std::uint32_t channel) {
+    auto identity = annotationSourceIdentity(
+        file->metadata, window.session().projectGeneration());
+    identity.selectedSampleChannel = channel;
+    identity.sampleFormat.selectedChannel = channel;
+    if (identity.sampleFormat.channels <= channel)
+      identity.sampleFormat.channels = channel + 1;
+    return identity;
+  };
+  const auto runFor = [&](const char* id, std::uint32_t channel,
+                          const char* phase) {
+    DetectionRun run;
+    run.lifecycle = DetectionLifecycle::Running;
+    run.computationPhase = phase;
+    run.request.runId = id;
+    run.request.sourceIdentity = identityFor(channel);
+    return run;
+  };
+  const auto eventFor = [&](const char* id, bool localized) {
+    PreviewTrackEvent event;
+    event.trackId = id;
+    event.sequence = 3;
+    event.observedSupport = {1000, 5000};
+    event.frequency = {99.9e6, 100.1e6};
+    event.timeLocalized = localized;
+    return event;
+  };
+  DetectionPreviewSnapshot foreign;
+  foreign.runId = "other-channel";
+  foreign.fileId = file->metadata.id;
+  foreign.projectGeneration = window.session().projectGeneration();
+  foreign.events = {eventFor("preview-other", false)};
+  panel->projectScopedPreview(
+      foreign, {runFor("other-channel", 1, "inference")});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(findAnnotation(*file, "preview-other") == nullptr);
+
+  DetectionPreviewSnapshot current;
+  current.runId = "this-channel";
+  current.fileId = file->metadata.id;
+  current.projectGeneration = window.session().projectGeneration();
+  current.dropped = 2;
+  current.events = {eventFor("preview-open", false),
+                    eventFor("preview-fixed", true)};
+  panel->projectScopedPreview(
+      current, {runFor("this-channel", 0, "inference"),
+                runFor("other-channel", 1, "tracking")});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 2);
+  QVERIFY(status->isVisible());
+  QVERIFY(status->text().contains("预览 2 条"));
+  QVERIFY(status->text().contains("1 条时间已定位"));
+  QVERIFY(status->text().contains("1 条时间未定位"));
+  QVERIFY(status->text().contains("随推理批次更新"));
+  QVERIFY(status->text().contains("不能转换为人工标记或创建窄带"));
+  QVERIFY(status->text().contains("已丢弃 2 条旧事件"));
+  QCOMPARE(file->marks.size(), marksBefore);
+  QVERIFY(findAnnotation(*file, "preview-open") == nullptr);
+  QVERIFY(findAnnotation(*file, "preview-fixed") == nullptr);
+  QCOMPARE(plot->powerGenerationCount(), powers);
+
+  current.dropped = 0;
+  current.events = {eventFor("preview-fixed", true)};
+  panel->projectScopedPreview(current, {runFor("this-channel", 0, "inference")});
+  QVERIFY(status->text().contains("时间已定位"));
+  QVERIFY(!status->text().contains("时间未定位"));
+  QVERIFY(status->text().contains("随推理批次更新"));
+
+  current.events.clear();
+  panel->projectScopedPreview(current, {runFor("this-channel", 0, "inference")});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QVERIFY(status->text().contains("inference"));
+  QVERIFY(status->text().contains("尚无轨迹预览"));
+  QVERIFY(status->text().contains("模型前向"));
+
+  current.events = {eventFor("preview-fixed", true)};
+  panel->projectScopedPreview(current, {runFor("this-channel", 0, "inference")});
+  box->setChecked(false);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QVERIFY(status->text().contains("已隐藏中间预览，检测继续"));
+  box->setChecked(true);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QCOMPARE(plot->powerGenerationCount(), powers);
+
+  const auto formalId = window.session().addMark(
+      {{1000, 5000}, {99.9e6, 100.1e6}});
+  file = window.session().activeFile();
+  auto* formal = findAnnotation(*file, formalId);
+  QVERIFY(formal);
+  formal->sourceKind = AnnotationSource::Algorithm;
+  QVERIFY(annotationOverlayVisible(*file, *formal));
+  const auto hit = plot->hitMark(plot->toPixel(3000, 100e6));
+  QCOMPARE(hit.id, formalId);
+  QVERIFY(hit.id != "preview-fixed");
+  QVERIFY(findAnnotation(*file, "preview-fixed") == nullptr);
+  window.session().selectMarks({});
+
+  QTest::mouseClick(window.findChild<QAbstractButton*>("manualAnnotationsTab"),
+                    Qt::LeftButton);
+  file = window.session().activeFile();
+  QVERIFY(!status->isVisible());
+  QVERIFY(!file->annotationLayers[static_cast<int>(AnnotationSource::Algorithm)]);
+  QVERIFY(file->annotationLayers[static_cast<int>(AnnotationSource::Manual)]);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QVERIFY(findAnnotation(*file, "preview-fixed") == nullptr);
+
+  QTest::mouseClick(window.findChild<QAbstractButton*>("detectionResultsTab"),
+                    Qt::LeftButton);
+  QVERIFY(status->isVisible());
+  QVERIFY(status->text().contains("预览 1 条"));
+  QVERIFY(!timer->isActive());
+
+  file = window.session().activeFile();
+  file->metadata.sampleFormat.channels = 2;
+  file->metadata.sampleFormat.selectedChannel = 1;
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(!timer->isActive());
+
+  file->metadata.sampleFormat.selectedChannel = 0;
+  current.projectGeneration = window.session().projectGeneration();
+  current.events = {eventFor("preview-fixed", true)};
+  panel->projectScopedPreview(current, {runFor("this-channel", 0, "inference")});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  issue = addSource(window, directory.path(), "IQ_B_FS1Msps_FC200MHz.dat");
+  QVERIFY2(issue.isEmpty(), qPrintable(issue));
+  QVERIFY(window.session().activeFile()->metadata.id != current.fileId);
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(!timer->isActive());
+
+  file = window.session().activeFile();
+  current.fileId = file->metadata.id;
+  current.projectGeneration = window.session().projectGeneration();
+  current.events = {eventFor("preview-fixed", false)};
+  auto sameFile = runFor("this-channel", 0, "reading");
+  sameFile.request.sourceIdentity = annotationSourceIdentity(
+      file->metadata, window.session().projectGeneration());
+  panel->projectScopedPreview(current, {sameFile});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  for (auto& source : window.session().project().files) {
+    if (source.metadata.sampleFormat.selectedChannel == 0)
+      source.metadata.sampleFormat.channels = 1;
+    for (auto& mark : source.marks)
+      if (mark.id == formalId) mark.sourceKind = AnnotationSource::Manual;
+  }
+  const auto generationBefore = window.session().projectGeneration();
+  auto replacement = window.session().project();
+  window.session().replaceProject(std::move(replacement));
+  QCOMPARE(window.session().projectGeneration(), generationBefore + 1);
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(panel->previewAbsenceNote().isEmpty());
+  QVERIFY(!timer->isActive());
+
+  file = window.session().activeFile();
+  QVERIFY(file);
+  file->metadata.sampleFormat.channels = 2;
+  file->metadata.sampleFormat.selectedChannel = 0;
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  const auto liveGeneration = window.session().projectGeneration();
+  const auto ownRun = runFor("channel-0-live", 0, "inference");
+  const auto otherRun = runFor("channel-1-live", 1, "tracking");
+  DetectionPreviewSnapshot ownPreview;
+  ownPreview.runId = ownRun.request.runId;
+  ownPreview.fileId = file->metadata.id;
+  ownPreview.projectGeneration = liveGeneration;
+  ownPreview.events = {eventFor("preview-own", false)};
+  DetectionPreviewSnapshot otherPreview;
+  otherPreview.runId = otherRun.request.runId;
+  otherPreview.fileId = file->metadata.id;
+  otherPreview.projectGeneration = liveGeneration;
+  otherPreview.events = {eventFor("preview-other-live", true)};
+  QCOMPARE(ownRun.request.sourceIdentity.projectGeneration, liveGeneration);
+  QCOMPARE(otherRun.request.sourceIdentity.selectedSampleChannel, quint32{1});
+  panel->tasks().retainPreview(ownRun, ownPreview);
+  panel->tasks().retainPreview(otherRun, otherPreview);
+  const auto chosen =
+      panel->tasks().previewFor(file->metadata.id, 0, liveGeneration);
+  QCOMPARE(chosen.runId, std::string("channel-0-live"));
+  QCOMPARE(chosen.events.size(), std::size_t{1});
+  QCOMPARE(chosen.events.front().trackId, std::string("preview-own"));
+  const auto newerOther =
+      panel->tasks().previewFor(file->metadata.id, 1, liveGeneration);
+  QCOMPARE(newerOther.runId, std::string("channel-1-live"));
+  QCOMPARE(newerOther.events.front().trackId, std::string("preview-other-live"));
+
+  panel->projectScopedPreview(otherPreview, {ownRun, otherRun});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{1});
+  QCOMPARE(panel->livePreview().events.front().trackId, std::string("preview-own"));
+  QCOMPARE(panel->livePreview().runId, std::string("channel-0-live"));
+
+  file = window.session().activeFile();
+  file->metadata.sampleFormat.selectedChannel = 1;
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 1);
+  QCOMPARE(panel->livePreview().events.front().trackId,
+           std::string("preview-other-live"));
+  file = window.session().activeFile();
+  file->metadata.sampleFormat.selectedChannel = 0;
+  window.refresh();
+  QCOMPARE(panel->livePreview().events.front().trackId, std::string("preview-own"));
+
+  panel->projectScopedPreview(otherPreview, {otherRun});
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(panel->livePreview().runId.empty());
+
+  file = window.session().activeFile();
+  file->metadata.sampleFormat.selectedChannel = 1;
+  window.refresh();
+  QCOMPARE(panel->livePreview().events.front().trackId,
+           std::string("preview-other-live"));
+  file = window.session().activeFile();
+  file->metadata.sampleFormat.channels = 3;
+  file->metadata.sampleFormat.selectedChannel = 2;
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+
+  const auto generationBeforeSecond = window.session().projectGeneration();
+  auto replacementAgain = window.session().project();
+  window.session().replaceProject(std::move(replacementAgain));
+  QCOMPARE(window.session().projectGeneration(), generationBeforeSecond + 1);
+  window.refresh();
+  QCOMPARE(plot->property("detectionPreviewCount").toInt(), 0);
+  QCOMPARE(panel->livePreview().events.size(), std::size_t{0});
+  QVERIFY(!timer->isActive());
 }

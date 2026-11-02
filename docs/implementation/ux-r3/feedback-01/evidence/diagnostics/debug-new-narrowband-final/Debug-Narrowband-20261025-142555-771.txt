@@ -1,0 +1,13 @@
+********* Start testing of NarrowbandAnalysisUiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+QINFO  : NarrowbandAnalysisUiTests::initTestCase() NARROWBAND_VALIDATION_NODE=W8
+PASS   : NarrowbandAnalysisUiTests::initTestCase()
+PASS   : NarrowbandAnalysisUiTests::compactAxesCoverEveryPageAndPreserveAnalysis()
+QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+QWARN  : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches() This plugin does not support grabbing the mouse
+PASS   : NarrowbandAnalysisUiTests::compactAxesFontFrequencyAndTimeLabelsReuseCaches()
+PASS   : NarrowbandAnalysisUiTests::cleanupTestCase()
+Totals: 4 passed, 0 failed, 0 skipped, 0 blacklisted, 33081ms
+********* Finished testing of NarrowbandAnalysisUiTests *********

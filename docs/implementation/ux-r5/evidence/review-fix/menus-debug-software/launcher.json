@@ -1,0 +1,20 @@
+{
+  "pass": true,
+  "configuration": "Debug",
+  "softwareRenderer": true,
+  "binary": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin\\SignalStudioUiCapture.exe",
+  "workingDirectory": "D:\\project\\signal_studio_rebuild\\out\\vs2026-qt611-debug_bin",
+  "outputDirectory": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r5\\diagnostics\\menus-debug-software-r3-verified",
+  "startedUtc": "2026-10-26T10:36:58.4448360Z",
+  "timeoutSeconds": 480,
+  "systemOnlyPath": true,
+  "dpiOverridesCleared": true,
+  "buildExecuted": false,
+  "independentReviewPerformed": false,
+  "modelInferenceVerified": false,
+  "largeRfbenchValidationExecuted": false,
+  "elapsedSeconds": 16.4724182,
+  "processId": 44216,
+  "exitCode": 0,
+  "finishedUtc": "2026-10-26T10:37:14.9171056Z"
+}

@@ -1,0 +1,35 @@
+********* Start testing of UiTests *********
+Config: Using QtTest library 6.11.1, Qt 6.11.1 (x86_64-little_endian-llp64 shared (dynamic) release build; by MSVC 2022), windows 11
+PASS   : UiTests::initTestCase()
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationSelectionAcrossPagesAndViews() This plugin does not support grabbing the mouse
+PASS   : UiTests::annotationSelectionAcrossPagesAndViews()
+PASS   : UiTests::annotationHoverProjectionAndNoCalculation()
+PASS   : UiTests::annotationCurrentSegmentGeometryAndHandles()
+PASS   : UiTests::annotationTreeStructuralNavigationAndLocate()
+PASS   : UiTests::annotationTreeSourceColorsSurviveInteractionStates()
+QWARN  : UiTests::annotationDirectTableDraftsAndPublication() QWidget::mapFrom(): parent must be in parent hierarchy
+PASS   : UiTests::annotationDirectTableDraftsAndPublication()
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+QWARN  : UiTests::annotationAtomicRangeAndUnknownFrequency() This plugin does not support grabbing the mouse
+PASS   : UiTests::annotationAtomicRangeAndUnknownFrequency()
+QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::annotationDeletePreviewPreservesDraftAndChannels() This plugin does not support propagateSizeHints()
+PASS   : UiTests::annotationDeletePreviewPreservesDraftAndChannels()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::unifiedAnnotationDraftsAndSegmentSwitch() This plugin does not support propagateSizeHints()
+PASS   : UiTests::unifiedAnnotationDraftsAndSegmentSwitch()
+PASS   : UiTests::torchSigLabelsNativeRoundtrip()
+QWARN  : UiTests::widebandFixtureTaskNativeRoundtrip() This plugin does not support propagateSizeHints()
+QWARN  : UiTests::widebandFixtureTaskNativeRoundtrip() This plugin does not support raise()
+PASS   : UiTests::widebandFixtureTaskNativeRoundtrip()
+PASS   : UiTests::cleanupTestCase()
+Totals: 13 passed, 0 failed, 0 skipped, 0 blacklisted, 35201ms
+********* Finished testing of UiTests *********

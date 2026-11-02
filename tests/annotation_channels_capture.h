@@ -193,7 +193,7 @@ void channelsCopyLegacyShards(const QString& project, const QDir& target) {
 void interactionChannelScenes(Capture& capture, QScreen* screen) {
   auto& window = capture.window;
   auto& session = window.session();
-  const auto primary = capture.output.filePath("u3-channel-project.json");
+  const auto primary = capture.output.filePath("u3-channel-project.ssproj");
   channelsSave(window, primary, capture.output);
 
   // Upgrade an untouched U2 v5 snapshot; the raw backup must be byte exact.

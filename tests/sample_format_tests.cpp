@@ -399,6 +399,18 @@ int main(int argc, char** argv) {
                 }
                 std::vector<std::complex<float>> data;
                 check(raw.read({2, 9}, data, {}, &error), "stream read matrix");
+                RawSampleReader sequential;
+                check(sequential.open(path,f,error,RawSampleReader::Access::Sequential) &&
+                    sequential.isOpen() && !sequential.isMapped() && sequential.sampleCount()==raw.sampleCount(),
+                    "sequential mode must not establish a full-source address mapping");
+                std::vector<std::complex<float>> sequentialData;
+                check(sequential.read({2,9},sequentialData,{},&error) && sequentialData==data,
+                    "bounded no-map decoding differs from mapped-mode reads");
+                std::complex<double> noMappedSample{123,456};
+                check(!sequential.sampleAt(0,noMappedSample,&error) && noMappedSample==std::complex<double>{123,456},
+                    "no-map mode cannot silently use a per-sample mapping");
+                check(!sequential.read({0,11},sequentialData,[]{return true;}),
+                    "no-map reads must obey cancellation");
                 for (int n = 2; n < 9; ++n) {
                   auto wanted = fixtures::reference(selected, n) / adcScale(f);
                   if (structure) wanted.imag(0);

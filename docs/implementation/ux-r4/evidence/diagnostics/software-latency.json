@@ -1,0 +1,9 @@
+{
+  "kind": "PNG completion timestamp interval; not instrumented action latency",
+  "previousFrameUtc": "2026-10-25T11:49:21.3458204Z",
+  "nextFrameUtc": "2026-10-25T11:52:43.8854519Z",
+  "intervalSeconds": 202.5396315,
+  "recheckPass": true,
+  "recheckReport": "evidence/release-software/report.json",
+  "rootCause": "not established"
+}

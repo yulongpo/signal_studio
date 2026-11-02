@@ -1,0 +1,39 @@
+{
+  "aggregateDeviceNotPerProcess": true,
+  "runStartUtc": "2026-10-26T12:57:49.611000+00:00",
+  "runEndUtc": "2026-10-26T13:00:00.904000+00:00",
+  "firstGpuSampleLocal": "2026/10/26 20:57:59.885",
+  "initialGpuSamplesMissingSeconds": 10,
+  "metrics": {
+    " utilization.gpu [%]": {
+      "mean": 13.830715532286213,
+      "max": 80.0,
+      "samples": 573
+    },
+    " utilization.memory [%]": {
+      "mean": 6.724258289703316,
+      "max": 70.0,
+      "samples": 573
+    },
+    " memory.used [MiB]": {
+      "mean": 3035.0,
+      "max": 3035.0,
+      "samples": 573
+    },
+    " memory.total [MiB]": {
+      "mean": 8151.0,
+      "max": 8151.0,
+      "samples": 573
+    },
+    " temperature.gpu": {
+      "mean": 48.67888307155323,
+      "max": 55.0,
+      "samples": 573
+    },
+    " power.draw [W]": {
+      "mean": 14.225165794066317,
+      "max": 23.0,
+      "samples": 573
+    }
+  }
+}

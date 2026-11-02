@@ -1,0 +1,69 @@
+{
+  "schema": "ss-de-rpo-baseline-cold-v1",
+  "sourceHead": "7220b2e295963288cb5d11e76946bb77646be0b0",
+  "configuration": "Release",
+  "backend": "ffscn-gui-iq-v1",
+  "strategy": "Sample",
+  "rawHeadRetained": false,
+  "workingSetBudgetBytes": "8589934592",
+  "applicationCold": true,
+  "workerCold": true,
+  "engineCold": true,
+  "osCacheState": "not flushed; may be warm",
+  "nativeUiVerified": false,
+  "formalProjectCommitVerified": false,
+  "runs": [
+    {
+      "caseId": "raw-off-v2-cold-01",
+      "pass": true,
+      "elapsedMs": 11258,
+      "windows": "20",
+      "eligible": "20",
+      "lifecycle": "Completed",
+      "annotations": 9,
+      "memoryAfter": {
+        "cpuMilliseconds": 3062.5,
+        "peakRssBytes": 126013440,
+        "privateBytes": 19677184,
+        "rssBytes": 79519744
+      },
+      "storedBytes": "742127",
+      "measurement": "out/tasks/ss-de-rpo/N0/diagnostics/raw-off-v2-cold-01/measurement.json"
+    },
+    {
+      "caseId": "raw-off-v2-cold-02",
+      "pass": true,
+      "elapsedMs": 11171,
+      "windows": "20",
+      "eligible": "20",
+      "lifecycle": "Completed",
+      "annotations": 9,
+      "memoryAfter": {
+        "cpuMilliseconds": 3062.5,
+        "peakRssBytes": 125825024,
+        "privateBytes": 19677184,
+        "rssBytes": 79527936
+      },
+      "storedBytes": "742130",
+      "measurement": "out/tasks/ss-de-rpo/N0/diagnostics/raw-off-v2-cold-02/measurement.json"
+    },
+    {
+      "caseId": "raw-off-v2-cold-03",
+      "pass": true,
+      "elapsedMs": 11574,
+      "windows": "20",
+      "eligible": "20",
+      "lifecycle": "Completed",
+      "annotations": 9,
+      "memoryAfter": {
+        "cpuMilliseconds": 3171.875,
+        "peakRssBytes": 125833216,
+        "privateBytes": 19443712,
+        "rssBytes": 79372288
+      },
+      "storedBytes": "742148",
+      "measurement": "out/tasks/ss-de-rpo/N0/diagnostics/raw-off-v2-cold-03/measurement.json"
+    }
+  ],
+  "boundaries": "Native standalone real IQ/TensorRT pipeline candidate; not a GUI click/p95 or formal project commit measurement."
+}

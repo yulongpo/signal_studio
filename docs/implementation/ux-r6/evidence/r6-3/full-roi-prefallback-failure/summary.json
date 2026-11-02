@@ -1,0 +1,301 @@
+{
+  "schema": "signal-studio-ux-r6-benchmark-summary-v1",
+  "launcher": "out\\tasks\\ux-r6\\diagnostics\\r6-2-baseline-roi-full\\launcher.json",
+  "runs": [
+    {
+      "launchPass": false,
+      "lifecycle": "Failed",
+      "report": "D:\\project\\signal_studio_rebuild\\out\\tasks\\ux-r6\\diagnostics\\r6-2-baseline-roi-full\\run-01\\native\\measurement.json",
+      "elapsedMs": 1730925,
+      "eligibleWindows": "639",
+      "completedWindows": "639",
+      "windowsPerSecond": 0.36916677499025086,
+      "error": "Spectrum ROI shape exceeds the working-cell budget",
+      "firstDecodedCandidateMs": 3231,
+      "frequencyTracksReadyMs": 1612503,
+      "worker": {
+        "bytesRead": "126406428",
+        "bytesWritten": "1675232962",
+        "exchanges": "322",
+        "exitCode": 62097,
+        "exitObserved": true,
+        "exitStatus": "crash",
+        "gracefulRequested": false,
+        "processId": 12824,
+        "resource": {
+          "available": true,
+          "cpuMilliseconds": 46656.25,
+          "peakRssBytes": 336560128,
+          "privateBytes": 447254528,
+          "rssBytes": 297807872
+        },
+        "state": 0,
+        "stderrTail": "",
+        "terminationRequested": true
+      },
+      "modelGpu": {
+        "cudaEventIntervals": true,
+        "d2hMs": 92.81913602352142,
+        "gpuStreamMs": 25181.80435180664,
+        "h2dMs": 138.68431997299194,
+        "hostEnqueueMs": 579.0794000000001,
+        "inputAdaptationMs": 397.39089999999993,
+        "physicalEnqueueCalls": 320
+      },
+      "pipelineStages": {
+        "append-chunk-and-manifest": {
+          "calls": "320",
+          "maximumMs": 9735.268,
+          "meanMs": 3067.4950099999996,
+          "totalMs": 981598.4032
+        },
+        "checkpoint-metadata": {
+          "calls": "320",
+          "maximumMs": 4943.9386,
+          "meanMs": 1531.9728946875,
+          "totalMs": 490231.3263
+        },
+        "decode-heads": {
+          "calls": "320",
+          "maximumMs": 3.5181,
+          "meanMs": 2.110895,
+          "totalMs": 675.4864
+        },
+        "finalize-frequency-tracks": {
+          "calls": "1",
+          "maximumMs": 2.4971,
+          "meanMs": 2.4971,
+          "totalMs": 2.4971
+        },
+        "frequency-analysis": {
+          "calls": "1",
+          "maximumMs": 24236.7435,
+          "meanMs": 24236.7435,
+          "totalMs": 24236.7435
+        },
+        "read-model-window": {
+          "calls": "639",
+          "maximumMs": 195.7407,
+          "meanMs": 73.62244194053208,
+          "totalMs": 47044.7404
+        },
+        "store-raw-heads": {
+          "calls": "320",
+          "maximumMs": 31.8558,
+          "meanMs": 12.587896875,
+          "totalMs": 4028.127
+        },
+        "time-refinement": {
+          "calls": "1",
+          "maximumMs": 108181.0704,
+          "meanMs": 108181.0704,
+          "totalMs": 108181.0704
+        },
+        "track-windows": {
+          "calls": "320",
+          "maximumMs": 4.5565,
+          "meanMs": 1.9391806249999999,
+          "totalMs": 620.5378
+        },
+        "worker-roundtrip": {
+          "calls": "320",
+          "maximumMs": 187.4036,
+          "meanMs": 162.5167309375,
+          "totalMs": 52005.3539
+        },
+        "worker-start": {
+          "calls": "1",
+          "maximumMs": 2868.5442,
+          "meanMs": 2868.5442,
+          "totalMs": 2868.5442
+        }
+      },
+      "sourceStages": {
+        "density-log": {
+          "calls": "9590",
+          "maximumMs": 2.6588,
+          "meanMs": 0.38827533889468197,
+          "totalMs": 3723.5605
+        },
+        "frame-total": {
+          "calls": "9590",
+          "maximumMs": 34.8427,
+          "meanMs": 5.482031949947862,
+          "totalMs": 52572.6864
+        },
+        "iq-read-and-input-hash": {
+          "calls": "9590",
+          "maximumMs": 31.3807,
+          "meanMs": 3.3137294786235665,
+          "totalMs": 31778.6657
+        },
+        "normalize-and-tensor-hash": {
+          "calls": "639",
+          "maximumMs": 57.5754,
+          "meanMs": 13.937924569640064,
+          "totalMs": 8906.3338
+        },
+        "window-fft-power": {
+          "calls": "9590",
+          "maximumMs": 10.5039,
+          "meanMs": 1.3460045255474453,
+          "totalMs": 12908.1834
+        },
+        "window-statistics": {
+          "calls": "6390",
+          "maximumMs": 0.8879,
+          "meanMs": 0.3064825508607199,
+          "totalMs": 1958.4235
+        }
+      },
+      "logicalBatchDistribution": {
+        "1": "1",
+        "2": "319"
+      },
+      "mainMemory": {
+        "cpuMilliseconds": 1688796.875,
+        "peakRssBytes": 142995456,
+        "privateBytes": 17833984,
+        "rssBytes": 28540928
+      },
+      "quality": {
+        "activityEvents": {
+          "available": true,
+          "f1": 0,
+          "fn": 41,
+          "fp": 0,
+          "frequencyIouThreshold": 0.3,
+          "matchedFrequencyBoundaryMaximumHz": 0,
+          "matchedFrequencyBoundaryMeanHz": 0,
+          "matchedTimeBoundaryMaximumSeconds": 0,
+          "matchedTimeBoundaryMeanSeconds": 0,
+          "matching": "maximum-cardinality bipartite; geometry order; no class prediction assumed",
+          "precision": 0,
+          "predicted": 0,
+          "recall": 0,
+          "timeIouThreshold": 0.5,
+          "tp": 0,
+          "truth": 41
+        },
+        "available": true,
+        "boundary": "physical bounds clipped to request; frequency-only observations are never activity events; not modulation or field-RF accuracy",
+        "frequencyOnly": {
+          "available": true,
+          "f1": 0.456140350877193,
+          "fn": 0,
+          "fp": 31,
+          "frequencyIouThreshold": 0.3,
+          "matchedFrequencyBoundaryMaximumHz": 126163.13117599487,
+          "matchedFrequencyBoundaryMeanHz": 23112.775954800138,
+          "matchedTimeBoundaryMaximumSeconds": 0,
+          "matchedTimeBoundaryMeanSeconds": 0,
+          "matching": "maximum-cardinality bipartite; geometry order; no class prediction assumed",
+          "precision": 0.29545454545454547,
+          "predicted": 44,
+          "recall": 1,
+          "timeIouThreshold": 0,
+          "tp": 13,
+          "truth": 13
+        },
+        "labelPath": "D:/project/signal_studio_rebuild/docs/implementation/ux-r6/evidence/fixtures/20260728-045101-650_bw_20000000_sampleTime_0.8_rollOff_0.35.txt",
+        "parser": "generator-txt-v1"
+      },
+      "gpu": {
+        "available": true,
+        "samples": 8152,
+        "metrics": {
+          "index": {
+            "available": true,
+            "n": 8152,
+            "minimum": 0.0,
+            "maximum": 0.0,
+            "mean": 0.0,
+            "p50": 0.0,
+            "p95": 0.0
+          },
+          "utilization.gpu [%]": {
+            "available": true,
+            "n": 8152,
+            "minimum": 5.0,
+            "maximum": 83.0,
+            "mean": 10.497669283611383,
+            "p50": 9.0,
+            "p95": 12.0
+          },
+          "utilization.memory [%]": {
+            "available": true,
+            "n": 8152,
+            "minimum": 1.0,
+            "maximum": 71.0,
+            "mean": 3.271099116781158,
+            "p50": 2.0,
+            "p95": 2.0
+          },
+          "memory.used [MiB]": {
+            "available": true,
+            "n": 8152,
+            "minimum": 2063.0,
+            "maximum": 3082.0,
+            "mean": 3004.829244357213,
+            "p50": 3082.0,
+            "p95": 3082.0
+          },
+          "memory.total [MiB]": {
+            "available": true,
+            "n": 8152,
+            "minimum": 8151.0,
+            "maximum": 8151.0,
+            "mean": 8151.0,
+            "p50": 8151.0,
+            "p95": 8151.0
+          },
+          "temperature.gpu": {
+            "available": true,
+            "n": 8152,
+            "minimum": 44.0,
+            "maximum": 56.0,
+            "mean": 47.06157998037291,
+            "p50": 47.0,
+            "p95": 49.0
+          },
+          "power.draw [W]": {
+            "available": true,
+            "n": 8152,
+            "minimum": 7.25,
+            "maximum": 29.39,
+            "mean": 11.082842247301276,
+            "p50": 9.81,
+            "p95": 16.14
+          }
+        },
+        "attribution": "whole selected GPU sampled at 200ms; not exclusive worker allocation"
+      },
+      "mainCpuMilliseconds": 1688703.125,
+      "combinedCpuPercentOfOneLogicalCore": 100.25618527665843
+    }
+  ],
+  "completedRunStatistics": {
+    "elapsedMs": {
+      "available": false,
+      "n": 0
+    },
+    "windowsPerSecond": {
+      "available": false,
+      "n": 0
+    },
+    "firstDecodedCandidateMs": {
+      "available": false,
+      "n": 0
+    },
+    "frequencyTracksReadyMs": {
+      "available": false,
+      "n": 0
+    },
+    "combinedCpuPercentOfOneLogicalCore": {
+      "available": false,
+      "n": 0
+    }
+  },
+  "percentileMethod": "linear interpolation over actual repeated complete runs; report n; no missing-data substitution",
+  "boundary": "decoded candidate/frequency readiness are headless, not native UI paint or new streaming stability; host/source/GPU timings nest"
+}
