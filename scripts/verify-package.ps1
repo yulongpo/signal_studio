@@ -50,7 +50,7 @@ try {
     & $executable @arguments 2>&1 | Out-File -LiteralPath ([IO.Path]::ChangeExtension($reportPath,'.process.log')) -Encoding utf8
     if ($LASTEXITCODE -ne 0) { throw "Standalone smoke test failed with exit code $LASTEXITCODE" }
     if (-not (Test-Path -LiteralPath $reportPath)) { throw "Renderer report was not produced: $reportPath" }
-    $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+    $report = Get-Content -LiteralPath $reportPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($report.pass -ne $true -or $report.fourK150Verified -ne $true -or $report.fullScreen -ne $true -or $report.captureHasVisibleContent -ne $true) { throw 'Native display or renderer acceptance failed.' }
     $expectedAxisMode = if ($AxisTitleMode) { $AxisTitleMode } else { 'CompactHeader' }
     if ($report.mainRendering.axisLayout.mode -ne $expectedAxisMode -or
